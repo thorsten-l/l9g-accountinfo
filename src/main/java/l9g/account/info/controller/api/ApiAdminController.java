@@ -143,6 +143,7 @@ public class ApiAdminController
         map.put("sigpad", signedJWT.getJWTClaimsSet().getClaimAsString("sigpad"));
         map.put("iss", signedJWT.getJWTClaimsSet().getClaimAsString("iss"));
         map.put("name", signedJWT.getJWTClaimsSet().getClaimAsString("name"));
+        map.put("cardnumber", signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"));
         map.put("publisher", publisherObj);
         Date iat = (Date)signedJWT.getJWTClaimsSet().getClaim("iat");
         map.put("iat", iat.getTime() / 1000);

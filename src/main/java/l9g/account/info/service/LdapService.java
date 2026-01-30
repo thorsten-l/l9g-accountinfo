@@ -15,22 +15,24 @@
  */
 package l9g.account.info.service;
 
-import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
+import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import java.security.GeneralSecurityException;
+import java.util.Map;
 import javax.net.ssl.SSLSocketFactory;
+import l9g.account.info.config.LdapData;
 import l9g.account.info.crypto.EncryptedValue;
+import l9g.account.info.dto.DtoAddress;
+import l9g.account.info.dto.DtoUserInfo;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -47,12 +49,10 @@ import org.springframework.stereotype.Service;
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class LdapService
 {
-  private final static Logger LOGGER =
-    LoggerFactory.getLogger(LdapService.class);
-
   @Value("${ldap.host.name}")
   private String ldapHostname;
 
@@ -68,26 +68,18 @@ public class LdapService
   @EncryptedValue("${ldap.bind.password}")
   private String ldapBindPassword;
 
-  @Value("${ldap.user.filter}")
-  private String ldapUserFilter;
+  //- ATTRIBUTES --------------------------------------------------------------
+  private final LdapData ldapDataConfig;
 
-  @Value("${ldap.user.attributes}")
-  private String[] ldapUserAttributeNames;
-
-  @Value("${ldap.locality.filter}")
-  private String ldapLocalityFilter;
-
-  @Value("${ldap.locality.attributes}")
-  private String[] ldapLocalityAttributeNames;
-
+  //---------------------------------------------------------------------------
   private LDAPConnection getConnection()
     throws Exception
   {
-    LOGGER.debug("host={}", ldapHostname);
-    LOGGER.debug("port={}", ldapPort);
-    LOGGER.debug("ssl={}", ldapSslEnabled);
-    LOGGER.debug("bind dn={}", ldapBindDn);
-    LOGGER.trace("bind pw={}", ldapBindPassword);
+    log.debug("host={}", ldapHostname);
+    log.debug("port={}", ldapPort);
+    log.debug("ssl={}", ldapSslEnabled);
+    log.debug("bind dn={}", ldapBindDn);
+    log.trace("bind pw={}", ldapBindPassword);
 
     LDAPConnection ldapConnection;
 
@@ -118,12 +110,8 @@ public class LdapService
     return sslUtil.createSSLSocketFactory();
   }
 
-  public Entry getEntry(String ldapBaseDn, String ldapScope, String userId)
-    throws Exception
+  private SearchScope scopeFromString(String ldapScope)
   {
-    String filter = String.format(ldapUserFilter, userId);
-    LOGGER.debug("LDAP filter: {}", filter);
-
     SearchScope scope = SearchScope.SUB;
     if("ONE".equalsIgnoreCase(ldapScope))
     {
@@ -133,36 +121,137 @@ public class LdapService
     {
       scope = SearchScope.BASE;
     }
+    return scope;
+  }
+
+  private String mapAttributeValue(
+    SearchResultEntry entry, Map<String, String> map, String key)
+  {
+    String attributeName = map.get(key);
+    return (attributeName != null) ? entry.getAttributeValue(attributeName) : null;
+  }
+
+  private DtoAddress dtoAddressFromEntry(
+    SearchResultEntry entry, Map<String, String> map)
+  {
+    return new DtoAddress(
+      mapAttributeValue(entry, map, "co"),
+      mapAttributeValue(entry, map, "street"),
+      mapAttributeValue(entry, map, "zip"),
+      mapAttributeValue(entry, map, "city"),
+      mapAttributeValue(entry, map, "state"),
+      mapAttributeValue(entry, map, "country")
+    );
+  }
+
+  public SearchResultEntry findUserEntryByCardNumber(
+    LDAPConnection connection, String cardNumber)
+    throws LDAPException
+  {
+    SearchResultEntry entry = null;
+
+    LdapData.Configuration userConfig = ldapDataConfig.getUser();
+    String filter = String.format(userConfig.getFilter(), cardNumber);
+    log.debug("LDAP filter: {}", filter);
+
+    SearchRequest searchRequest = new SearchRequest(
+      userConfig.getBaseDn(), scopeFromString(userConfig.getScope()),
+      filter, userConfig.getAttributes().values().toArray(String[] :: new)
+    );
+    log.debug("searchRequest={}", searchRequest);
+
+    SearchResult searchResult = connection.search(searchRequest);
+
+    if(searchResult.getEntryCount() == 1)
+    {
+      entry = searchResult.getSearchEntries().getFirst();
+    }
+
+    return entry;
+  }
+
+  public DtoUserInfo findUserInfoByCardNumber(String cardNumber)
+    throws Exception
+  {
+    log.debug("searching for cardnumber {} within ldap.", cardNumber);
+    log.debug("ldapDataConfig={}", ldapDataConfig);
+    DtoUserInfo userInfo = null;
 
     try(LDAPConnection connection = getConnection())
     {
-      SearchRequest searchRequest = new SearchRequest(
-        ldapBaseDn, scope, filter, ldapUserAttributeNames
-      );
 
-      SearchResult searchResult = connection.search(searchRequest);
+      LdapData.Configuration userConfig = ldapDataConfig.getUser();
+      LdapData.Configuration localityConfig = ldapDataConfig.getLocality();
 
-      switch(searchResult.getEntryCount())
+      SearchResultEntry entry = findUserEntryByCardNumber(connection, cardNumber);
+
+      log.debug("entry={}", entry);
+
+      if(entry != null)
       {
-        case 0 ->
+        Map<String, String> map = userConfig.getAttributes();
+
+        String status = "OK";
+        String jpegPhoto = null;
+        String firstname = mapAttributeValue(entry, map, "firstname");
+        String lastname = mapAttributeValue(entry, map, "lastname");
+        String uid = mapAttributeValue(entry, map, "username");
+        String mail = mapAttributeValue(entry, map, "mail");
+        String birthday = mapAttributeValue(entry, map, "birthday");
+
+        String localityBaseDn = String.format(localityConfig.getBaseDn(), entry.getDN());
+
+        log.debug("localityBaseDn={}", localityBaseDn);
+
+        SearchRequest searchRequestLocality = new SearchRequest(
+          localityBaseDn, scopeFromString(localityConfig.getScope()),
+          localityConfig.getFilter(),
+          localityConfig.getAttributes().values().toArray(String[] :: new)
+        );
+
+        SearchResult searchResultLocality = connection.search(searchRequestLocality);
+
+        DtoAddress semester = null;
+        DtoAddress home = null;
+
+        map = localityConfig.getAttributes();
+
+        for(SearchResultEntry localityEntry : searchResultLocality.getSearchEntries())
         {
-          return null;
+          if(localityEntry.getDN().toLowerCase().startsWith("cn=home,"))
+          {
+            home = dtoAddressFromEntry(localityEntry, map);
+          }
+          else if(localityEntry.getDN().toLowerCase().startsWith("cn=semester,"))
+          {
+            semester = dtoAddressFromEntry(localityEntry, map);
+          }
         }
-        case 1 ->
-        {
-          return searchResult.getSearchEntries().get(0);
-        }
-        default ->
-          throw new LDAPException(ResultCode.LOCAL_ERROR,
-            "UserId is not unique!");
+
+        userInfo = new DtoUserInfo(status, jpegPhoto, firstname, lastname, uid,
+          mail, birthday, semester, home);
       }
     }
     catch(Exception e)
     {
-      LOGGER.error("Error during LDAP search for userId {}: {}",
-        userId, e.getMessage());
+      log.error("Error during LDAP search for cardNumber {}: {}",
+        cardNumber, e.getMessage());
       throw e;
     }
+
+    log.debug("userInfo={}", userInfo);
+    return userInfo;
+  }
+
+  public void saveCardInfoByCardnumber(String cardNumber, String publisher)
+  {
+    log.debug("saveCardInfoByCardnumber: {} / {}", cardNumber, publisher);
+    /*
+      chipcard-is-issued: soniaChipcardIsIssued
+      chipcard-is-issued-by: soniaChipcardIsIssuedBy
+      chipcard-is-issued-timestamp: soniaChipcardIsIssuedTimestamp
+      user-log: soniaUserLog
+     */
   }
 
 }

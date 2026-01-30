@@ -15,6 +15,8 @@
  */
 package l9g.account.info.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * Data Transfer Object representing user information for signature pad operations.
  * Contains personal details, contact information, and address data that can be
@@ -31,6 +33,7 @@ package l9g.account.info.dto;
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public record DtoUserInfo(
   String status,
   String jpegPhoto,

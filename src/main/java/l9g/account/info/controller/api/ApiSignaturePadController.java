@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import l9g.account.info.db.DbService;
 import l9g.account.info.dto.DtoEvent;
+import l9g.account.info.service.LdapService;
 import l9g.account.info.service.PublisherService;
 import l9g.account.info.service.SignaturePad;
 import l9g.account.info.service.SignaturePadService;
@@ -72,33 +73,48 @@ import org.springframework.web.server.ResponseStatusException;
                 produces = MediaType.APPLICATION_JSON_VALUE)
 public class ApiSignaturePadController
 {
-  /** Path template for signature pad validation endpoint */
+  /**
+   * Path template for signature pad validation endpoint
+   */
   private static final String VALIDATE_NEW_PAD = "/admin/validate-new-pad";
 
-  /** Service for managing signature pad operations and data persistence */
+  /**
+   * Service for managing signature pad operations and data persistence
+   */
   private final SignaturePadService signaturePadService;
 
-  /** WebSocket handler for real-time communication with signature pad devices */
+  /**
+   * WebSocket handler for real-time communication with signature pad devices
+   */
   private final SignaturePadWebSocketHandler signaturePadWebSocketHandler;
 
   private final DbService dbService;
+
+  private final LdapService ldapService;
+
   private final PublisherService publisherService;
 
-  /** Service for authentication and authorization operations */
+  /**
+   * Service for authentication and authorization operations
+   */
   private final AuthService authService;
 
-  /** 
+  /**
    * Map storing deferred results for asynchronous signature requests.
    * Key: signature pad UUID, Value: deferred result waiting for response
    */
   private final Map<String, DeferredResult<ResponsePayload>> waitingRequests =
     new ConcurrentHashMap<>();
 
-  /** Base URL of the application for generating absolute URLs */
+  /**
+   * Base URL of the application for generating absolute URLs
+   */
   @Value("${app.base-url}")
   private String appBaseUrl;
 
-  /** Timeout in milliseconds for signature pad operations */
+  /**
+   * Timeout in milliseconds for signature pad operations
+   */
   @Value("${app.signature-pad.timeout:180000}")
   private long signaturePadTimeout;
 
@@ -106,8 +122,9 @@ public class ApiSignaturePadController
    * Establishes a long-polling connection to wait for signature responses.
    * Creates a deferred result that will be completed when a signature is captured
    * or when the request times out.
-   * 
+   *
    * @param padUuid the unique identifier of the signature pad
+   *
    * @return deferred result that will contain the signature response
    */
   @GetMapping("/wait-for-response")
@@ -173,9 +190,10 @@ public class ApiSignaturePadController
    * Generates a QR code image for signature pad connection.
    * Creates a QR code containing the validation URL that signature pads can scan
    * to establish connection with the system.
-   * 
+   *
    * @param uuid the unique identifier of the signature pad
    * @param response HTTP response to write the QR code image to
+   *
    * @throws IOException if QR code generation or response writing fails
    */
   @GetMapping(path = "/connect-qrcode", produces = MediaType.IMAGE_PNG_VALUE)
@@ -222,9 +240,10 @@ public class ApiSignaturePadController
    * Validates a signature pad by processing its validation JWT.
    * Extracts the public key from the JWT and marks the signature pad as validated
    * in the system, enabling it for signature operations.
-   * 
+   *
    * @param padUuid the unique identifier of the signature pad
    * @param signatureJwt the validation JWT containing public key and environment info
+   *
    * @throws IOException if signature pad data access fails
    * @throws ParseException if JWT parsing fails
    * @throws ResponseStatusException if validation fails or pad not found
@@ -266,7 +285,7 @@ public class ApiSignaturePadController
       signaturePad.setPublicJwk(publicJwkMap);
       signaturePad.setClientEnvironment(signedJWT.getJWTClaimsSet().getJSONObjectClaim("clientEnvironment"));
       signaturePad.setValidated(true);
-      signaturePadService.saveSignaturePad(null,signaturePad);
+      signaturePadService.saveSignaturePad(null, signaturePad);
 
       String issuer = signedJWT.getJWTClaimsSet().getIssuer();
       log.debug("issuer: {}", issuer);
@@ -285,9 +304,10 @@ public class ApiSignaturePadController
    * Processes a signature captured by a signature pad.
    * Verifies the signature JWT, extracts signature data, and notifies waiting
    * clients about the signature completion.
-   * 
+   *
    * @param padUuid the unique identifier of the signature pad
    * @param signatureJwt the signature JWT containing captured signature data
+   *
    * @throws IOException if signature pad data access fails
    * @throws ParseException if JWT parsing fails
    * @throws ResponseStatusException if verification fails
@@ -336,9 +356,14 @@ public class ApiSignaturePadController
       log.debug("sigpad={}", signedJWT.getJWTClaimsSet().getClaimAsString("sigpad"));
       log.debug("name={}", signedJWT.getJWTClaimsSet().getClaimAsString("name"));
       log.debug("mail={}", signedJWT.getJWTClaimsSet().getClaimAsString("mail"));
+      log.debug("cardnumber={}", signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"));
       log.debug("publisher={}", signedJWT.getJWTClaimsSet().getClaim("publisher"));
 
       dbService.saveSignedJWT(signedJWT);
+      
+      ldapService.saveCardInfoByCardnumber(
+        signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"), 
+        principal.getFullName());
       
       // Notify waiting client with signature data
       if(deferred != null)
@@ -369,9 +394,10 @@ public class ApiSignaturePadController
    * Handles signature pad cancellation requests.
    * Notifies waiting clients that the signature operation was cancelled
    * by the user on the signature pad device.
-   * 
+   *
    * @param padUuid the unique identifier of the signature pad
    * @param json the cancellation request data
+   *
    * @throws IOException if signature pad communication fails
    */
   @PostMapping(path = "/cancel",
@@ -402,9 +428,10 @@ public class ApiSignaturePadController
    * Shows a signature request on the specified signature pad.
    * Sends a show event to the signature pad device to display signature
    * interface for the specified user.
-   * 
+   *
    * @param padUuid the unique identifier of the signature pad
    * @param cardNumber the identifier of the user requesting the signature
+   *
    * @throws IOException if WebSocket communication fails
    */
   @GetMapping(path = "/show",
@@ -423,8 +450,9 @@ public class ApiSignaturePadController
   /**
    * Hides the signature interface on the specified signature pad.
    * Sends a hide event to the signature pad device to clear the display.
-   * 
+   *
    * @param padUuid the unique identifier of the signature pad
+   *
    * @throws IOException if WebSocket communication fails
    */
   @GetMapping(path = "/hide",

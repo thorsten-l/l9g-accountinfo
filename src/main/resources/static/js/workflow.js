@@ -98,7 +98,9 @@ function processCardNumber(code)
 
       document.getElementById('userinfo-name-preview').innerText = `${userInfo.firstname} ${userInfo.lastname}`;
       document.getElementById('userinfo-birthday-preview').innerText = `${userInfo.birthday}`;
-
+      document.getElementById('userinfo-semester-preview').innerText = "";
+      document.getElementById('userinfo-home-preview').innerText = "";
+      
       if (userInfo.semester)
       {
         const sem = userInfo.semester;

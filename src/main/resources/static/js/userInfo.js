@@ -22,6 +22,9 @@ export var userInfo;
 
 export function fetchUserInfo(card, padUuid)
 {
+  userId = null;
+  userInfo = null;
+  
   return fetch(`/api/v1/userinfo?card=${encodeURIComponent(card)}`, {
     method: 'GET',
     headers: {
@@ -44,56 +47,6 @@ export function fetchUserInfo(card, padUuid)
   });
 }
 
-/*
-export function showUserInfo2()
-{
-
-  console.log(userInfo);
-
-  document.getElementById('userinfo-jpegpoto').src = userInfo.jpegPhoto;
-  document.getElementById('userinfo-name').innerText =
-          `${userInfo.firstname} ${userInfo.lastname}`;
-
-  document.getElementById('userinfo-birthday').innerText =
-          userInfo.birthday || '';
-
-  document.getElementById('userinfo-userid').innerText =
-          userInfo.uid || '';
-  document.getElementById('userinfo-email').innerText =
-          userInfo.mail || '';
-
-  if (userInfo.semster)
-  {
-    const sem = userInfo.semster;
-    const semText = [sem.co, sem.street, sem.zip, sem.city, sem.state, sem.country]
-            .filter(Boolean)
-            .join(', ');
-    document.getElementById('userinfo-semester').innerText = semText;
-    document.getElementById('userinfo-semester-container').style.display = 'block';
-  }
-  else
-  {
-    document.getElementById('userinfo-semester-container').style.display = 'none';
-  }
-
-  if (userInfo.home)
-  {
-    const home = userInfo.home;
-    const homeText = [home.co, home.street, home.zip, home.city, home.state, home.country]
-            .filter(Boolean)
-            .join(', ');
-    document.getElementById('userinfo-home').innerText = homeText;
-    document.getElementById('userinfo-home-container').style.display = 'block';
-  }
-  else
-  {
-    document.getElementById('userinfo-home-container').style.display = 'none';
-  }
-
-}
-
-
-*/
 export function showUserinfo(card)
 {
   userId = null;

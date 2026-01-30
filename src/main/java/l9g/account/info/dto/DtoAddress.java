@@ -15,10 +15,13 @@
  */
 package l9g.account.info.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public record DtoAddress( String co, String street, String zip, String city, String state, String country )
 {
   

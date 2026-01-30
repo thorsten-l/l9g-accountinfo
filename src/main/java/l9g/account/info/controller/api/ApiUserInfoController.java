@@ -18,6 +18,7 @@ package l9g.account.info.controller.api;
 import java.io.IOException;
 import l9g.account.info.dto.DtoAddress;
 import l9g.account.info.dto.DtoUserInfo;
+import l9g.account.info.service.LdapService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -48,6 +49,7 @@ public class ApiUserInfoController
    * Service for authentication and authorization operations
    */
   private final AuthService authService;
+  private final LdapService ldapService;
 
   /**
    * Retrieves user information for the specified user ID.
@@ -69,7 +71,7 @@ public class ApiUserInfoController
     @RequestParam("card") String cardNumber,
     @AuthenticationPrincipal DefaultOidcUser principal
   )
-    throws IOException
+    throws Exception
   {
     log.debug("userinfo called for card number '{}'", cardNumber);
     log.debug("principal={}", principal);
@@ -77,43 +79,12 @@ public class ApiUserInfoController
     // Authenticate signature pad
     authService.authCheck(padUuid, true);
 
-    // Demo implementation - only supports user123
-    if( ! cardNumber.equalsIgnoreCase("091600045759") &&  ! cardNumber.equalsIgnoreCase("091600110911"))
+    DtoUserInfo userInfo = ldapService.findUserInfoByCardNumber(cardNumber);
+    if ( userInfo != null )
     {
-      log.error("ERROR: card number not found {}", cardNumber);
-      return new DtoUserInfo("ERROR: card number not found : " + cardNumber);
-    }
-    else
-    {
-
-      // Create demo address information
-      DtoAddress semester = new DtoAddress(
-        "c/o M. Maier", "Musterstr. Str 1701", "38302", "Wolfenbüttel",
-        "Niedersachsen", "Deutschland");
-      DtoAddress home = new DtoAddress(
-        null, "Neuer Weg 4711", "38302", "Wolfenbüttel",
-        "Niedersachsen", "Deutschland");
-
-      // Load and encode demo profile photo
-      String jpegPhoto = null;
-
-/*      ClassPathResource imgFile = new ClassPathResource("demo/MarieMuster.jpg");
-
-      try(InputStream is = imgFile.getInputStream())
-      {
-        byte[] imageBytes = is.readAllBytes();
-        String base64 = Base64.getEncoder().encodeToString(imageBytes);
-        jpegPhoto = "data:image/jpeg;base64," + base64;
-      }
-*/
-
-      // Create and return user information object
-      DtoUserInfo userInfo = new DtoUserInfo("OK",
-        jpegPhoto, "Marie", "Muster", "user123", "m.muster@the.net",
-        "01.01.2005", semester, home);
-
       return userInfo;
     }
+    
+    return new DtoUserInfo("ERROR: card number not found : " + cardNumber);    
   }
-
 }

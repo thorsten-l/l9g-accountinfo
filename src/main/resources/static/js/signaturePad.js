@@ -21,7 +21,7 @@
 // ----------------------------------------------------------------------------
 import { switchLang, defaultLang } from './i18n.js';
 import { showAlert } from './alerts.js';
-import { userInfo, userId } from './userInfo.js';
+import { userInfo, userId, cardNumber } from './userInfo.js';
 import { startCountdown, stopCountdown } from './countdown.js';
 
 const wrapper = document.getElementById("signature-pad");
@@ -115,6 +115,7 @@ okButton.addEventListener("click", async () => {
       sigpad: padName,
       sigpng: signaturePngBase64,
       sigsvg: signatureSvgBase64,
+      cardnumber: cardNumber,
       sub: userInfo.uid,
       name: `${userInfo.firstname} ${userInfo.lastname}`,
       mail: userInfo.mail,
