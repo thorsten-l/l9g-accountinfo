@@ -25,6 +25,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.SignedJWT;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.ParseException;
@@ -318,9 +319,10 @@ public class ApiSignaturePadController
   public void signature(
     @RequestHeader("SIGNATURE_PAD_UUID") String padUuid,
     @RequestBody String signatureJwt,
+    HttpServletRequest request,
     @AuthenticationPrincipal DefaultOidcUser principal
   )
-    throws IOException, ParseException
+    throws IOException, ParseException, Exception
   {
     log.debug("signature called");
     log.debug("Received JWT length: {}", signatureJwt.length());
@@ -360,11 +362,13 @@ public class ApiSignaturePadController
       log.debug("publisher={}", signedJWT.getJWTClaimsSet().getClaim("publisher"));
 
       dbService.saveSignedJWT(signedJWT);
-      
+
       ldapService.saveCardInfoByCardnumber(
-        signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"), 
-        principal.getFullName());
-      
+        signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"),
+        principal.getFullName() + ", " + principal.getPreferredUsername(),
+        request.getRemoteAddr(), padUuid, signedJWT.getJWTClaimsSet().getClaimAsString("sigpad")
+      );
+
       // Notify waiting client with signature data
       if(deferred != null)
       {

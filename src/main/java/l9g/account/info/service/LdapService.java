@@ -18,14 +18,21 @@ package l9g.account.info.service;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPException;
+import com.unboundid.ldap.sdk.Modification;
+import com.unboundid.ldap.sdk.ModificationType;
+import com.unboundid.ldap.sdk.ModifyRequest;
 import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
+import java.net.InetAddress;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.net.ssl.SSLSocketFactory;
 import l9g.account.info.config.LdapData;
 import l9g.account.info.crypto.EncryptedValue;
@@ -84,6 +91,9 @@ public class LdapService
     LDAPConnection ldapConnection;
 
     LDAPConnectionOptions options = new LDAPConnectionOptions();
+    options.setConnectTimeoutMillis(10_000);
+    options.setResponseTimeoutMillis(30_000);
+
     if(ldapSslEnabled)
     {
       ldapConnection = new LDAPConnection(createSSLSocketFactory(), options,
@@ -150,7 +160,7 @@ public class LdapService
   {
     SearchResultEntry entry = null;
 
-    LdapData.Configuration userConfig = ldapDataConfig.getUser();
+    LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
     String filter = String.format(userConfig.getFilter(), cardNumber);
     log.debug("LDAP filter: {}", filter);
 
@@ -180,8 +190,8 @@ public class LdapService
     try(LDAPConnection connection = getConnection())
     {
 
-      LdapData.Configuration userConfig = ldapDataConfig.getUser();
-      LdapData.Configuration localityConfig = ldapDataConfig.getLocality();
+      LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
+      LdapData.LdapConfig localityConfig = ldapDataConfig.getLocality();
 
       SearchResultEntry entry = findUserEntryByCardNumber(connection, cardNumber);
 
@@ -243,15 +253,65 @@ public class LdapService
     return userInfo;
   }
 
-  public void saveCardInfoByCardnumber(String cardNumber, String publisher)
+  public void saveCardInfoByCardnumber(String cardNumber, String publisher, 
+    String remoteIp, String padUuid, String padName)
+    throws Exception
   {
     log.debug("saveCardInfoByCardnumber: {} / {}", cardNumber, publisher);
-    /*
-      chipcard-is-issued: soniaChipcardIsIssued
-      chipcard-is-issued-by: soniaChipcardIsIssuedBy
-      chipcard-is-issued-timestamp: soniaChipcardIsIssuedTimestamp
-      user-log: soniaUserLog
-     */
+
+    LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
+    Map<String, String> attributesMap = userConfig.getAttributes();
+
+    try(LDAPConnection connection = getConnection())
+    {
+
+      SearchResultEntry entry = findUserEntryByCardNumber(connection, cardNumber);
+      if(entry == null)
+      {
+        throw new IllegalStateException("User not found for cardNumber=" + cardNumber);
+      }
+
+      String dn = entry.getDN();
+
+      String attrIssued = attributesMap.get("chipcard-is-issued");
+      String attrIssuedBy = attributesMap.get("chipcard-is-issued-by");
+      String attrIssuedTs = attributesMap.get("chipcard-is-issued-timestamp");
+      String attrUserLog = attributesMap.get("user-log");
+
+      requireAttr(attrIssued, "chipcard-is-issued");
+      requireAttr(attrIssuedBy, "chipcard-is-issued-by");
+      requireAttr(attrIssuedTs, "chipcard-is-issued-timestamp");
+      requireAttr(attrUserLog, "user-log");
+
+      long nowMs = System.currentTimeMillis();
+
+      String logLine = nowMs + "|" + remoteIp + "|" + publisher
+        + "|accountinfo|issued chipcard using device: '" + padName + " (" + padUuid +")'";
+
+      List<Modification> mods = new ArrayList<>(4);
+      mods.add(new Modification(ModificationType.REPLACE, attrIssued, "true"));
+      mods.add(new Modification(ModificationType.REPLACE, attrIssuedBy, Objects.toString(publisher, "")));
+      mods.add(new Modification(ModificationType.REPLACE, attrIssuedTs, Long.toString(nowMs)));
+      mods.add(new Modification(ModificationType.ADD, attrUserLog, logLine));
+
+      ModifyRequest modifyRequest = new ModifyRequest(dn, mods);
+      log.debug("LDAP modify dn={} mods={}", dn, mods.size());
+
+      connection.modify(modifyRequest);
+    }
+    catch(Exception e)
+    {
+      log.error("Error during LDAP modify for cardNumber {}: {}", cardNumber, e.getMessage(), e);
+      throw e;
+    }
+  }
+
+  private static void requireAttr(String attrName, String key)
+  {
+    if(attrName == null || attrName.isBlank())
+    {
+      throw new IllegalStateException("LDAP attribute mapping missing for key: " + key);
+    }
   }
 
 }

@@ -31,12 +31,12 @@ import org.springframework.context.annotation.Configuration;
 @ToString
 public class LdapData
 {
-  private Configuration user;
-  private Configuration locality;
+  private LdapConfig user;
+  private LdapConfig locality;
 
   @Data
   @ToString
-  public static class Configuration
+  public static class LdapConfig
   {
     private String baseDn;
 
