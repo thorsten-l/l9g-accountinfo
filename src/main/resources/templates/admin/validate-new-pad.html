@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<!--
+Copyright 2025 Thorsten Ludewig (t.ludewig@gmail.com).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Validate New Pad</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link th:rel="stylesheet"
+          th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link th:rel="stylesheet"
+          th:href="@{/webjars/font-awesome/css/all.min.css}"/>
+    <style>
+      .validation-alert {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 200px;
+        z-index: 1050;
+      }
+      .goto-pad-btn {
+        margin-top: 1rem;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">Validate New Pad</h1>
+
+      <div class="mb-4">
+        Name: <em><span th:text="${pad.name}">PAD-NAME</span></em> <br/>
+        Key ID: <em><span th:text="${pad.keyId}">PAD-KeyID</span></em>
+      </div>
+
+      <h2 class="h5 mb-3">Client Environment</h2>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Property</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="env-info">
+            <!-- rows populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Container for Goto Signature Pad button -->
+      <div id="goto-pad-container" class="goto-pad-btn"></div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/jose/index.umd.min.js}"></script>
+
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+
+      (async function ()
+      {
+        const {generateKeyPair, importJWK, exportJWK, CompactSign} = jose;
+        const padKeyId = /*[[${pad.keyId}]]*/ 'unknown-key-id';
+        const padUuid = /*[[${pad.uuid}]]*/ 'unknown-uuid';
+        const padName = /*[[${pad.name}]]*/ 'unknown-name';
+        const padJwkJson = /*[[${padJwkJson}]]*/ 'missing-jwk';
+
+        const padJwk = JSON.parse(padJwkJson);
+        const padPrivateKey = await importJWK(padJwk, 'RS256');
+ 
+        const props = {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          appVersion: navigator.appVersion,
+          language: navigator.language,
+          languages: navigator.languages,
+          hardwareConcurrency: navigator.hardwareConcurrency,
+          maxTouchPoints: navigator.maxTouchPoints,
+          screen: {
+            width: screen.width,
+            height: screen.height,
+            availWidth: screen.availWidth,
+            availHeight: screen.availHeight,
+            colorDepth: screen.colorDepth,
+            pixelDepth: screen.pixelDepth
+          }
+        };
+
+        function renderTable(obj, prefix = '')
+        {
+          const tbody = document.getElementById('env-info');
+          for (const [key, value] of Object.entries(obj))
+          {
+            if (value !== null && typeof value === 'object')
+            {
+              renderTable(value, prefix + key + '.');
+            }
+            else
+            {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td>${prefix + key}</td><td>${value}</td>`;
+              tbody.appendChild(tr);
+            }
+        }
+        }
+
+        function showAlert(message, type)
+        {
+          const alertDiv = document.createElement('div');
+          alertDiv.className = `alert alert-${type} validation-alert`;
+          alertDiv.textContent = message;
+          document.body.appendChild(alertDiv);
+          setTimeout(() => alertDiv.remove(), 10000);
+        }
+
+        function showGotoPadButton()
+        {
+          const container = document.getElementById('goto-pad-container');
+          const btn = document.createElement('a');
+          btn.className = 'btn btn-success';
+          btn.href = '/signature-pad';
+          btn.innerHTML = '<i class="fas fa-signature me-1"></i>Goto Signature Pad';
+          container.appendChild(btn);
+        }
+
+        renderTable(props);
+
+        const {publicKey, privateKey} = await generateKeyPair('RS256', {
+          modulusLength: 2048,
+          extractable: true
+        });
+
+        const publicJwk = await exportJWK(publicKey);
+        const privateJwk = await exportJWK(privateKey);
+        privateJwk.use = "sig";
+        privateJwk.kid = padKeyId;
+
+        const payload = {
+          iss: padUuid,
+          sigpad: padName,
+          sub: padUuid,
+          clientEnvironment: props,
+          publicJwk: publicJwk
+        };
+
+        const jwt = await new CompactSign(
+                new TextEncoder().encode(JSON.stringify(payload))
+                )
+                .setProtectedHeader({alg: 'RS256', kid: padJwk.kid})
+                .sign(padPrivateKey);
+
+        const url = '/api/v1/signature-pad/validate';
+        try
+        {
+          const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'text/plain',
+              'SIGNATURE_PAD_UUID': padUuid
+            },
+            body: jwt
+          });
+          if (resp.ok)
+          {
+            localStorage.setItem('SIGNATURE_PAD_UUID', padUuid);
+            localStorage.setItem('SIGNATURE_PAD_NAME', padName);
+            localStorage.setItem('SIGNATURE_PAD_PRIVATE_JWK', JSON.stringify(privateJwk));
+            showAlert('Validation succeeded', 'success');
+            showGotoPadButton();
+          }
+          else
+          {
+            showAlert('Validation failed!', 'danger');
+          }
+        }
+        catch (e)
+        {
+          console.error('Error sending validation data', e);
+          showAlert('Validation failed!', 'danger');
+        }
+      })();
+      /*]]>*/
+    </script>
+  </body>
+</html>

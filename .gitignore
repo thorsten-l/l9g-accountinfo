@@ -1,0 +1,14 @@
+.DS_Store
+private/
+target/
+*.log
+*.tmp
+*.bak
+config.yaml
+server.p12
+nb-configuration.xml
+l9g-oidc-info.jar
+l9g-accountinfo.jar
+GEMINI.md
+secrets
+secret.bin

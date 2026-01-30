@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Account Details</title>
+    <link rel="manifest" th:href="@{/manifest.json}"/>
+    <div th:replace="~{header::head}"></div>
+  </head>
+  <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+    <div class="app-wrapper">
+      <div th:replace="~{header::header}"></div>
+      <!--begin::App Main-->
+      <main class="app-main">
+        <div style="margin-top: 3em" class="container">
+          <div class="d-flex justify-content-center">
+            <p>
+              <a class="btn btn-primary" th:href="@{/app}">
+                <span th:text="#{login}" th:remove="tag">login</span>
+              </a>
+            </p>
+          </div>
+        </div>        
+      </main> 
+      <!--end::App Main-->
+    </div>
+
+    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <script th:src="@{/webjars/popper.js/umd/popper.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+
+  </body>
+</html>

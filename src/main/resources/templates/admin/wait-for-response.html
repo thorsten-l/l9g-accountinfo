@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!--
+Copyright 2025 Thorsten Ludewig (t.ludewig@gmail.com).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Validate New Pad</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link th:rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link th:rel="stylesheet" th:href="@{/webjars/font-awesome/css/all.min.css}"/>
+    <style>
+      #progress-container {
+        width: 300px;
+        margin: 2rem auto;
+      }
+      #label {
+        text-align: center;
+        margin-top: 0.5rem;
+        font-weight: bold;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="mb-4">Wait for response</h1>
+
+      <div class="mb-4" style="width: 700px">
+        Name: <em><span th:text="${pad.name}">PAD-NAME</span></em> <br/>
+        UUID: <em><span th:text="${pad.uuid}">PAD-KeyID</span></em>
+
+        <div id="message" style="font-weight: bold;">Warte auf Kundenantwort...</div>
+        <div id="signature" style="margin-top:1em; height: 292px; width:688px; border: solid grey 4px"></div>
+
+        <div id="progress-container">
+          <div class="progress">
+            <div id="progress-bar"
+                 class="progress-bar bg-success"
+                 role="progressbar"
+                 style="width: 100%;"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 aria-valuenow="100">
+            </div>
+          </div>
+          <div id="label">180 s</div>
+        </div>
+
+        <div class="d-flex justify-content-center" style="margin-top: 2rem;">
+          <button type="button"
+                  class="btn btn-secondary"
+                  onclick="window.close();">
+            Schließen
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/jose/index.umd.min.js}"></script>
+
+    <script th:inline="javascript">
+      const padUuid = /*[[${pad.uuid}]]*/ 'unknown-uuid';
+      const padName = /*[[${pad.name}]]*/ 'unknown-name';
+      const cardNumber = /*[[${card}]]*/ 'unknown-card';
+
+      const duration = 180; // Sek.
+      let remaining = duration;
+      const bar = document.getElementById('progress-bar');
+      const label = document.getElementById('label');
+      // Update alle 1 Sekunde
+      const interval = setInterval(() => {
+        remaining--;
+        if (remaining < 0)
+        {
+          clearInterval(interval);
+          label.textContent = 'Abgelaufen!';
+          bar.classList.replace('bg-success', 'bg-danger');
+          return;
+        }
+        const percent = (remaining / duration) * 100;
+        bar.style.width = percent + '%';
+        bar.setAttribute('aria-valuenow', percent.toFixed(0));
+        label.textContent = remaining + ' s';
+        // optional: bei Unterschreitung bestimmter Schwelle Farbe ändern
+        if (remaining <= 10)
+        {
+          bar.classList.replace('bg-success', 'bg-warning');
+        }
+      }, 1000);
+
+      console.log(padUuid);
+      console.log(padName);
+      console.log(cardNumber);
+      console.log("send show ...");
+
+      const url = `/api/v1/signature-pad/show?uuid=${encodeURIComponent(padUuid)}&card=${encodeURIComponent(cardNumber)}`;
+      fetch(url, {method: 'GET'});
+
+      console.log("wait ...");
+
+      const pollUrl = '/api/v1/signature-pad/wait-for-response?uuid=' + encodeURIComponent(padUuid);
+
+      fetch(pollUrl).then(async response => {
+        if (!response.ok)
+        {
+          clearInterval(interval);
+          const err = await response.text();
+          throw new Error(err || 'Fehler');
+        }
+        return response.json();
+      }).then(data => {
+        const msgEl = document.getElementById('message');
+        clearInterval(interval);
+        if (data.status === 'cancel')
+        {
+          msgEl.textContent = 'Der Kunde hat abgebrochen.';
+        }
+        else if (data.status === 'timeout')
+        {
+          msgEl.textContent = 'TIMEOUT!';
+        }
+        else if (data.status === 'ok')
+        {
+          msgEl.textContent = 'Unterschrift erhalten:';
+          const img = document.createElement('img');
+          img.src = 'data:image/png;base64,' + data.sigpng;
+          img.alt = 'Unterschrift';
+          img.style = "width: 680px";
+          document.getElementById('signature').appendChild(img);
+        }
+      }).catch(err => {
+        document.getElementById('message').textContent = 'Fehler: ' + err.message;
+      });
+    </script>
+
+  </body>
+</html>

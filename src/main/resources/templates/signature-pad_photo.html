@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<!--
+Copyright 2025 Thorsten Ludewig (t.ludewig@gmail.com).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Signature-Pad</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/webjars/font-awesome/css/all.min.css}"/>
+    <link th:rel="stylesheet" th:href="@{/css/signature-pad.css}"/>
+  </head>
+
+  <body
+    onselectstart="return false"
+    th:attr="data-ws-base-url=${wsBaseUrl}, data-heartbeat-enabled=${heartbeatEnabled}" 
+    >   
+
+    <nav class="app-header navbar navbar-expand"> 
+      <div class="container-fluid"> 
+        <ul class="navbar-nav">
+          <li class="nav-item d-md-block"> 
+            <a th:href="@{/app}" class="nav-link"><i class="fa-solid fa-house-chimney"></i></a> 
+          </li>
+          <li id="green-light" class="nav-item" style="display: none; align-items: center;">
+            <img th:src="@{/images/green.svg}" class="monitor-status-light" />
+          </li>
+          <li id="red-light" class="nav-item" style="display: inline-flex; align-items: center;">
+            <img th:src="@{/images/red.svg}" class="monitor-status-light" />
+          </li>
+          <li class="nav-item d-md-block"> 
+            <a th:href="@{/signature-pad}" class="nav-link"><i class="fas fa-signature me-1"></i> Signature Pad</a> 
+          </li>
+        </ul> 
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown ms-auto">
+            <button class="btn dropdown-toggle" id="lang-btn" data-bs-toggle="dropdown">
+              <img id="lang-flag" src="i18n/flags/de.svg" width="24" alt="DE"/>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" id="lang-menu">
+              <li><button class="dropdown-item" data-lang="de"><img src="i18n/flags/de.svg" width="24" alt="DE"/> DE - Deutsch</button></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><button class="dropdown-item" data-lang="ar"><img src="i18n/flags/ar.svg" width="24" alt="AR"/> AR - العربية</button></li>
+              <li><button class="dropdown-item" data-lang="en"><img src="i18n/flags/en.svg" width="24" alt="EN"/> EN - English</button></li>
+              <li><button class="dropdown-item" data-lang="es"><img src="i18n/flags/es.svg" width="24" alt="ES"/> ES - Español</button></li>
+              <li><button class="dropdown-item" data-lang="fr"><img src="i18n/flags/fr.svg" width="24" alt="FR"/> FR - Français</button></li>
+              <li><button class="dropdown-item" data-lang="hi"><img src="i18n/flags/hi.svg" width="24" alt="HI"/> HI - हिन्दी</button></li>
+              <li><button class="dropdown-item" data-lang="it"><img src="i18n/flags/it.svg" width="24" alt="IT"/> IT - Italiano</button></li>
+              <li><button class="dropdown-item" data-lang="jp"><img src="i18n/flags/jp.svg" width="24" alt="JP"/> JP - 日本語</button></li>
+              <li><button class="dropdown-item" data-lang="pl"><img src="i18n/flags/pl.svg" width="24" alt="PL"/> PL - Polski</button></li>
+              <li><button class="dropdown-item" data-lang="ru"><img src="i18n/flags/ru.svg" width="24" alt="RU"/> RU - Русский</button></li>
+              <li><button class="dropdown-item" data-lang="tr"><img src="i18n/flags/tr.svg" width="24" alt="TR"/> TR - Türkçe</button></li>
+              <li><button class="dropdown-item" data-lang="uk"><img src="i18n/flags/uk.svg" width="24" alt="UK"/> UK - Українська</button></li>
+              <li><button class="dropdown-item" data-lang="vi"><img src="i18n/flags/vi.svg" width="24" alt="VI"/> VI - Tiếng Việt</button></li>
+              <li><button class="dropdown-item" data-lang="zh"><img src="i18n/flags/zh.svg" width="24" alt="ZH"/> ZH - 中文</button></li>
+            </ul>
+        </ul>
+        </li>
+      </div> 
+    </nav> 
+
+    <div id="scanner-pages" class="container py-4">
+      <h1 id="signature-pad-title" class="mb-4"><i class="fas fa-id-card"></i> Signature-Pad (ID-Card Workflow)</h1>
+
+      <!-- 0. Start Page -->
+      <div id="start-page">
+
+        <div>Verantwortliche/r Herausgeber*in: <span style="font-weight: bold" th:text="${principal.fullName}" /></div>
+        <div>Ausgabemodus: <span style="font-weight: bold" th:text="${mode}" /></div>
+
+        <div class="mb-3">
+          <label for="library-barcode" class="form-label fs-4">Bibliotheks-Barcode</label>
+          <input type="number" class="form-control form-control-lg" id="library-barcode" placeholder="12-stelligen Barcode eingeben">
+        </div>
+        <button type="button" class="btn btn-secondary btn-lg me-2" onclick="document.getElementById('library-barcode').value = ''"><i class="fas fa-eraser"></i> Löschen</button>
+        <button type="button" class="btn btn-primary btn-lg me-2" id="btn-send-barcode"><i class="fas fa-paper-plane"></i> Senden</button>
+        <button type="button" class="btn btn-info btn-lg" id="btn-show-scanner"><i class="fas fa-barcode"></i> Barcodescanner</button>
+      </div>
+
+      <!-- 1. Scanner-Section -->
+      <div id="scanner" class="d-none">
+        <p class="fs-4">Smartcard Barcode einlesen:</p>
+        <div class="card-viewfinder">
+          <video id="video" autoplay muted playsinline></video>
+        </div>
+        <div id="message" class="mt-3 alert alert-info d-none"></div>
+        <button type="button" class="btn btn-danger btn-lg mt-3" id="btn-cancel-scan"><i class="fas fa-times"></i> Abbruch</button>
+      </div>
+
+      <!-- 2. Foto-Section -->
+      <div id="photo-section" class="mt-4 d-none">
+        <div class="userinfo-container-preview">
+          <img id="userinfo-jpegpoto-preview" class="userinfo-jpegpoto" th:src="@{/images/loading.png}" />
+          <div class="userinfo-text">
+            <div id="userinfo-name-preview" class="userinfo-name"></div>
+            <div id="userinfo-userid-preview"></div>
+          </div>
+        </div>
+        <p class="fs-4">Ausweis-Fotos aufnehmen:</p>
+        <button id="btn-front" class="btn btn-primary btn-lg me-2">
+          <i class="fas fa-camera"></i> Vorderseite
+        </button>
+        <button id="btn-back" class="btn btn-secondary btn-lg me-2">
+          <i class="fas fa-camera"></i> Rückseite
+        </button>
+        <button id="btn-cancel-photo" class="btn btn-lg btn-danger">
+          <i class="fas fa-times"></i> Abbruch
+        </button>
+
+        <div id="photo-msg" class="mt-3"></div>
+
+        <!-- Live-Vorschau der Aufnahmen im ID-Karten-Format -->
+        <div id="preview-front" class="photo-viewfinder">
+          <img id="img-front" alt="Vorderseite Vorschau"/>
+        </div>
+        <div id="preview-back" class="photo-viewfinder">
+          <img id="img-back" alt="Rückseite Vorschau"/>
+        </div>
+
+        <!-- Neuer Weiter-Button -->
+        <div class="text-center mt-4">
+          <button type="button" class="btn btn-lg btn-success" id="btn-next"><i class="fas fa-times"></i> Weiter zur Unterschrift</button>
+        </div>
+
+      </div>
+
+      <!-- versteckte File-Inputs -->
+      <input type="file" id="file-front" accept="image/*" capture="environment" class="d-none"/>
+      <input type="file" id="file-back"  accept="image/*" capture="environment" class="d-none"/>
+    </div>
+
+    <div id="signpad-standby">
+      <div id="signpad-logo-container" class="d-none signpad-logo-container">
+        <div class="signpad-logo"><i class="fas fa-signature me-1"></i>
+          <span data-i18n="nav.signaturePad">Signature Pad</span>
+        </div>
+      </div>
+      <div class="heartbeat-container">
+        <div class="heartbeat"><i class="fas fa-heartbeat me-1"></i>
+          <span id="heartbeat" data-i18n="heartbeat.disabled">disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="signpad-active" style="display: none">
+      <div class="userinfo-container">
+        <img id="userinfo-jpegpoto" class="userinfo-jpegpoto" th:src="@{/images/loading.png}"/>
+        <div class="userinfo-text">
+          <div id="userinfo-name" class="userinfo-name"></div>
+
+          <label for="userinfo-birthday" data-i18n="label.birthday">Birthday</label>
+          <div id="userinfo-birthday"></div>
+
+          <label for="userinfo-userid" data-i18n="label.userid">User-Id</label>
+          <div id="userinfo-userid"></div>
+
+          <label for="userinfo-email" data-i18n="label.email">E-Mail</label>
+          <div id="userinfo-email"></div>
+
+          <div id="userinfo-semester-container" style="display: none">
+            <label data-i18n="label.semesterAddress">Semester Address</label>
+            <div id="userinfo-semester"></div>
+          </div>
+
+          <div id="userinfo-home-container" style="display: none">
+            <label data-i18n="label.homeAddress">Home Address</label>
+            <div id="userinfo-home"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pie-container">
+        <svg viewBox="0 0 100 100">
+        <!-- Hintergrundkreis -->
+        <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
+        <!-- Vordergrund-Kreis, dessen stroke-dashoffset wir anpassen -->
+        <circle id="pie" class="pie-fg" cx="50" cy="50" r="40"
+                stroke-dasharray="251.327" stroke-dashoffset="0">
+        </circle>
+        </svg>
+        <div id="pie-label" class="pie-label">180 s</div>
+      </div>
+
+      <div class="user-consens" id="consent-text" data-i18n="consentText">
+        By signing this document, I accept the IT usage policy of this university.
+      </div>
+
+      <div id="signature-pad-container" class="signature-container">
+        <div id="signature-pad" class="signature-pad">
+          <div class="signature-pad--body">
+            <canvas></canvas>
+          </div>
+          <div class="signature-pad--footer text-center">
+            <div class="description mb-2" data-i18n="signature.signAbove">Sign above</div>
+            <div class="signature-pad--actions grid-4">
+              <button class="btn btn-secondary btn-lg" data-action="clear" style="text-wrap: nowrap">
+                <i class="fas fa-eraser me-2"></i>
+                <span data-i18n="btn.clear">Clear</span>
+              </button>
+              <div></div>
+              <button class="btn btn-danger btn-lg" data-action="cancel" style="text-wrap: nowrap">
+                <i class="fas fa-times-circle me-2"></i>
+                <span data-i18n="btn.cancel">Cancel</span>
+              </button>
+              <button class="btn btn-success btn-lg" data-action="ok" style="text-wrap: nowrap">
+                <i class="fas fa-check-circle me-2"></i>
+                <span data-i18n="btn.ok">OK</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/webjars/signature_pad/dist/signature_pad.umd.min.js}"></script>
+    <script th:src="@{/js/sweetalert2/sweetalert2.all.min.js}"></script>
+    <script th:src="@{/js/jose/index.umd.min.js}"></script>
+    <script type="module" th:src="@{/js/app.js}"></script>
+
+  </body>
+</html>
