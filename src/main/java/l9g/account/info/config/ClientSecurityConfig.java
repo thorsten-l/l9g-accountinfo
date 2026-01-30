@@ -110,7 +110,7 @@ public class ClientSecurityConfig
           "/favicon**"
         )
         .permitAll()
-        .requestMatchers("/admin**","/api/v1/admin**")
+        .requestMatchers("/admin**","/api/v1/admin**","/v3/api-docs")
         .hasRole("ADMIN")
         .anyRequest()
         .authenticated()

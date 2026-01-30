@@ -59,6 +59,10 @@ management:
 
 springdoc:
   show-actuator: false
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 app:
   development: false
