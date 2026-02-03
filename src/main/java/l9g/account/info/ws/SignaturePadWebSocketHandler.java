@@ -33,9 +33,12 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketMessage;
 
 /**
- * WebSocket handler for managing real-time communication with signature pad devices.
- * Handles connection lifecycle, message routing, and event broadcasting to signature pads.
- * Maintains active sessions and provides methods to send events to specific pads or all connected devices.
+ * WebSocket handler for managing real-time communication with signature pad
+ * devices.
+ * Handles connection lifecycle, message routing, and event broadcasting to
+ * signature pads.
+ * Maintains active sessions and provides methods to send events to specific
+ * pads or all connected devices.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -56,18 +59,22 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
 
   /**
    * Invoked after a new WebSocket connection has been established.
-   * Validates the signature pad UUID and stores the session if valid.
+   * Validates the signature pad UUID from the session attributes and stores the
+   * session if valid.
    *
-   * @param session the WebSocket session that has been established
+   * @param session The WebSocket session that has been established.
    *
-   * @throws Exception if an error occurs during the establishment of the connection
+   * @throws Exception If an error occurs during the establishment of the
+   * connection or UUID parsing.
    */
   @Override
   public void afterConnectionEstablished(@NonNull WebSocketSession session)
     throws Exception
   {
-    String padUuid = (String)session.getAttributes().get(SignaturePadWebSocketConfig.SIGNATURE_PAD_UUID);
-    log.debug("afterConnectionEstablished: session id = {}/{}", session.getId(), padUuid);
+    String padUuid = (String)session.getAttributes().get(
+      SignaturePadWebSocketConfig.SIGNATURE_PAD_UUID);
+    log.debug("afterConnectionEstablished: session id = {}/{}",
+      session.getId(), padUuid);
 
     if(padUuid != null)
     {
@@ -83,12 +90,13 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
 
   /**
    * Handles incoming WebSocket messages from signature pad devices.
-   * Currently logs incoming messages for debugging purposes.
+   * This implementation currently only logs incoming messages for debugging
+   * purposes.
    *
-   * @param session the WebSocket session associated with the message
-   * @param message the WebSocket message received
+   * @param session The WebSocket session associated with the message.
+   * @param message The WebSocket message received.
    *
-   * @throws Exception if an error occurs while handling the message
+   * @throws Exception If an error occurs while handling the message.
    */
   @Override
   public void handleMessage(
@@ -102,12 +110,13 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
 
   /**
    * Handles transport errors that occur during WebSocket communication.
-   * Closes the session and removes it from the active sessions map.
+   * Logs the error, closes the session, and removes it from the active sessions
+   * map.
    *
-   * @param session the WebSocket session where the error occurred
-   * @param exception the exception that was thrown
+   * @param session The WebSocket session where the error occurred.
+   * @param exception The exception that was thrown.
    *
-   * @throws Exception if an error occurs while handling the transport error
+   * @throws Exception If an error occurs while handling the transport error.
    */
   @Override
   public void handleTransportError(@NonNull WebSocketSession session,
@@ -124,10 +133,12 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
    * Invoked after a WebSocket connection has been closed.
    * Removes the session from the active sessions map for cleanup.
    *
-   * @param session the WebSocket session that was closed
-   * @param closeStatus the status object containing the code and reason for the closure
+   * @param session The WebSocket session that was closed.
+   * @param closeStatus The status object containing the code and reason for the
+   * closure.
    *
-   * @throws Exception if any error occurs during the handling of the closed connection
+   * @throws Exception If any error occurs during the handling of the closed
+   * connection.
    */
   @Override
   public void afterConnectionClosed(@NonNull WebSocketSession session,
@@ -141,8 +152,10 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
 
   /**
    * Indicates whether this WebSocket handler supports partial messages.
+   * This implementation does not support partial messages.
    *
-   * @return false, indicating that partial messages are not supported
+   * @return Always {@code false}, indicating that partial messages are not
+   * supported.
    */
   @Override
   public boolean supportsPartialMessages()
@@ -151,12 +164,13 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
   }
 
   /**
-   * Broadcasts an event to all connected signature pad sessions.
-   * Automatically cleans up closed sessions during the broadcast process.
+   * Broadcasts an event to all connected signature pad WebSocket sessions.
+   * This method iterates through all active sessions, removes any closed ones,
+   * and sends the event as a JSON message.
    *
-   * @param event the event to be sent to all WebSocket sessions
+   * @param event The {@link DtoEvent} to be sent to all WebSocket sessions.
    *
-   * @throws IOException if an I/O error occurs while sending the message
+   * @throws IOException If an I/O error occurs while sending the message.
    */
   public void fireEventToAllSessions(DtoEvent event)
     throws IOException
@@ -186,12 +200,13 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
 
   /**
    * Sends an event to a specific signature pad identified by its UUID.
-   * Only sends the message to sessions associated with the specified signature pad.
+   * Only sends the message to sessions associated with the specified signature
+   * pad.
    *
-   * @param event the event to send to the signature pad
-   * @param padUuid the unique identifier of the target signature pad
+   * @param event The {@link DtoEvent} to send to the signature pad.
+   * @param padUuid The unique identifier of the target signature pad.
    *
-   * @throws IOException if an I/O error occurs while sending the message
+   * @throws IOException If an I/O error occurs while sending the message.
    */
   public void fireEventToPad(DtoEvent event, String padUuid)
     throws IOException
@@ -200,7 +215,9 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
     sessionsBySessionId.values().forEach(session ->
     {
       // Check if session is open and belongs to the target signature pad
-      if(session.isOpen() && padUuid.equals((String)session.getAttributes().get(SignaturePadWebSocketConfig.SIGNATURE_PAD_UUID)))
+      if(session.isOpen() && padUuid.equals(
+        (String)session.getAttributes().get(
+          SignaturePadWebSocketConfig.SIGNATURE_PAD_UUID)))
       {
         try
         {

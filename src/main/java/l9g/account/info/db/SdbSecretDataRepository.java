@@ -23,6 +23,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
+ * Spring Data JPA repository for managing {@link SdbSecretData} entities.
+ * Provides methods for CRUD operations and custom queries for secret data.
  *
  * @author Thorsten Ludewig <t.ludewig@gmail.com>
  */
@@ -30,6 +32,23 @@ import org.springframework.stereotype.Repository;
 public interface SdbSecretDataRepository extends
   JpaRepository<SdbSecretData, String>
 {
+  /**
+   * Finds a list of {@link SdbSecretData} entities by their key, ordered by modification timestamp in descending order.
+   *
+   * @param key The key of the secret data to find.
+   *
+   * @return An {@link Optional} containing a list of found {@link SdbSecretData} entities, or empty if none found.
+   */
   Optional<List<SdbSecretData>> findByKeyOrderByModifyTimestampDesc(String key);
+
+  /**
+   * Finds a list of {@link SdbSecretData} entities by their key and type, ordered by modification timestamp in descending order.
+   *
+   * @param key The key of the secret data to find.
+   * @param type The type of the secret data to find.
+   *
+   * @return An {@link Optional} containing a list of found {@link SdbSecretData} entities, or empty if none found.
+   */
   Optional<List<SdbSecretData>> findByKeyAndTypeOrderByModifyTimestampDesc(String key, SdbSecretType type);
+
 }

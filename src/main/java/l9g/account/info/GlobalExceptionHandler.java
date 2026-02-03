@@ -26,6 +26,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
+ * Global exception handler for the application.
+ * This class provides centralized exception handling across all controllers,
+ * rendering appropriate error pages based on the type of exception.
+ * It uses Spring's @ControllerAdvice to intercept exceptions.
  *
  * @author Thorsten Ludewig <t.ludewig@gmail.com>
  */
@@ -34,6 +38,16 @@ import org.springframework.web.servlet.ModelAndView;
 public class GlobalExceptionHandler
 {
 
+  /**
+   * Handles bad request exceptions (HTTP 400).
+   * This includes `HttpClientErrorException.BadRequest` and `MissingServletRequestParameterException`.
+   * It logs the exception and returns a ModelAndView for the 400 error page.
+   *
+   * @param request The current HttpServletRequest.
+   * @param ex The caught Exception.
+   *
+   * @return A ModelAndView for the 400 error page.
+   */
   @ExceptionHandler(
     {
       org.springframework.web.client.HttpClientErrorException.BadRequest.class,
@@ -50,6 +64,16 @@ public class GlobalExceptionHandler
     return modelAndView;
   }
 
+  /**
+   * Handles "no resource found" exceptions (HTTP 404).
+   * Specifically handles `NoResourceFoundException`.
+   * It returns a ModelAndView for the 404 error page.
+   *
+   * @param request The current HttpServletRequest.
+   * @param ex The caught Exception.
+   *
+   * @return A ModelAndView for the 404 error page.
+   */
   @ExceptionHandler(
     org.springframework.web.servlet.resource.NoResourceFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -61,12 +85,22 @@ public class GlobalExceptionHandler
     return modelAndView;
   }
 
+  /**
+   * Handles generic exceptions (HTTP 500).
+   * This catches `Exception.class` and `TemplateInputException`.
+   * It attempts to log out the user, logs the exception details, and returns a ModelAndView for the 500 error page.
+   *
+   * @param request The current HttpServletRequest.
+   * @param ex The caught Exception.
+   *
+   * @return A ModelAndView for the 500 error page.
+   */
   @ExceptionHandler(
     {
       Exception.class, org.thymeleaf.exceptions.TemplateInputException.class
     })
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-  public ModelAndView handleException(HttpServletRequest request, Exception ex) 
+  public ModelAndView handleException(HttpServletRequest request, Exception ex)
   {
     log.debug("request={} exception={}", request, ex);
 
@@ -79,7 +113,7 @@ public class GlobalExceptionHandler
     {
       log.warn("LOGOUT failed : {}", ex1.getMessage());
     }
-    
+
     ModelAndView modelAndView = new ModelAndView("error/500");
     modelAndView.addObject("pageErrorRequestUri", request.getRequestURI());
     modelAndView.addObject("pageErrorException", ex.getMessage());
@@ -97,6 +131,16 @@ public class GlobalExceptionHandler
     return modelAndView;
   }
 
+  /**
+   * Handles access denied exceptions (HTTP 403).
+   * Specifically handles `AccessDeniedException`.
+   * It logs the access denied event, invalidates the session, and returns a ModelAndView for the 403 error page.
+   *
+   * @param ex The caught AccessDeniedException.
+   * @param request The current HttpServletRequest.
+   *
+   * @return A ModelAndView for the 403 error page.
+   */
   @ExceptionHandler(AccessDeniedException.class)
   @ResponseStatus(HttpStatus.FORBIDDEN)
   public ModelAndView handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request)
@@ -108,4 +152,5 @@ public class GlobalExceptionHandler
     request.getSession().invalidate();
     return modelAndView;
   }
+
 }

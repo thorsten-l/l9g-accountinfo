@@ -21,16 +21,25 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Custom annotation to mark a field as an encrypted value.
+ * This annotation is used in conjunction with {@link EncryptedValueProcessor}
+ * to automatically encrypt and decrypt string values during data access.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Target(
-{
-  ElementType.FIELD
-})
+  {
+    ElementType.FIELD
+  })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EncryptedValue
 {
+  /**
+   * Represents the encrypted value as a String.
+   * This method defines the default attribute for the annotation.
+   *
+   * @return The encrypted string value.
+   */
   String value();
 
 }

@@ -21,6 +21,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**
+ * Spring Data JPA repository for managing {@link SdbProperty} entities.
+ * Provides methods for CRUD operations and custom queries for application properties.
  *
  * @author Thorsten Ludewig <t.ludewig@gmail.com>
  */
@@ -28,6 +30,13 @@ import org.springframework.stereotype.Repository;
 public interface SdbPropertiesRepository extends
   JpaRepository<SdbProperty, String>
 {
+  /**
+   * Finds an {@link SdbProperty} by its unique key.
+   *
+   * @param key The key of the property to find.
+   *
+   * @return An {@link Optional} containing the found {@link SdbProperty}, or empty if not found.
+   */
   Optional<SdbProperty> findByKey(String key);
 
 }

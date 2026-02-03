@@ -25,15 +25,37 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+/**
+ * Custom Jackson deserializer for {@link PublicKey} objects.
+ * This class handles the conversion of a Base64 encoded public key string into a Java {@link PublicKey} object.
+ * It expects the public key to be in X.509 format and uses RSA algorithm.
+ */
 public class PublicKeyDeserializer extends StdDeserializer<PublicKey>
 {
+  /**
+   * Serial Version UID.
+   */
   private static final long serialVersionUID = 8318750956675564611L;
 
+  /**
+   * Constructs a new {@code PublicKeyDeserializer}.
+   */
   public PublicKeyDeserializer()
   {
     super(PublicKey.class);
   }
 
+  /**
+   * Deserializes a Base64 encoded string into a {@link PublicKey} object.
+   * The input string is expected to be an X.509 encoded public key.
+   *
+   * @param p The JSON parser.
+   * @param ctxt The deserialization context.
+   *
+   * @return A {@link PublicKey} object.
+   *
+   * @throws IOException If an I/O error occurs or the public key cannot be deserialized.
+   */
   @Override
   public PublicKey deserialize(
     JsonParser p,

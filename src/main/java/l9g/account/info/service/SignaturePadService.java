@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Service class for managing signature pad operations and data persistence.
  * Handles creation, storage, and retrieval of signature pad configurations
- * using JSON file-based storage system.
+ * using a database service.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -33,16 +33,22 @@ import lombok.RequiredArgsConstructor;
 @Slf4j
 @RequiredArgsConstructor
 public class SignaturePadService
-{  
+{
+  /**
+   * Database service for accessing and managing stored data.
+   */
   private final DbService dbService;
 
   /**
-   * Creates a new signature pad with the specified name.
+   * Creates a new signature pad with the specified name and associates it with a publisher.
    * Generates a unique UUID for the signature pad and stores it persistently.
-   * 
-   * @param name the display name for the new signature pad
-   * @return the newly created signature pad instance
-   * @throws IOException if storage operation fails
+   *
+   * @param publisher The identifier of the entity creating the signature pad.
+   * @param name The display name for the new signature pad.
+   *
+   * @return The newly created {@link SignaturePad} instance.
+   *
+   * @throws IOException If storage operation fails.
    */
   public SignaturePad createSignaturePad(String publisher, String name)
     throws IOException
@@ -54,10 +60,12 @@ public class SignaturePadService
 
   /**
    * Retrieves a signature pad by its unique identifier.
-   * 
-   * @param uuid the unique identifier of the signature pad
-   * @return the signature pad instance or null if not found
-   * @throws IOException if file access fails
+   *
+   * @param uuid The unique identifier of the signature pad.
+   *
+   * @return The {@link SignaturePad} instance or null if not found.
+   *
+   * @throws IOException If data access fails.
    */
   public SignaturePad findSignaturePadByUUID(String uuid)
     throws IOException
@@ -66,15 +74,17 @@ public class SignaturePadService
   }
 
   /**
-   * Stores the given signature pad object as a JSON file.
-   * The file is saved as {storeDir}/{uuid}.json with pretty-printed formatting.
-   * 
-   * @param pad the signature pad to store
-   * @throws IOException if file writing fails
+   * Stores the given {@link SignaturePad} object persistently.
+   *
+   * @param publisher The identifier of the entity saving the signature pad.
+   * @param pad The {@link SignaturePad} to store.
+   *
+   * @throws IOException If data writing fails.
    */
   public void saveSignaturePad(String publisher, SignaturePad pad)
     throws IOException
   {
     dbService.saveSignaturePad(publisher, pad);
   }
+
 }

@@ -16,6 +16,12 @@
 package l9g.account.info.ws;
 
 /**
+ * Represents an active session of a signature pad.
+ * This record stores key identifiers for managing WebSocket connections to individual signature pads.
+ *
+ * @param sessionId The unique ID of the HTTP session associated with the WebSocket connection.
+ * @param padUuid The unique identifier (UUID) of the signature pad.
+ * @param name The human-readable name of the signature pad.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */

@@ -26,6 +26,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
+ * Service for storing and retrieving files in a hierarchical directory structure.
+ * Files are encrypted before storage and decrypted upon retrieval using {@link CryptoHandler}.
+ * This service also handles directory creation and cleanup.
  *
  * @author Thorsten Ludewig <t.ludewig@gmail.com>
  */
@@ -33,8 +36,19 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class FileStorageService
 {
+  /**
+   * The base path where files are stored.
+   */
   private final Path storageLocationPath;
 
+  /**
+   * Constructs a {@code FileStorageService} and initializes the storage directory.
+   * If the specified storage directory does not exist, it will be created.
+   *
+   * @param storageLocation The base directory path for file storage.
+   *
+   * @throws IOException If an I/O error occurs during directory creation.
+   */
   public FileStorageService(
     @Value("${app.storage-location}") String storageLocation)
     throws IOException
@@ -43,6 +57,15 @@ public class FileStorageService
     Files.createDirectories(this.storageLocationPath);
   }
 
+  /**
+   * Generates a hierarchical file path for a given ID.
+   * This method creates subdirectories based on parts of the ID to distribute files
+   * and avoid very large directories.
+   *
+   * @param id The unique identifier for which to generate the path.
+   *
+   * @return The {@link Path} object representing the hierarchical file path.
+   */
   private Path getHierarchicalPath(String id)
   {
     String idPart1 = id.substring(0, 2);
@@ -52,6 +75,14 @@ public class FileStorageService
       .resolve(idPart3).resolve(id);
   }
 
+  /**
+   * Saves the provided {@link SdbSecretData} by encrypting its value and storing it in the file system.
+   *
+   * @param secretData The {@link SdbSecretData} object containing the value to be saved.
+   *
+   * @throws IOException If an I/O error occurs during file writing or directory creation.
+   * @throws IllegalArgumentException If the {@code secretData} has a null value.
+   */
   public void save(SdbSecretData secretData)
     throws IOException
   {
@@ -71,6 +102,15 @@ public class FileStorageService
     }
   }
 
+  /**
+   * Loads and decrypts the file data associated with the given {@link SdbSecretData} ID.
+   *
+   * @param secretData The {@link SdbSecretData} object containing the ID of the file to load.
+   *
+   * @return A byte array containing the decrypted file data.
+   *
+   * @throws IOException If an I/O error occurs during file reading or decryption.
+   */
   public byte[] load(SdbSecretData secretData)
     throws IOException
   {
@@ -86,6 +126,15 @@ public class FileStorageService
     }
   }
 
+  /**
+   * Checks if a given directory is empty.
+   *
+   * @param dir The {@link Path} to the directory to check.
+   *
+   * @return {@code true} if the directory is empty, {@code false} otherwise.
+   *
+   * @throws IOException If an I/O error occurs while accessing the directory.
+   */
   private boolean isDirEmpty(Path dir)
     throws IOException
   {
@@ -95,6 +144,13 @@ public class FileStorageService
     }
   }
 
+  /**
+   * Deletes a file and any empty parent directories created for it.
+   *
+   * @param secretData The {@link SdbSecretData} object containing the ID of the file to delete.
+   *
+   * @throws IOException If an I/O error occurs during file or directory deletion.
+   */
   public void delete(SdbSecretData secretData)
     throws IOException
   {

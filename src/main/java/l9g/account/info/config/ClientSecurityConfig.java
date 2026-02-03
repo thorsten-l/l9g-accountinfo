@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Thorsten Ludewig (t.ludewig@gmail.com).
+ * Copyright 2026 Thorsten Ludewig (t.ludewig@gmail.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,13 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
+/**
+ * Security configuration for the client-side of the application.
+ * This class configures Spring Security for OAuth2/OIDC, including authorization,
+ * logout handling, and authorities conversion. It also sets up Content Security Policy.
+ *
+ * @author Thorsten Ludewig <t.ludewig@gmail.com>
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -57,10 +64,18 @@ public class ClientSecurityConfig
   private final LoginSuccessHandler loginSuccessHandler;
 
   /**
-   * Content Security Policy directives for enhanced security
+   * Content Security Policy directives for enhanced security.
+   * This policy defines allowed content sources for various types of resources.
    */
   private final String CSP_POLICY;
 
+  /**
+   * Constructs a {@code ClientSecurityConfig} instance.
+   *
+   * @param appAuthoritiesConverter The converter for application authorities.
+   * @param loginSuccessHandler The handler for successful logins.
+   * @param appBaseUrl The base URL of the application, used in CSP.
+   */
   public ClientSecurityConfig(
     AppAuthoritiesConverter appAuthoritiesConverter,
     LoginSuccessHandler loginSuccessHandler,
@@ -77,6 +92,18 @@ public class ClientSecurityConfig
       + "script-src 'self' 'unsafe-inline';";
   }
 
+  /**
+   * Configures the security filter chain for HTTP requests.
+   * Defines authorization rules, OAuth2 login, OAuth2 client, and logout behavior.
+   * Includes CSRF configuration and Content Security Policy headers.
+   *
+   * @param http The HttpSecurity object to configure.
+   * @param clientRegistrationRepository The repository for client registrations.
+   *
+   * @return A SecurityFilterChain instance.
+   *
+   * @throws Exception If an error occurs during configuration.
+   */
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
     ClientRegistrationRepository clientRegistrationRepository)
@@ -102,15 +129,15 @@ public class ClientSecurityConfig
           "/manifest.webmanifest",
           "/error/**", "/api/v1/buildinfo",
           "/webjars/**", "/icons/**", "/css/**", "/js/**", "/images/**",
-          "/actuator/**", "/flags/**", "/logout", "/oidc-backchannel-logout", 
-          "/admin/validate-new-pad", "/api/v1/signature-pad/validate", 
+          "/actuator/**", "/flags/**", "/logout", "/oidc-backchannel-logout",
+          "/admin/validate-new-pad", "/api/v1/signature-pad/validate",
           "/ws/signature-pad",
           "/android**",
           "/apple**",
           "/favicon**"
         )
         .permitAll()
-        .requestMatchers("/admin**","/api/v1/admin**","/v3/api-docs")
+        .requestMatchers("/admin**", "/api/v1/admin**", "/v3/api-docs")
         .hasRole("ADMIN")
         .anyRequest()
         .authenticated()
@@ -144,6 +171,11 @@ public class ClientSecurityConfig
     return http.build();
   }
 
+  /**
+   * Creates a {@link LogoutHandler} that invalidates the security context and session.
+   *
+   * @return A {@link LogoutHandler} instance.
+   */
   private LogoutHandler invalidateCacheLogoutHandler()
   {
     return (HttpServletRequest request, HttpServletResponse response,
@@ -153,6 +185,14 @@ public class ClientSecurityConfig
     };
   }
 
+  /**
+   * Configures the OIDC client-initiated logout success handler.
+   * This handler redirects to the post-logout URI after a successful logout.
+   *
+   * @param clientRegistrationRepository The repository for client registrations.
+   *
+   * @return An {@link OidcClientInitiatedLogoutSuccessHandler} instance.
+   */
   private LogoutSuccessHandler oidcLogoutSuccessHandler(
     ClientRegistrationRepository clientRegistrationRepository)
   {
@@ -164,6 +204,12 @@ public class ClientSecurityConfig
     return oidcLogoutSuccessHandler;
   }
 
+  /**
+   * Configures the OIDC user service to load user information and convert authorities.
+   * This service retrieves the OidcUser and then converts JWT roles into Spring Security GrantedAuthorities.
+   *
+   * @return An {@link OidcUserService} instance.
+   */
   private OidcUserService oidcUserService()
   {
     log.debug("oidcUserService");
@@ -198,6 +244,14 @@ public class ClientSecurityConfig
     };
   }
 
+  /**
+   * Decodes an access token using a JwtDecoder.
+   *
+   * @param token The access token string.
+   * @param issuerUri The issuer URI for the JWT.
+   *
+   * @return A decoded {@link Jwt} object.
+   */
   private Jwt decodeAccessToken(String token, String issuerUri)
   {
     JwtDecoder jwtDecoder = JwtDecoders.fromIssuerLocation(issuerUri);

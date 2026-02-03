@@ -22,7 +22,6 @@ import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -32,42 +31,65 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller responsible for handling signature pad related web requests.
- * Provides endpoints for displaying signature pad interfaces with proper
- * internationalization and WebSocket configuration.
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Controller
 @Slf4j
 @RequiredArgsConstructor
+@Tag(name = "Signature Pad", description = "Endpoints for managing signature pad interactions")
 public class SignaturePadController
 {
+  /**
+   * Object mapper for JSON serialization/deserialization.
+   */
   private final ObjectMapper objectMapper;
-  
-  /** WebSocket base URL for real-time communication with signature pad devices */
+
+  /**
+   * WebSocket base URL for real-time communication with signature pad devices
+   */
   @Value("${app.ws-url}")
   private String wsBaseUrl;
 
-  /** Flag indicating whether heartbeat functionality is enabled for connection monitoring */
+  /**
+   * Flag indicating whether heartbeat functionality is enabled for connection monitoring
+   */
   @Value("${scheduler.heartbeat.enabled}")
   private boolean heartbeatEnabled;
 
   /**
    * Displays the main signature pad interface.
    * Sets up the necessary model attributes for localization and WebSocket connectivity.
-   * 
-   * @param model Spring MVC model for passing data to the view
-   * @return the name of the signature-pad template to render
+   *
+   * @param mode The mode of the signature pad, e.g., "UNSET" or a specific pickup mode.
+   * @param principal The authenticated OIDC user.
+   * @param request The HTTP servlet request.
+   * @param model The Spring MVC model for passing data to the view.
+   *
+   * @return The name of the signature-pad template to render.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
    */
+  @Operation(summary = "Display the signature pad interface",
+             description = "Renders the signature pad view, configuring it with locale, WebSocket URL, and heartbeat settings.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Signature pad interface successfully displayed"),
+               @ApiResponse(responseCode = "401", description = "Unauthorized if user is not authenticated"),
+               @ApiResponse(responseCode = "500", description = "Internal server error due to JSON processing issues")
+             })
   @GetMapping("/signature-pad")
   public String signaturePad(
-    @RequestParam( name="mode", required = false, 
-                                defaultValue = "UNSET") String mode, 
-    @AuthenticationPrincipal DefaultOidcUser principal, 
-    HttpServletRequest request,  Model model) throws JsonProcessingException
+    @RequestParam(name = "mode", required = false,
+                  defaultValue = "UNSET") String mode,
+    @AuthenticationPrincipal DefaultOidcUser principal,
+    HttpServletRequest request, Model model)
+    throws JsonProcessingException
   {
     log.debug("signaturePad principal={}", principal);
     log.debug("signaturePad mode={}", mode);
@@ -76,23 +98,23 @@ public class SignaturePadController
 
     HttpSession session = request.getSession(true);
 
-    if ("UNSET".equals(mode))
+    if("UNSET".equals(mode))
     {
-      if ( session.getAttribute("PICKUP_MODE") != null )
+      if(session.getAttribute("PICKUP_MODE") != null)
       {
         mode = (String)session.getAttribute("PICKUP_MODE");
       }
     }
     else
     {
-      session.setAttribute("PICKUP_MODE", mode );
+      session.setAttribute("PICKUP_MODE", mode);
     }
-    
+
     Map<String, String> publisher = new HashMap<>();
     publisher.put("name", principal.getFullName());
     publisher.put("username", principal.getPreferredUsername());
     publisher.put("mail", principal.getEmail());
-    
+
     model.addAttribute("principal", principal);
     model.addAttribute("publisher", publisher);
     model.addAttribute("mode", mode);
@@ -101,4 +123,5 @@ public class SignaturePadController
     model.addAttribute("heartbeatEnabled", heartbeatEnabled);
     return "signature-pad";
   }
+
 }

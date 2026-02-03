@@ -18,47 +18,45 @@ package l9g.account.info.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Represents the OpenID Connect (OIDC) Discovery metadata.
- * This record is used to deserialize the JSON response from the OIDC discovery endpoint.
- *
- * @param issuer The issuer identifier for the OpenID Provider.
- * @param authorizationEndpoint The URL of the authorization endpoint.
- * @param tokenEndpoint The URL of the token endpoint.
- * @param introspectionEndpoint The URL of the introspection endpoint.
- * @param userinfoEndpoint The URL of the userinfo endpoint.
- * @param endSessionEndpoint The URL of the end session endpoint.
- * @param frontchannelLogoutSessionSupported Indicates if frontchannel logout session is supported.
- * @param frontchannelLogoutSupported Indicates if frontchannel logout is supported.
- * @param jwksUri The URL of the JSON Web Key Set (JWKS) endpoint.
- * @param checkSessionIframe The URL of the check session iframe.
- * @param grantTypesSupported The list of grant types supported by the OpenID Provider.
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "OidcDiscovery", description = "OpenID Connect Discovery metadata")
 public record OidcDiscovery(
+  @Schema(description = "The issuer identifier for the OpenID Provider")
   String issuer,
   @JsonProperty("authorization_endpoint")
+  @Schema(description = "The URL of the authorization endpoint")
   String authorizationEndpoint,
   @JsonProperty("token_endpoint")
+  @Schema(description = "The URL of the token endpoint")
   String tokenEndpoint,
   @JsonProperty("introspection_endpoint")
+  @Schema(description = "The URL of the introspection endpoint")
   String introspectionEndpoint,
   @JsonProperty("userinfo_endpoint")
+  @Schema(description = "The URL of the userinfo endpoint")
   String userinfoEndpoint,
   @JsonProperty("end_session_endpoint")
+  @Schema(description = "The URL of the end session endpoint")
   String endSessionEndpoint,
   @JsonProperty("frontchannel_logout_session_supported")
+  @Schema(description = "Indicates if frontchannel logout session is supported")
   boolean frontchannelLogoutSessionSupported,
   @JsonProperty("frontchannel_logout_supported")
+  @Schema(description = "Indicates if frontchannel logout is supported")
   boolean frontchannelLogoutSupported,
   @JsonProperty("jwks_uri")
+  @Schema(description = "The URL of the JSON Web Key Set (JWKS) endpoint")
   String jwksUri,
   @JsonProperty("check_session_iframe")
+  @Schema(description = "The URL of the check session iframe")
   String checkSessionIframe,
   @JsonProperty("grant_types_supported")
+  @Schema(description = "The list of grant types supported by the OpenID Provider")
   List<String> grantTypesTupported)
   {
 }

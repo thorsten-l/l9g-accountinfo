@@ -27,7 +27,6 @@ import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
-import java.net.InetAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,14 +43,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
- *
  * Component for handling all interactions with an LDAP directory.
  * <p>
  * This class encapsulates the logic for connecting to an LDAP server,
  * searching for entries, and retrieving user data. Configuration for the LDAP
  * connection and queries is injected from application properties. It is
- * - * designed to be used by services that need to query user information from
- * - * LDAP.
+ * designed to be used by services that need to query user information from
+ * LDAP and update user attributes.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -60,25 +58,51 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LdapService
 {
+  /**
+   * The LDAP server hostname.
+   */
   @Value("${ldap.host.name}")
   private String ldapHostname;
 
+  /**
+   * The LDAP server port.
+   */
   @Value("${ldap.host.port}")
   private int ldapPort;
 
+  /**
+   * Indicates whether SSL/TLS is enabled for the LDAP connection.
+   */
   @Value("${ldap.host.ssl}")
   private boolean ldapSslEnabled;
 
+  /**
+   * The Distinguished Name (DN) used for binding to the LDAP server.
+   */
   @Value("${ldap.bind.dn}")
   private String ldapBindDn;
 
+  /**
+   * The encrypted password used for binding to the LDAP server.
+   */
   @EncryptedValue("${ldap.bind.password}")
   private String ldapBindPassword;
 
   //- ATTRIBUTES --------------------------------------------------------------
+  /**
+   * Configuration data for LDAP queries and attribute mappings.
+   */
   private final LdapData ldapDataConfig;
 
   //---------------------------------------------------------------------------
+  /**
+   * Establishes and returns a new {@link LDAPConnection} to the configured LDAP server.
+   * Connection details (host, port, SSL, bind DN, bind password) are sourced from application properties.
+   *
+   * @return An active {@link LDAPConnection} instance.
+   *
+   * @throws Exception If an error occurs during connection establishment or SSL configuration.
+   */
   private LDAPConnection getConnection()
     throws Exception
   {
@@ -112,6 +136,15 @@ public class LdapService
     return ldapConnection;
   }
 
+  /**
+   * Creates an {@link SSLSocketFactory} that trusts all certificates.
+   * This is typically used for development or testing environments where
+   * certificate validation might be bypassed.
+   *
+   * @return An {@link SSLSocketFactory} that trusts all certificates.
+   *
+   * @throws GeneralSecurityException If an error occurs during SSL utility initialization.
+   */
   private SSLSocketFactory createSSLSocketFactory()
     throws
     GeneralSecurityException
@@ -120,6 +153,15 @@ public class LdapService
     return sslUtil.createSSLSocketFactory();
   }
 
+  /**
+   * Converts a string representation of an LDAP search scope into a {@link SearchScope} enum.
+   * Supports "ONE" for one-level scope and "BASE" for base object scope,
+   * defaulting to subtree scope for other values.
+   *
+   * @param ldapScope The string representation of the LDAP scope.
+   *
+   * @return The corresponding {@link SearchScope} enum constant.
+   */
   private SearchScope scopeFromString(String ldapScope)
   {
     SearchScope scope = SearchScope.SUB;
@@ -134,6 +176,15 @@ public class LdapService
     return scope;
   }
 
+  /**
+   * Retrieves an attribute value from an LDAP entry based on a mapping key.
+   *
+   * @param entry The {@link SearchResultEntry} from which to retrieve the attribute.
+   * @param map A map defining the mapping from a logical key to the actual LDAP attribute name.
+   * @param key The logical key for the desired attribute.
+   *
+   * @return The string value of the LDAP attribute, or null if the attribute is not found or mapped.
+   */
   private String mapAttributeValue(
     SearchResultEntry entry, Map<String, String> map, String key)
   {
@@ -141,6 +192,15 @@ public class LdapService
     return (attributeName != null) ? entry.getAttributeValue(attributeName) : null;
   }
 
+  /**
+   * Constructs a {@link DtoAddress} object from an LDAP {@link SearchResultEntry}.
+   * Attribute values are mapped using the provided map.
+   *
+   * @param entry The {@link SearchResultEntry} containing address-related attributes.
+   * @param map A map defining the mapping from DTO field names to LDAP attribute names.
+   *
+   * @return A {@link DtoAddress} object populated with values from the LDAP entry.
+   */
   private DtoAddress dtoAddressFromEntry(
     SearchResultEntry entry, Map<String, String> map)
   {
@@ -154,6 +214,16 @@ public class LdapService
     );
   }
 
+  /**
+   * Finds an LDAP user entry by a given card number.
+   *
+   * @param connection The active {@link LDAPConnection}.
+   * @param cardNumber The card number to search for.
+   *
+   * @return The {@link SearchResultEntry} for the user, or null if not found.
+   *
+   * @throws LDAPException If an LDAP-specific error occurs during the search.
+   */
   public SearchResultEntry findUserEntryByCardNumber(
     LDAPConnection connection, String cardNumber)
     throws LDAPException
@@ -180,6 +250,16 @@ public class LdapService
     return entry;
   }
 
+  /**
+   * Retrieves comprehensive user information as a {@link DtoUserInfo} object based on a card number.
+   * This method performs LDAP searches for user and locality data using configured filters and attributes.
+   *
+   * @param cardNumber The card number to search for.
+   *
+   * @return A {@link DtoUserInfo} object containing the user's details, or null if the user is not found.
+   *
+   * @throws Exception If an error occurs during LDAP connection, search, or data processing.
+   */
   public DtoUserInfo findUserInfoByCardNumber(String cardNumber)
     throws Exception
   {
@@ -253,7 +333,21 @@ public class LdapService
     return userInfo;
   }
 
-  public void saveCardInfoByCardnumber(String cardNumber, String publisher, 
+  /**
+   * Saves or updates card information for a user in the LDAP directory.
+   * This method retrieves the user entry by card number and updates specific attributes
+   * related to card issuance and user activity log.
+   *
+   * @param cardNumber The card number of the user.
+   * @param publisher The publisher of the update, typically the authenticated user.
+   * @param remoteIp The IP address of the client initiating the request.
+   * @param padUuid The UUID of the signature pad used for the operation.
+   * @param padName The name of the signature pad used for the operation.
+   *
+   * @throws Exception If an error occurs during LDAP connection, search, or modification.
+   * @throws IllegalStateException If a required LDAP attribute mapping is missing or the user is not found.
+   */
+  public void saveCardInfoByCardnumber(String cardNumber, String publisher,
     String remoteIp, String padUuid, String padName)
     throws Exception
   {
@@ -286,7 +380,7 @@ public class LdapService
       long nowMs = System.currentTimeMillis();
 
       String logLine = nowMs + "|" + remoteIp + "|" + publisher
-        + "|accountinfo|issued chipcard using device: '" + padName + " (" + padUuid +")'";
+        + "|accountinfo|issued chipcard using device: '" + padName + " (" + padUuid + ")'";
 
       List<Modification> mods = new ArrayList<>(4);
       mods.add(new Modification(ModificationType.REPLACE, attrIssued, "true"));
@@ -306,6 +400,14 @@ public class LdapService
     }
   }
 
+  /**
+   * Helper method to ensure that an LDAP attribute name is not null or blank.
+   *
+   * @param attrName The LDAP attribute name to check.
+   * @param key The configuration key associated with the attribute, used for error messages.
+   *
+   * @throws IllegalStateException If the attribute name is null or blank.
+   */
   private static void requireAttr(String attrName, String key)
   {
     if(attrName == null || attrName.isBlank())

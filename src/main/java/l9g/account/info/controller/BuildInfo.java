@@ -15,6 +15,8 @@
  */
 package l9g.account.info.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- *
  * REST controller for providing application build information.
  * <p>
  * This controller exposes an endpoint to retrieve build-time information,
@@ -39,15 +40,27 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping(path = "/api/v1/buildinfo",
                 produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Info", description = "Application and system information")
 public class BuildInfo
 {
+  /**
+   * Auto-configured by Spring Boot, provides access to build-time information of the application.
+   */
   private final BuildProperties buildProperties;
 
+  @Operation(summary = "Retrieve application build information",
+             description = "Returns a JSON object containing build properties and request details.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Build information successfully retrieved")
+             })
   @GetMapping
   /**
    * Retrieves the application's build properties.
@@ -88,8 +101,7 @@ public class BuildInfo
     req.put("xForwardedHost", request.getHeader("X-Forwarded-Host"));
     req.put("xForwardedPort", request.getHeader("X-Forwarded-Port"));
     req.put("forwarded", request.getHeader("Forwarded"));
-    */
-    
+     */
     out.put("request", req);
 
     // optional: alle Header (für 1-2 Tests ok, danach wieder rausnehmen)

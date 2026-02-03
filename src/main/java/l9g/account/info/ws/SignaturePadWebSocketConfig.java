@@ -40,6 +40,9 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 /**
+ * Configuration for WebSocket connectivity, specifically for signature pads.
+ * This class registers the WebSocket handler and defines an interceptor for
+ * handling handshake authentication using a signature pad UUID.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -49,15 +52,23 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 @RequiredArgsConstructor
 public class SignaturePadWebSocketConfig implements WebSocketConfigurer
 {
+  /**
+   * HTTP header name or WebSocket sub-protocol for passing the signature pad UUID.
+   */
   public static final String SIGNATURE_PAD_UUID = "SIGNATURE_PAD_UUID";
 
+  /**
+   * Service for managing signature pad operations and data persistence.
+   */
   private final SignaturePadService signaturePadService;
 
   /**
    * Registers WebSocket handlers with the specified registry.
-   * This method is called to configure the WebSocket handlers for the application.
+   * This method configures the WebSocket endpoint "/ws/signature-pad",
+   * sets up a custom handshake handler, adds an API key handshake interceptor for authentication,
+   * and allows all origins.
    *
-   * @param registry the WebSocketHandlerRegistry to register handlers with
+   * @param registry The {@link WebSocketHandlerRegistry} to register handlers with.
    */
   @Override
   public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry)
@@ -76,8 +87,9 @@ public class SignaturePadWebSocketConfig implements WebSocketConfigurer
 
   /**
    * Creates and configures a {@link SignaturePadWebSocketHandler} bean.
+   * This handler manages WebSocket connections and messages from signature pads.
    *
-   * @return a new instance of {@link SignaturePadWebSocketHandler}
+   * @return A new instance of {@link SignaturePadWebSocketHandler}.
    */
   @Bean
   SignaturePadWebSocketHandler webSocketHandler()
@@ -86,9 +98,28 @@ public class SignaturePadWebSocketConfig implements WebSocketConfigurer
     return new SignaturePadWebSocketHandler();
   }
 
+  /**
+   * Handshake interceptor for authenticating WebSocket connections using an API key (signature pad UUID).
+   * It extracts the API key from the Sec-WebSocket-Protocol header and validates it against registered signature pads.
+   */
   private class ApiKeyHandshakeInterceptor implements HandshakeInterceptor
   {
 
+    /**
+     * Intercepts the WebSocket handshake request before it is processed.
+     * This method extracts the signature pad UUID from the "Sec-WebSocket-Protocol" header,
+     * authenticates it against registered signature pads, and sets the UUID as an attribute for the session.
+     *
+     * @param request The current HTTP request.
+     * @param response The current HTTP response.
+     * @param wsHandler The WebSocket handler that will be used.
+     * @param attributes A map of attributes to be passed to the WebSocket session.
+     *
+     * @return {@code true} if the handshake should proceed, {@code false} otherwise.
+     *
+     * @throws HandshakeFailureException If an authentication or authorization failure occurs.
+     * @throws IOException If an I/O error occurs.
+     */
     @Override
     public boolean beforeHandshake(
       @NonNull ServerHttpRequest request,
@@ -150,6 +181,15 @@ public class SignaturePadWebSocketConfig implements WebSocketConfigurer
       return true;
     }
 
+    /**
+     * Called after the handshake is completed.
+     * This method does nothing in this implementation.
+     *
+     * @param request The current HTTP request.
+     * @param response The current HTTP response.
+     * @param wsHandler The WebSocket handler that was used.
+     * @param exception An exception if the handshake failed, or null if successful.
+     */
     @Override
     public void afterHandshake(
       @NonNull ServerHttpRequest request,

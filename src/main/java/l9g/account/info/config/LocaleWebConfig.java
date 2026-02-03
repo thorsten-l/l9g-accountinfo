@@ -27,6 +27,9 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 /**
+ * Configuration for locale and internationalization (i18n) settings in the web application.
+ * This class sets up a LocaleResolver and a LocaleChangeInterceptor to handle
+ * locale changes based on a request parameter or a cookie.
  *
  * @author Thorsten Ludewig <t.ludewig@gmail.com>
  */
@@ -34,12 +37,24 @@ import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 @Slf4j
 public class LocaleWebConfig implements WebMvcConfigurer
 {
+  /**
+   * The default locale for the application, loaded from application properties.
+   */
   @Value("${app.default.locale}")
   private String defaultLocale;
-  
+
+  /**
+   * The issuer URI for the OAuth2/OIDC provider, loaded from Spring Security properties.
+   */
   @Value("${spring.security.oauth2.client.provider.app.issuer-uri}")
   private String issuerUri;
 
+  /**
+   * Configures and provides a {@link LocaleResolver} bean that uses cookies to store
+   * and retrieve the user's preferred locale.
+   *
+   * @return A {@link CookieLocaleResolver} instance.
+   */
   @Bean
   public LocaleResolver localeResolver()
   {
@@ -50,6 +65,12 @@ public class LocaleWebConfig implements WebMvcConfigurer
     return resolver;
   }
 
+  /**
+   * Configures and provides a {@link LocaleChangeInterceptor} bean.
+   * This interceptor allows changing the current locale based on a request parameter (defaulting to "lang").
+   *
+   * @return A {@link LocaleChangeInterceptor} instance.
+   */
   @Bean
   public LocaleChangeInterceptor localeChangeInterceptor()
   {
@@ -59,6 +80,11 @@ public class LocaleWebConfig implements WebMvcConfigurer
     return interceptor;
   }
 
+  /**
+   * Registers the {@link LocaleChangeInterceptor} with the application's interceptor registry.
+   *
+   * @param registry The {@link InterceptorRegistry} to add the interceptor to.
+   */
   @Override
   public void addInterceptors(InterceptorRegistry registry)
   {
@@ -66,4 +92,5 @@ public class LocaleWebConfig implements WebMvcConfigurer
     log.debug("issuer uri = {}", issuerUri);
     registry.addInterceptor(localeChangeInterceptor());
   }
+
 }

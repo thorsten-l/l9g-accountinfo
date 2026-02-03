@@ -16,39 +16,44 @@
 package l9g.account.info.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Data Transfer Object representing user information for signature pad operations.
- * Contains personal details, contact information, and address data that can be
- * displayed on signature pad devices during the signing process.
- *
- * @param jpegPhoto Base64-encoded JPEG photo of the user (with data URI prefix)
- * @param firstname User's first name
- * @param lastname User's last name
- * @param uid Unique user identifier
- * @param mail User's email address
- * @param birthday User's birth date as string
- * @param semster Semester/temporary address information
- * @param home Home address information
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@Schema(name = "UserInfo", description = "Comprehensive user information for display on signature pads")
 public record DtoUserInfo(
+  @Schema(description = "Status of the user information retrieval")
   String status,
+  @Schema(description = "Base64-encoded JPEG photo of the user (with data URI prefix)")
   String jpegPhoto,
+  @Schema(description = "User's first name")
   String firstname,
+  @Schema(description = "User's last name")
   String lastname,
+  @Schema(description = "Unique user identifier")
   String uid,
+  @Schema(description = "User's email address")
   String mail,
+  @Schema(description = "User's birth date as string (format might vary, e.g., YYYY-MM-DD)")
   String birthday,
+  @Schema(description = "Semester or temporary address information")
   DtoAddress semester,
+  @Schema(description = "Home address information")
   DtoAddress home
   )
   {
-  
+
+  /**
+   * Constructs a DtoUserInfo with only a status, typically used for error responses.
+   * All other fields are initialized to null.
+   *
+   * @param status The status message.
+   */
   public DtoUserInfo(String status)
   {
     this(status, null, null, null, null, null, null, null, null);
   }
+
 }

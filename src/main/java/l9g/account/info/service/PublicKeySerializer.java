@@ -23,15 +23,36 @@ import java.io.IOException;
 import java.security.PublicKey;
 import java.util.Base64;
 
+/**
+ * Custom Jackson serializer for {@link PublicKey} objects.
+ * This class handles the conversion of a Java {@link PublicKey} object into a Base64 encoded string.
+ * It serializes the public key in its X.509 encoded form.
+ */
 public class PublicKeySerializer extends StdSerializer<PublicKey>
 {
+  /**
+   * Serial Version UID.
+   */
   private static final long serialVersionUID = 5878221140870733911L;
 
+  /**
+   * Constructs a new {@code PublicKeySerializer}.
+   */
   public PublicKeySerializer()
   {
     super(PublicKey.class);
   }
 
+  /**
+   * Serializes a {@link PublicKey} object into a Base64 encoded string.
+   * The public key is first encoded into its X.509 format.
+   *
+   * @param key The {@link PublicKey} to serialize.
+   * @param gen The JSON generator to write the serialized value to.
+   * @param provider The serializer provider.
+   *
+   * @throws IOException If an I/O error occurs during serialization.
+   */
   @Override
   public void serialize(
     PublicKey key,

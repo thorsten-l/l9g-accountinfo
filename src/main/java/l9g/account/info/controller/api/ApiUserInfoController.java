@@ -15,8 +15,6 @@
  */
 package l9g.account.info.controller.api;
 
-import java.io.IOException;
-import l9g.account.info.dto.DtoAddress;
 import l9g.account.info.dto.DtoUserInfo;
 import l9g.account.info.service.LdapService;
 import lombok.RequiredArgsConstructor;
@@ -29,26 +27,29 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST API controller for user information retrieval.
- * Provides endpoints for fetching user details and associated data
- * for signature pad operations.
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(path = "/api/v1/userinfo",
                 produces = MediaType.APPLICATION_JSON_VALUE)
+@Tag(name = "User Info API", description = "API for retrieving user details")
 public class ApiUserInfoController
 {
   /**
    * Service for authentication and authorization operations
    */
   private final AuthService authService;
+
+  /**
+   * Service for interacting with LDAP (Lightweight Directory Access Protocol) directory.
+   */
   private final LdapService ldapService;
 
   /**
@@ -56,14 +57,23 @@ public class ApiUserInfoController
    * Returns comprehensive user data including personal details, addresses,
    * and profile photo for display on signature pad devices.
    *
-   * @param padUuid the unique identifier of the requesting signature pad
-   * @param cardNumber the identifier of the user whose information is requested
+   * @param padUuid The unique identifier of the requesting signature pad.
+   * @param cardNumber The identifier of the user whose information is requested.
+   * @param principal The authenticated OIDC user.
    *
-   * @return user information data transfer object containing all user details
+   * @return User information data transfer object containing all user details.
    *
-   * @throws IOException if authentication fails or resource access fails
-   * @throws ResponseStatusException if user not found
+   * @throws Exception If an error occurs during authentication or data retrieval.
    */
+  @Operation(summary = "Retrieve user information",
+             description = "Fetches comprehensive user data for display on signature pad devices, based on card number.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "User information successfully retrieved"),
+               @ApiResponse(responseCode = "401", description = "Unauthorized if signature pad is not authenticated"),
+               @ApiResponse(responseCode = "404", description = "User not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
   @GetMapping(
     produces = MediaType.APPLICATION_JSON_VALUE)
   public DtoUserInfo userinfo(
@@ -80,11 +90,12 @@ public class ApiUserInfoController
     authService.authCheck(padUuid, true);
 
     DtoUserInfo userInfo = ldapService.findUserInfoByCardNumber(cardNumber);
-    if ( userInfo != null )
+    if(userInfo != null)
     {
       return userInfo;
     }
-    
-    return new DtoUserInfo("ERROR: card number not found : " + cardNumber);    
+
+    return new DtoUserInfo("ERROR: card number not found : " + cardNumber);
   }
+
 }

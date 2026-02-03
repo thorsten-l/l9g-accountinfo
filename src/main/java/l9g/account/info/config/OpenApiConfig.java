@@ -16,21 +16,19 @@
 package l9g.account.info.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
-import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.context.annotation.Configuration;
 
 /**
- *
  * Configuration for OpenAPI (Swagger) documentation.
  * <p>
  * This class uses annotations to define the global properties of the OpenAPI
  * documentation, including API metadata, server information, and security
  * schemes.
+ *
+ * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Configuration
 @OpenAPIDefinition(

@@ -17,49 +17,46 @@ package l9g.account.info.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Represents a collection of JSON Web Key Set (JWKS) certificates.
- * This class is used to deserialize the JWKS response from an OpenID Connect provider.
- *
- * @param keys A list of JSON Web Keys (JWKs).
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
+@Schema(name = "JwksCerts", description = "A collection of JSON Web Key Set (JWKS) certificates")
 public record JwksCerts(
   List<JwksKey> keys)
   {
   /**
    * Represents a JSON Web Key (JWK) used in the JWKS response.
-   *
-   * @param keyId The unique identifier for the key.
-   * @param keyType The cryptographic algorithm family used with the key.
-   * @param algorithm The specific algorithm used with the key.
-   * @param keyUsage The intended use of the key (e.g., signature, encryption).
-   * @param modulus The modulus value for RSA keys.
-   * @param exponent The exponent value for RSA keys.
-   * @param x509CertificateChain The X.509 certificate chain corresponding to the key.
-   * @param x509CertificateThumbprint The thumbprint of the X.509 certificate.
-   * @param x509CertificateSha256Thumbprint The SHA-256 thumbprint of the X.509 certificate.
    */
+  @Schema(name = "JwksKey", description = "A JSON Web Key (JWK)")
   public record JwksKey(
     @JsonProperty("kid")
+    @Schema(description = "The unique identifier for the key")
     String keyId,
     @JsonProperty("kty")
+    @Schema(description = "The cryptographic algorithm family used with the key")
     String keyType,
     @JsonProperty("alg")
+    @Schema(description = "The specific algorithm used with the key")
     String algorithm,
     @JsonProperty("use")
+    @Schema(description = "The intended use of the key (e.g., signature, encryption)")
     String keyUsage,
     @JsonProperty("n")
+    @Schema(description = "The modulus value for RSA keys")
     String modulus,
     @JsonProperty("e")
+    @Schema(description = "The exponent value for RSA keys")
     String exponent,
     @JsonProperty("x5c")
+    @Schema(description = "The X.509 certificate chain corresponding to the key")
     List<String> x509CertificateChain,
     @JsonProperty("x5t")
+    @Schema(description = "The thumbprint of the X.509 certificate")
     String x509CertificateThumbprint,
     @JsonProperty("x5t#S256")
+    @Schema(description = "The SHA-256 thumbprint of the X.509 certificate")
     String x509CertificateSha256Thumbprint)
     {
   }

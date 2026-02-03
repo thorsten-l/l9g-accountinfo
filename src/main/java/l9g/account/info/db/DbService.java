@@ -39,8 +39,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * DbService is responsible for managing and updating the properties related to
- * tenants...
+ * Service responsible for managing database operations related to application
+ * properties and secret data.
+ * This includes handling application startup initialization, storing and
+ * retrieving signature pad data, file data, and signed JWTs.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -49,18 +51,39 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class DbService
 {
+  /**
+   * Constant representing the key for the system user in properties.
+   */
   public static final String KEY_SYSTEM_USER = "SYSTEM USER";
 
+  /**
+   * Constant representing an unset or undefined key/value.
+   */
   public static final String KEY_UNSET = "*** unset ***";
 
+  /**
+   * Property key used to check if the database has been initialized.
+   */
   public static final String KEY_DB_INITIALIZED = "database.initialized";
 
+  /**
+   * Repository for accessing and managing {@link SdbProperty} entities.
+   */
   private final SdbPropertiesRepository sdbPropertiesRepository;
 
+  /**
+   * Repository for accessing and managing {@link SdbSecretData} entities.
+   */
   private final SdbSecretDataRepository sdbSecretDataRepository;
 
+  /**
+   * Service for handling file storage operations.
+   */
   private final FileStorageService fileStorageService;
 
+  /**
+   * Object mapper for JSON serialization/deserialization.
+   */
   private final ObjectMapper objectMapper;
 
   /**
@@ -68,6 +91,13 @@ public class DbService
    *
    * This method is triggered when the application is ready and performs
    * necessary initialization tasks.
+   */
+  /**
+   * Handles the application startup event.
+   * This method is triggered when the application is ready and performs
+   * necessary initialization tasks, such as checking if the database has been initialized.
+   *
+   * @throws Exception If an error occurs during startup initialization.
    */
   @EventListener(ApplicationReadyEvent.class)
   @Order(100)
@@ -142,6 +172,16 @@ public class DbService
      */
   }
 
+  /**
+   * Finds the latest {@link SdbSecretData} entry for a given UUID and type.
+   *
+   * @param uuid The UUID of the secret data.
+   * @param type The type of the secret data.
+   *
+   * @return The latest {@link SdbSecretData} object, or null if not found.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   */
   private SdbSecretData findSdbSecretData(String uuid, SdbSecretType type)
     throws JsonProcessingException
   {
@@ -158,6 +198,15 @@ public class DbService
     return secretData;
   }
 
+  /**
+   * Finds a {@link SignaturePad} by its UUID.
+   *
+   * @param uuid The UUID of the signature pad.
+   *
+   * @return The {@link SignaturePad} object, or null if not found.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   */
   public SignaturePad findSignaturePadbyUUID(String uuid)
     throws JsonProcessingException
   {
@@ -176,6 +225,14 @@ public class DbService
     return signaturePad;
   }
 
+  /**
+   * Saves or updates a {@link SignaturePad} in the database.
+   *
+   * @param publisher The publisher of the signature pad data.
+   * @param signaturePad The {@link SignaturePad} object to save.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   */
   public void saveSignaturePad(String publisher, SignaturePad signaturePad)
     throws JsonProcessingException
   {
@@ -202,6 +259,20 @@ public class DbService
     sdbSecretDataRepository.save(secretData);
   }
 
+  /**
+   * Saves secret file data (e.g., photos) associated with a signature pad event.
+   *
+   * @param publisher The publisher of the file data.
+   * @param fullname The full name associated with the file.
+   * @param username The username associated with the file.
+   * @param mail The email associated with the file.
+   * @param padUuid The UUID of the signature pad.
+   * @param side The side of the card (e.g., "front", "back").
+   * @param file The {@link MultipartFile} containing the file data.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws IOException If an I/O error occurs during file processing.
+   */
   public void saveSecretFileData(String publisher, String fullname,
     String username, String mail, String padUuid, String side, MultipartFile file)
     throws JsonProcessingException, IOException
@@ -222,6 +293,15 @@ public class DbService
     fileStorageService.save(data);
   }
 
+  /**
+   * Saves a signed JWT to the database.
+   *
+   * @param signedJWT The {@link SignedJWT} to save.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws IOException If an I/O error occurs.
+   * @throws ParseException If parsing the JWT claims fails.
+   */
   public void saveSignedJWT(SignedJWT signedJWT)
     throws JsonProcessingException, IOException, ParseException
   {
@@ -243,6 +323,15 @@ public class DbService
     sdbSecretDataRepository.save(data);
   }
 
+  /**
+   * Finds file data (e.g., images) by its database ID.
+   *
+   * @param id The database ID of the file data.
+   *
+   * @return A byte array containing the file data, or null if not found or not a file type.
+   *
+   * @throws IOException If an I/O error occurs during file loading.
+   */
   public byte[] findFileDataById(String id)
     throws IOException
   {
@@ -261,6 +350,13 @@ public class DbService
     return fileData;
   }
 
+  /**
+   * Finds an {@link SdbSecretData} entry by its database ID.
+   *
+   * @param id The database ID of the secret data.
+   *
+   * @return The {@link SdbSecretData} object, or null if not found.
+   */
   public SdbSecretData findSdbSecretDataById(String id)
   {
     return sdbSecretDataRepository.findById(id).orElse(null);

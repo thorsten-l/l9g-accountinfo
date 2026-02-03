@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026 Thorsten Ludewig (t.ludewig@gmail.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package l9g.account.info;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -12,10 +27,28 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Main entry point for the l9g-accountinfo Spring Boot application.
+ * This class initializes and runs the application, handling command-line arguments
+ * for encryption, token generation, and help information. It also provides
+ * a CommandLineRunner bean to log database and connection pool information on startup.
+ */
 @SpringBootApplication
 @Slf4j
 public class Application
 {
+  /**
+   * Main method to start the l9g-accountinfo application.
+   * It also handles several command-line arguments for utility functions:
+   * <ul>
+   * <li>`-e <clear text>`: Encrypts the provided clear text.</li>
+   * <li>`-g`: Generates a new encrypted token.</li>
+   * <li>`-i`: Initializes `data/secret.bin`.</li>
+   * <li>`-h`: Displays help information.</li>
+   * </ul>
+   *
+   * @param args Command-line arguments.
+   */
   public static void main(String[] args)
   {
     if(args != null)
@@ -56,6 +89,14 @@ public class Application
     SpringApplication.run(Application.class, args);
   }
 
+  /**
+   * Provides a {@link org.springframework.boot.CommandLineRunner} bean to execute code
+   * after the application starts up. This runner logs database and connection pool details.
+   *
+   * @param dataSource The {@link javax.sql.DataSource} automatically injected by Spring.
+   *
+   * @return A {@link org.springframework.boot.CommandLineRunner} instance.
+   */
   @Bean
   public CommandLineRunner commandLineRunner(DataSource dataSource)
   {

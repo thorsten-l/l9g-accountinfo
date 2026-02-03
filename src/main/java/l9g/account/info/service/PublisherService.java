@@ -29,13 +29,29 @@ import org.springframework.stereotype.Service;
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
+/**
+ * Service for converting user principal information into a publisher map or JSON string.
+ * This is used to capture details about the user performing an action, such as name, username, and email.
+ *
+ * @author Thorsten Ludewig (t.ludewig@gmail.com)
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PublisherService
 {
+  /**
+   * Object mapper for JSON serialization/deserialization.
+   */
   private final ObjectMapper objectMapper;
 
+  /**
+   * Converts a {@link DefaultOidcUser} principal into a map of publisher information.
+   *
+   * @param principal The authenticated {@link DefaultOidcUser}.
+   *
+   * @return A map containing the full name, preferred username, and email of the principal.
+   */
   public Map<String, String> principalToPublisherMap(DefaultOidcUser principal)
   {
     Map<String, String> publisher = new HashMap<>();
@@ -45,6 +61,15 @@ public class PublisherService
     return publisher;
   }
 
+  /**
+   * Converts a {@link DefaultOidcUser} principal into a JSON string representing publisher information.
+   *
+   * @param principal The authenticated {@link DefaultOidcUser}.
+   *
+   * @return A JSON string containing the full name, preferred username, and email of the principal.
+   *
+   * @throws JsonProcessingException If there is an error during JSON serialization.
+   */
   @SneakyThrows
   public String principalToPublisherJSON(DefaultOidcUser principal)
   {

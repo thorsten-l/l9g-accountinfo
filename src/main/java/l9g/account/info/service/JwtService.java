@@ -54,17 +54,30 @@ import org.springframework.stereotype.Service;
  * <p>
  * Note: The HS512 signature validation method is currently a stub and always returns true.</p>
  *
- * <p>
- * Author: Thorsten Ludewig (t.ludewig@gmail.com)</p>
+ * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Service
 @Slf4j
 @Getter
 public class JwtService
 {
+  /**
+   * JSON Web Key Set (JWKS) certificates for OAuth2.
+   * This is typically populated from the OIDC discovery endpoint and contains
+   * the public keys used by the authorization server to sign JWTs.
+   */
   @Setter
   private JwksCerts oauth2JwksCerts;
 
+  /**
+   * Splits a JWT token string into its three constituent parts: header, payload, and signature.
+   *
+   * @param jwt The JWT string to split.
+   *
+   * @return A string array containing the header, payload, and signature in that order.
+   *
+   * @throws IllegalArgumentException If the JWT format is invalid (does not have three parts).
+   */
   public String[] splitJwt(String jwt)
   {
     String[] parts = jwt.split("\\.");
@@ -76,6 +89,16 @@ public class JwtService
   }
 
   // decode Jwt ///////////////////////////////////////////////////////////
+  /**
+   * Decodes the payload section of a JWT token and returns it as a sorted map.
+   * The payload is expected to be a Base64 URL-encoded JSON string.
+   *
+   * @param jwt The full JWT string from which to decode the payload.
+   *
+   * @return A {@link Map} containing the decoded payload claims, sorted by natural order of keys.
+   *
+   * @throws RuntimeException If an error occurs during decoding or JSON parsing.
+   */
   public Map<String, String> decodeJwtPayload(String jwt)
   {
     try
@@ -100,6 +123,15 @@ public class JwtService
   }
 
   // validate Jwt ///////////////////////////////////////////////////////////
+  /**
+   * Validates the signature of a JWT token based on its algorithm.
+   * Supports RS256 and HS512 algorithms. For RS256, it retrieves the public key from JWKS.
+   * For HS512, it currently performs a placeholder validation (always returns true).
+   *
+   * @param jwt The JWT string to validate.
+   *
+   * @return {@code true} if the JWT signature is valid, {@code false} otherwise.
+   */
   public boolean validateJwtSignature(String jwt)
   {
     String[] parts = splitJwt(jwt);
@@ -139,6 +171,16 @@ public class JwtService
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  /**
+   * Retrieves an RSA public key from a JSON Web Key Set (JWKS) based on the key ID (kid).
+   * It specifically looks for RS256 algorithm keys and extracts the public key from the X.509 certificate chain.
+   *
+   * @param jwksCerts The {@link JwksCerts} object containing the JWKS.
+   * @param kid The key ID of the public key to retrieve.
+   * @return The {@link RSAPublicKey} corresponding to the provided kid.
+   * @throws Exception If the public key cannot be found or an error occurs during certificate processing.
+   * @throws IllegalArgumentException If no public key with the specified kid and RS256 algorithm is found.
+   */
   private RSAPublicKey getPublicKeyFromJwks(JwksCerts jwksCerts, String kid)
     throws Exception
   {
@@ -160,6 +202,15 @@ public class JwtService
       "Public key with kid=" + kid + " not found");
   }
 
+  /**
+   * Validates the RS256 signature of a JWT token.
+   * This method uses the public key retrieved from JWKS to verify the token's signature.
+   *
+   * @param jwt The JWT string to validate.
+   * @param keyId The key ID (kid) of the public key to use for validation.
+   *
+   * @return {@code true} if the signature is valid, {@code false} otherwise.
+   */
   private boolean validateRs256Signature(String jwt, String keyId)
   {
     try
@@ -190,6 +241,16 @@ public class JwtService
     }
   }
 
+  /**
+   * Validates the HS512 signature of a JWT token.
+   * <p>
+   * NOTE: This method is currently a placeholder and always returns {@code true}.
+   * Proper implementation for HS512 signature validation would require a shared secret key.
+   *
+   * @param jwt The JWT string to validate.
+   *
+   * @return Always {@code true} as this is a placeholder implementation.
+   */
   private boolean validateHs512Signature(String jwt)
   {
     // TODO: implement

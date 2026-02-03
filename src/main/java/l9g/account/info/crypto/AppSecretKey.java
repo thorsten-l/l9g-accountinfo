@@ -20,38 +20,70 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * Manages the application's secret key, loading it from or generating it into a file.
+ * This class ensures a single instance of the secret key is available throughout the application
+ * for cryptographic operations, primarily for AES-256 encryption.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Slf4j
 public class AppSecretKey
 {
+  /**
+   * The path to the file where the secret key is stored.
+   */
   private static final Path SECRET_PATH = Path.of("data/secret.bin");
 
+  /**
+   * The expected length of the secret key in bytes (32 bytes for AES-256).
+   */
   private static final int KEY_LEN = AES256.KEY_LEN_BYTES; // 32
 
+  /**
+   * Private constructor to initialize AppSecretKey with a given secret key.
+   * Ensures that the secret key is always set when an instance is created.
+   *
+   * @param secretKey The byte array representing the secret key.
+   */
   private AppSecretKey(byte[] secretKey)
   {
     this.secretKey = secretKey;
   }
 
+  /**
+   * Returns the singleton instance of {@code AppSecretKey}.
+   * This method ensures that the secret key is loaded or generated only once.
+   *
+   * @return The singleton instance of {@code AppSecretKey}.
+   */
   public static AppSecretKey getInstance()
   {
     return Holder.INSTANCE;
   }
 
+  /**
+   * Inner static class to implement the singleton pattern for {@code AppSecretKey}.
+   */
   private static final class Holder
   {
+    /**
+     * The singleton instance of {@code AppSecretKey}, initialized upon first access.
+     */
     private static final AppSecretKey INSTANCE = loadOrCreate();
 
   }
 
+  /**
+   * Loads the secret key from a file or generates a new one if it doesn't exist.
+   * Sets appropriate file permissions for security.
+   *
+   * @return An instance of {@code AppSecretKey} with the loaded or newly generated key.
+   */
   private static AppSecretKey loadOrCreate()
   {
     try
@@ -85,15 +117,24 @@ public class AppSecretKey
       log.error("ERROR: secret file ", e);
       System.exit(-1);
     }
-    
+
     return null;
   }
 
+  /**
+   * Returns a mutable copy of the raw AES-256 secret key bytes (32 bytes).
+   * It returns a copy to prevent external modification of the internal key.
+   *
+   * @return A byte array containing the secret key.
+   */
   public byte[] getSecretKey() // mutable copy 
   {
     return Arrays.copyOf(secretKey, secretKey.length);
   }
 
+  /**
+   * The raw byte array of the secret key.
+   */
   private byte[] secretKey;
 
 }

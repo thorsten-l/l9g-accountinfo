@@ -26,6 +26,9 @@ import l9g.account.info.service.SignaturePadService;
 import l9g.account.info.ws.SignaturePadSession;
 import l9g.account.info.ws.SignaturePadWebSocketConfig;
 import l9g.account.info.ws.SignaturePadWebSocketHandler;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -51,24 +54,43 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 @RequestMapping(path = "/admin")
 @RequiredArgsConstructor
+@Tag(name = "Admin", description = "Administration and management of signature pads")
 public class AdminController
 {
-  /** WebSocket handler for managing real-time communication with signature pads */
+  /**
+   * WebSocket handler for managing real-time communication with signature pads
+   */
   private final SignaturePadWebSocketHandler signaturePadWebSocketHandler;
 
-  
-  /** Service for managing signature pad operations and data persistence */
+  /**
+   * Service for managing signature pad operations and data persistence
+   */
   private final SignaturePadService signaturePadService;
+
+  /**
+   * Service for publishing events or messages, likely related to signature pad activities
+   */
   private final PublisherService publisherService;
 
   /**
    * Displays the main home page with an overview of active signature pad sessions.
    * Sets up localization and provides a list of currently connected signature pads.
-   * 
+   *
    * @param model Spring MVC model for passing data to the view
+   *
    * @return the name of the home template to render
    */
-  @GetMapping({"","/"})
+  @Operation(summary = "Display the admin home page",
+             description = "Shows an overview of active signature pad sessions and localized content.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Admin home page successfully displayed"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
+             })
+  @GetMapping(
+  {
+    "", "/"
+  })
   public String home(@AuthenticationPrincipal DefaultOidcUser principal, Model model)
   {
     log.debug("admin home principal = {}", principal);
@@ -85,8 +107,8 @@ public class AdminController
    * Retrieves a list of active signature pad sessions from WebSocket connections.
    * Filters sessions to only include those with valid signature pad UUIDs and
    * enriches them with signature pad name information.
-   * 
-   * @return list of active signature pad sessions with their details
+   *
+   * @return A list of active signature pad sessions with their details.
    */
   public List<SignaturePadSession> getSignaturePadSessions()
   {
@@ -116,17 +138,25 @@ public class AdminController
       }
     });
 
-    log.debug( "{} signature pad sessions running", list.size() );
+    log.debug("{} signature pad sessions running", list.size());
     return list;
   }
-    
+
   /**
    * Displays the registration form for creating a new signature pad.
    * Provides the interface for administrators to initiate the signature pad setup process.
-   * 
+   *
    * @param model Spring MVC model for passing data to the view
+   *
    * @return the name of the register-new-pad template to render
    */
+  @Operation(summary = "Display registration form for a new signature pad",
+             description = "Provides the administrative interface to begin the signature pad setup.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Registration form successfully displayed"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
+             })
   @GetMapping("/register-new-pad")
   public String registerNewPad(@AuthenticationPrincipal DefaultOidcUser principal, Model model)
   {
@@ -140,12 +170,22 @@ public class AdminController
   /**
    * Processes the creation of a new signature pad with the specified name.
    * Creates a new signature pad instance and displays connection instructions.
-   * 
+   *
    * @param padName the display name for the new signature pad
    * @param model Spring MVC model for passing data to the view
+   *
    * @return the name of the connect-new-pad template to render
+   *
    * @throws IOException if signature pad creation fails
    */
+  @Operation(summary = "Process new signature pad creation",
+             description = "Creates a new signature pad instance and displays connection instructions for it.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Signature pad created and connection instructions displayed"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN"),
+               @ApiResponse(responseCode = "500", description = "Internal server error if signature pad creation fails")
+             })
   @PostMapping("/connect-new-pad")
   public String connectNewPad(@RequestParam("name") String padName, @AuthenticationPrincipal DefaultOidcUser principal, Model model)
     throws IOException
@@ -168,14 +208,26 @@ public class AdminController
   /**
    * Validates and finalizes the setup of a newly created signature pad.
    * Generates cryptographic keys for the signature pad and marks it as validated.
-   * 
+   *
    * @param padUUID the unique identifier of the signature pad to validate
    * @param model Spring MVC model for passing data to the view
+   *
    * @return the name of the validate-new-pad template to render
+   *
    * @throws NoSuchAlgorithmException if cryptographic algorithm is not available
    * @throws IOException if signature pad data access fails
    * @throws ResponseStatusException if signature pad not found or already validated
    */
+  @Operation(summary = "Validate and finalize new signature pad setup",
+             description = "Generates cryptographic keys for a signature pad and marks it as validated.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Signature pad successfully validated"),
+               @ApiResponse(responseCode = "400", description = "Bad request if signature pad is already validated"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error if key generation or data access fails")
+             })
   @GetMapping("/validate-new-pad")
   public String verifyNewPad(@RequestParam("uuid") String padUUID, Model model)
     throws NoSuchAlgorithmException, IOException
@@ -219,23 +271,34 @@ public class AdminController
   /**
    * Displays a waiting page for signature responses from signature pads.
    * Shows status information while waiting for user interaction with the signature pad.
-   * 
+   *
    * @param padUUID the unique identifier of the signature pad
    * @param card the identifier of the user requesting the signature
    * @param model Spring MVC model for passing data to the view
+   *
    * @return the name of the wait-for-response template to render
+   *
    * @throws NoSuchAlgorithmException if cryptographic algorithm is not available
    * @throws IOException if signature pad data access fails
    * @throws ResponseStatusException if signature pad not found
    */
+  @Operation(summary = "Display waiting page for signature responses",
+             description = "Shows status while awaiting user interaction with a signature pad.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Waiting page successfully displayed"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error if data access fails")
+             })
   @GetMapping("/wait-for-response")
   public String waitForResponse(
-    @RequestParam("uuid") String padUUID, 
-    @RequestParam("card") String cardNumber, 
+    @RequestParam("uuid") String padUUID,
+    @RequestParam("card") String cardNumber,
     Model model)
     throws NoSuchAlgorithmException, IOException
   {
-    log.debug("wait-for-response uuid={} card='{}'", padUUID, cardNumber );
+    log.debug("wait-for-response uuid={} card='{}'", padUUID, cardNumber);
     Locale locale = LocaleContextHolder.getLocale();
     log.debug("locale={}", locale);
 

@@ -15,11 +15,8 @@
  */
 package l9g.account.info.controller;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Locale;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Map;
 import l9g.account.info.service.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -35,20 +32,54 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 
 /**
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
+ * Handles application-specific requests, primarily displaying user and application information.
+ * This controller provides the main application view after successful authentication,
+ * presenting JWT details, build properties, and system properties.
  */
 @Controller
 @Slf4j
 @RequiredArgsConstructor
+@Tag(name = "Application", description = "User and application information endpoints")
 public class AppController
 {
+  /**
+   * Service for handling JWT (JSON Web Token) related operations.
+   */
   private final JwtService jwtService;
 
+  /**
+   * Provides access to application build-time properties.
+   */
   private final BuildProperties buildProperties;
 
+  /**
+   * Displays the main application page with user and application details.
+   * This endpoint is secured and requires either 'PUBLISHER' or 'ADMIN' role.
+   * It extracts and displays information from the ID token, access token, and refresh token (if available),
+   * along with build properties and filtered system properties.
+   *
+   * @param model The Spring MVC model to pass data to the view.
+   * @param principal The authenticated OIDC user.
+   * @param authorizedClient The OAuth2 authorized client containing token details.
+   *
+   * @return The name of the view ("app") to render.
+   */
+  @Operation(summary = "Display the main application page",
+             description = "Shows user information, JWT details, build properties, and filtered system properties.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Application page successfully displayed"),
+               @ApiResponse(responseCode = "302", description = "Redirect to home if principal is null"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user does not have PUBLISHER or ADMIN role")
+             })
   @GetMapping("/app")
   @PreAuthorize("hasRole('PUBLISHER') or hasRole('ADMIN')")
   public String app(
@@ -86,19 +117,18 @@ public class AppController
       ? (String)providerMetadata.getOrDefault("end_session_endpoint", null)
       : null;
 
-    
     ArrayList<String> keys = new ArrayList<>();
     buildProperties.forEach(p -> keys.add(p.getKey()));
     Collections.sort(keys);
     LinkedHashMap<String, String> properties = new LinkedHashMap<>();
-    for (String key : keys)
+    for(String key : keys)
     {
       properties.put(key, buildProperties.get(key));
     }
-    
+
     model.addAttribute("buildProperties", properties);
     model.addAttribute("systemProperties", systemPropertiesMap());
-    
+
     model.addAttribute("oauth2ClientId", clientId);
     model.addAttribute("oauth2EndSessionEndpoint", endSessionEndpoint);
     model.addAttribute("oauth2PostLogoutRedirectUri", null);
@@ -112,15 +142,22 @@ public class AppController
     return "app";
   }
 
-  
+  /**
+   * Retrieves a filtered map of system properties.
+   * Only properties starting with "java.", "os.", "sun.", "file.", "native",
+   * "user.lang", "user.time", or "user.coun" are included,
+   * excluding those ending with "path" or ".tmpdir".
+   *
+   * @return A sorted map of filtered system properties.
+   */
   private Map<String, String> systemPropertiesMap()
   {
     LinkedHashMap<String, String> properties = new LinkedHashMap<>();
-    String[] keys = System.getProperties().keySet().toArray(String[]::new);
+    String[] keys = System.getProperties().keySet().toArray(String[] :: new);
     Arrays.sort(keys);
-    for (String key : keys)
+    for(String key : keys)
     {
-      if (key.startsWith("java.")
+      if(key.startsWith("java.")
         || key.startsWith("os.")
         || key.startsWith("sun.")
         || key.startsWith("file.")
@@ -129,8 +166,8 @@ public class AppController
         || key.startsWith("user.time")
         || key.startsWith("user.coun"))
       {
-        if (!key.endsWith("path")
-          && !key.endsWith(".tmpdir"))
+        if( ! key.endsWith("path")
+          &&  ! key.endsWith(".tmpdir"))
         {
           properties.put(key, System.getProperty(key));
         }
@@ -138,4 +175,5 @@ public class AppController
     }
     return properties;
   }
+
 }

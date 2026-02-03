@@ -38,17 +38,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "OAuth2Tokens", description = "Represents OAuth2 tokens received from an authorization server")
 public record OAuth2Tokens(
   @JsonProperty("access_token")
+  @Schema(description = "The access token issued by the authorization server")
   String accessToken,
   @JsonProperty("id_token")
+  @Schema(description = "The ID token issued by the authorization server")
   String idToken,
   @JsonProperty("refresh_token")
+  @Schema(description = "The refresh token issued by the authorization server")
   String refreshToken,
   @JsonProperty("token_type")
+  @Schema(description = "The type of the token issued by the authorization server")
   String tokenType,
   @JsonProperty("expires_in")
+  @Schema(description = "The lifetime in seconds of the access token")
   int expiresIn)
   {
 }

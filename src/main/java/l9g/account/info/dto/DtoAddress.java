@@ -16,13 +16,20 @@
 package l9g.account.info.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
+ * Data Transfer Object (DTO) representing an address.
  */
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-public record DtoAddress( String co, String street, String zip, String city, String state, String country )
-{
-  
+@Schema(name = "Address", description = "Represents a postal address")
+public record DtoAddress(@Schema(description = "\"Care Of\" or alternative recipient information")
+  String co, @Schema(description = "Street name and house number")
+  String street, @Schema(description = "Postal code")
+  String zip, @Schema(description = "City or town")
+  String city, @Schema(description = "State, province, or region")
+  String state, @Schema(description = "Country")
+  String country)
+  {
+
 }

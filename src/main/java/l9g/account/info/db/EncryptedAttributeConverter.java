@@ -20,6 +20,10 @@ import jakarta.persistence.Converter;
 import l9g.account.info.crypto.CryptoHandler;
 
 /**
+ * JPA Attribute Converter for transparent encryption and decryption of String
+ * attributes in the database.
+ * This converter uses {@link CryptoHandler} to encrypt values before persisting
+ * them and decrypt them when loading from the database.
  *
  * @author Thorsten Ludewig <t.ludewig@gmail.com>
  */
@@ -28,12 +32,28 @@ public class EncryptedAttributeConverter implements
   AttributeConverter<String, String>
 {
 
+  /**
+   * Converts an entity attribute value to its encrypted form for storage in the
+   * database column.
+   *
+   * @param attribute The value to be converted (encrypted).
+   *
+   * @return The encrypted value, or null if the input attribute is null.
+   */
   @Override
   public String convertToDatabaseColumn(String attribute)
   {
     return attribute == null ? null : CryptoHandler.getInstance().encrypt(attribute);
   }
 
+  /**
+   * Converts a database column value to its decrypted form for use as an entity
+   * attribute.
+   *
+   * @param dbData The value retrieved from the database column (encrypted).
+   *
+   * @return The decrypted value, or null if the database value is null.
+   */
   @Override
   public String convertToEntityAttribute(String dbData)
   {

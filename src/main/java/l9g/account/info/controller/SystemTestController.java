@@ -15,20 +15,37 @@
  */
 package l9g.account.info.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
+ * Controller for system testing endpoints.
  */
 @Controller
 @Slf4j
+@Tag(name = "System Test", description = "Endpoints for testing error handling and system behavior")
 public class SystemTestController
 {
+  /**
+   * Triggers an HTTP 403 Forbidden error for testing purposes.
+   * This method throws an {@link AccessDeniedException} to simulate an access denied scenario.
+   *
+   * @return This method never returns normally due to the exception.
+   *
+   * @throws AccessDeniedException Always thrown to simulate a 403 error.
+   */
+  @Operation(summary = "Trigger a 403 Forbidden error",
+             description = "Simulates an access denied scenario by throwing an AccessDeniedException.",
+             responses =
+             {
+               @ApiResponse(responseCode = "403", description = "Access denied (simulated)")
+             })
   @GetMapping("/system/test/403")
   public String systemError403()
   {
@@ -36,6 +53,18 @@ public class SystemTestController
     throw new AccessDeniedException("Access denied for testing purposes");
   }
 
+  /**
+   * Triggers an HTTP 500 Internal Server Error for testing purposes.
+   * This method deliberately causes a division-by-zero error to simulate an unhandled exception.
+   *
+   * @return This method never returns normally due to the exception.
+   */
+  @Operation(summary = "Trigger a 500 Internal Server Error",
+             description = "Simulates an unhandled internal server error by performing a division by zero.",
+             responses =
+             {
+               @ApiResponse(responseCode = "500", description = "Internal server error (simulated)")
+             })
   @GetMapping("/system/test/500")
   public String systemError500()
   {
@@ -45,13 +74,40 @@ public class SystemTestController
     return "home";
   }
 
+  /**
+   * Triggers an HTTP 400 Bad Request error by expecting a missing request parameter.
+   * This method will throw a {@link org.springframework.web.bind.MissingServletRequestParameterException}
+   * if the "no_params" parameter is not provided, simulating a bad request.
+   *
+   * @param p A placeholder parameter that is expected to be missing to trigger the error.
+   *
+   * @return This method never returns normally due to the exception.
+   */
+  @Operation(summary = "Trigger a 400 Bad Request error (missing parameter)",
+             description = "Simulates a bad request by expecting a parameter that is typically not provided.",
+             responses =
+             {
+               @ApiResponse(responseCode = "400", description = "Bad request (simulated due to missing parameter)")
+             })
   @GetMapping("/system/test/400")
   public String badRequest400(@RequestParam("no_params") String p)
   {
     log.debug("badRequest400");
     return "home";
   }
-  
+
+  /**
+   * Triggers an HTTP 400 Bad Request error.
+   * This method simulates a bad request scenario.
+   *
+   * @return The "home" view.
+   */
+  @Operation(summary = "Trigger a 400 Bad Request error (general)",
+             description = "Simulates a general bad request scenario.",
+             responses =
+             {
+               @ApiResponse(responseCode = "400", description = "Bad request (simulated)")
+             })
   @GetMapping("/system/test/400-2")
   public String badRequest400()
   {

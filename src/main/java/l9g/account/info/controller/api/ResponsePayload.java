@@ -16,6 +16,11 @@
 package l9g.account.info.controller.api;
 
 /**
+ * Represents a standardized response payload for API calls, especially for signature capture.
+ * This record provides a status and optionally a base64 encoded PNG image of a signature.
+ *
+ * @param status The status of the operation (e.g., "ok", "error", "timeout", "cancel").
+ * @param sigpng A base64 encoded string of the signature PNG image.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */

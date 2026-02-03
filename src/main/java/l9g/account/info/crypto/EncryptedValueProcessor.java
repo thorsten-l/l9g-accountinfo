@@ -26,6 +26,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
 /**
+ * A Spring {@link BeanPostProcessor} that processes fields annotated with {@link EncryptedValue}.
+ * This processor automatically decrypts values from the Spring Environment that are marked
+ * as encrypted, using {@link CryptoHandler}.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -34,10 +37,29 @@ import org.springframework.util.ReflectionUtils;
 @RequiredArgsConstructor
 public class EncryptedValueProcessor implements BeanPostProcessor
 {
+  /**
+   * Spring Environment for accessing property values.
+   */
   private final Environment environment;
 
+  /**
+   * Singleton instance of CryptoHandler for cryptographic operations.
+   */
   private final CryptoHandler cryptoHandler = CryptoHandler.getInstance();
 
+  /**
+   * Processes beans before their initialization.
+   * This method inspects fields annotated with {@link EncryptedValue},
+   * decrypts their corresponding environment properties, and injects the 
+   * decrypted values into the bean.
+   *
+   * @param bean The bean instance to process.
+   * @param beanName The name of the bean.
+   *
+   * @return The processed bean instance.
+   *
+   * @throws BeansException If an error occurs during bean processing.
+   */
   @Override
   public Object postProcessBeforeInitialization(Object bean, String beanName)
     throws BeansException
@@ -52,17 +74,17 @@ public class EncryptedValueProcessor implements BeanPostProcessor
         String environmentName = annotation.value()
           .replaceAll("^\\$\\{", "").replaceAll("}$", "");
 
-        if ( environmentName.charAt(environmentName.length()-1) == ':' )
+        if(environmentName.charAt(environmentName.length() - 1) == ':')
         {
-          environmentName = environmentName.substring(0, environmentName.length()-1);
+          environmentName = environmentName.substring(0, environmentName.length() - 1);
         }
-        
+
         String[] nameAndDefaultValue = environmentName.split("\\:");
-        
+
         String encryptedValue = (nameAndDefaultValue.length == 1)
           ? environment.getProperty(environmentName)
           : environment.getProperty(nameAndDefaultValue[0]);
-        
+
         String decryptedValue = (encryptedValue != null)
           ? cryptoHandler.decrypt(encryptedValue)
           : (nameAndDefaultValue.length == 2) ? nameAndDefaultValue[1] : null;

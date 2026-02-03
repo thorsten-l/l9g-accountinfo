@@ -15,6 +15,7 @@
  */
 package l9g.account.info.controller.api;
 
+import io.swagger.v3.oas.annotations.Operation;
 import java.io.IOException;
 import l9g.account.info.db.DbService;
 import l9g.account.info.service.PublisherService;
@@ -31,34 +32,57 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
+ * REST controller for handling scan-related API requests, 
+ * specifically for card scanning and photo uploads.
  */
 @Slf4j
 @RestController
 @RequestMapping(path = "/api/v1/signature-pad",
                 produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
+@Tag(name = "Scan API", description = "Endpoints for handling card scans and photo uploads")
 public class ApiScanController
 {
+  /**
+   * Database service for accessing and managing stored data.
+   */
   private final DbService dbService;
 
+  /**
+   * Service for publishing events or messages.
+   */
   private final PublisherService publisherService;
 
   /**
-   * DTO für den Barcode-Scan-Request
+   * Data Transfer Object (DTO) for barcode scan requests.
    */
   public static class ScanRequest
   {
+    /**
+     * The card number obtained from the scan.
+     */
     private String cardNumber;
 
+    /**
+     * Returns the card number.
+     *
+     * @return The card number.
+     */
     public String getCardNumber()
     {
       return cardNumber;
     }
 
+    /**
+     * Sets the card number.
+     *
+     * @param cardNumber The card number to set.
+     */
     public void setCardNumber(String cardNumber)
     {
       this.cardNumber = cardNumber;
@@ -67,46 +91,47 @@ public class ApiScanController
   }
 
   /**
-   * DTO für die Standard-Response
+   * Generic API response DTO for status and messages.
    */
+  @Data
+  @NoArgsConstructor
   public static class ApiResponse
   {
+    /**
+     * The status of the API response (e.g., "OK", "ERROR").
+     */
     private String status;
 
+    /**
+     * A descriptive message related to the API response.
+     */
     private String message;
 
-    public ApiResponse()
-    {
-    }
-
+    /**
+     * Constructs an ApiResponse with a specified status and message.
+     *
+     * @param status The status of the response.
+     * @param message The message of the response.
+     */
     public ApiResponse(String status, String message)
     {
       this.status = status;
       this.message = message;
     }
 
-    public String getStatus()
-    {
-      return status;
-    }
-
-    public void setStatus(String status)
-    {
-      this.status = status;
-    }
-
-    public String getMessage()
-    {
-      return message;
-    }
-
-    public void setMessage(String message)
-    {
-      this.message = message;
-    }
-
   }
 
+  /**
+   * Processes a card scan request, validating the card number.
+   *
+   * @param request The {@link ScanRequest} containing the card number.
+   * @param principal The authenticated OIDC user.
+   *
+   * @return A {@link ResponseEntity} with an {@link ApiResponse} indicating success or failure.
+   */
+  @Operation(summary = "Process card scan",
+             description = "Receives a card number from a scan request and validates it. Currently hardcoded for testing."
+  )
   @PostMapping(path = "/scan", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<ApiResponse> scanCard(@RequestBody ScanRequest request,
     @AuthenticationPrincipal DefaultOidcUser principal)
@@ -128,6 +153,25 @@ public class ApiScanController
       .ok(new ApiResponse("OK", "Kartennummer erhalten"));
   }
 
+  /**
+   * Uploads a photo associated with a user and signature pad.
+   * This endpoint receives multipart file data along with user and signature pad details.
+   *
+   * @param fullname The full name of the user.
+   * @param userid The user ID.
+   * @param mail The user's email address.
+   * @param padUuid The UUID of the signature pad.
+   * @param side The side of the card being photographed (e.g., "front", "back").
+   * @param file The {@link MultipartFile} containing the photo.
+   * @param principal The authenticated OIDC user.
+   *
+   * @return A {@link ResponseEntity} with an {@link ApiResponse} indicating success.
+   *
+   * @throws IOException If an I/O error occurs during file processing.
+   */
+  @Operation(summary = "Upload photo for a user/signature pad",
+             description = "Accepts a multipart file along with user and signature pad details for storage."
+  )
   @PostMapping(path = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<ApiResponse> uploadPhoto(
     @RequestParam("fullname") String fullname,
@@ -137,7 +181,8 @@ public class ApiScanController
     @RequestParam("side") String side,
     @RequestParam("file") MultipartFile file,
     @AuthenticationPrincipal DefaultOidcUser principal
-  ) throws IOException
+  )
+    throws IOException
   {
     log.debug("principal={}", principal);
     log.debug("fullname={}, userid={}, mail={}", fullname, userid, mail);

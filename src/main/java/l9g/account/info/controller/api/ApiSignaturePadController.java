@@ -59,19 +59,19 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.server.ResponseStatusException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST API controller for signature pad operations and management.
- * Provides endpoints for signature pad authentication, validation, signature capture,
- * QR code generation, and real-time communication with signature pad devices.
- *
- * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(path = "/api/v1/signature-pad",
                 produces = MediaType.APPLICATION_JSON_VALUE)
+@Tag(name = "Signature Pad API", description = "API for managing and interacting with signature pads")
 public class ApiSignaturePadController
 {
   /**
@@ -89,10 +89,19 @@ public class ApiSignaturePadController
    */
   private final SignaturePadWebSocketHandler signaturePadWebSocketHandler;
 
+  /**
+   * Database service for accessing and managing stored data.
+   */
   private final DbService dbService;
 
+  /**
+   * Service for interacting with LDAP (Lightweight Directory Access Protocol) directory.
+   */
   private final LdapService ldapService;
 
+  /**
+   * Service for publishing events or messages.
+   */
   private final PublisherService publisherService;
 
   /**
@@ -128,6 +137,23 @@ public class ApiSignaturePadController
    *
    * @return deferred result that will contain the signature response
    */
+  /**
+   * Establishes a long-polling connection to wait for signature responses.
+   * Creates a deferred result that will be completed when a signature is captured
+   * or when the request times out.
+   *
+   * @param padUuid The unique identifier of the signature pad.
+   *
+   * @return A deferred result that will contain the signature response.
+   */
+  @Operation(summary = "Wait for signature pad response",
+             description = "Establishes a long-polling connection for signature capture events. Times out after a configurable duration.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Signature response received or request cancelled/timed out"),
+               @ApiResponse(responseCode = "202", description = "Request accepted, waiting for response"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
   @GetMapping("/wait-for-response")
   @ResponseBody
   public DeferredResult<ResponsePayload> waitForResponse(@RequestParam(name = "uuid") String padUuid)
@@ -197,6 +223,23 @@ public class ApiSignaturePadController
    *
    * @throws IOException if QR code generation or response writing fails
    */
+  /**
+   * Generates a QR code image for signature pad connection.
+   * Creates a QR code containing the validation URL that signature pads can scan
+   * to establish connection with the system.
+   *
+   * @param uuid The unique identifier of the signature pad.
+   * @param response The HTTP response to write the QR code image to.
+   *
+   * @throws IOException If QR code generation or response writing fails.
+   */
+  @Operation(summary = "Generate QR code for signature pad connection",
+             description = "Creates and returns a QR code image containing the validation URL for a specific signature pad.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "QR code successfully generated and returned as PNG"),
+               @ApiResponse(responseCode = "500", description = "Internal server error if QR code generation fails")
+             })
   @GetMapping(path = "/connect-qrcode", produces = MediaType.IMAGE_PNG_VALUE)
   public void connectQrcode(
     @RequestParam("uuid") String uuid,
@@ -249,6 +292,28 @@ public class ApiSignaturePadController
    * @throws ParseException if JWT parsing fails
    * @throws ResponseStatusException if validation fails or pad not found
    */
+  /**
+   * Validates a signature pad by processing its validation JWT.
+   * Extracts the public key from the JWT and marks the signature pad as validated
+   * in the system, enabling it for signature operations.
+   *
+   * @param padUuid The unique identifier of the signature pad.
+   * @param signatureJwt The validation JWT containing public key and environment info.
+   *
+   * @throws IOException If signature pad data access fails.
+   * @throws ParseException If JWT parsing fails.
+   * @throws ResponseStatusException If validation fails or pad not found.
+   */
+  @Operation(summary = "Validate a signature pad",
+             description = "Validates a signature pad using a JWT, extracts its public key, and marks it as active for signature operations.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Signature pad successfully validated"),
+               @ApiResponse(responseCode = "400", description = "Invalid JWT or JWK"),
+               @ApiResponse(responseCode = "403", description = "Access denied"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
   @PostMapping(path = "/validate",
                consumes = MediaType.TEXT_PLAIN_VALUE,
                produces = MediaType.APPLICATION_JSON_VALUE)
@@ -313,6 +378,30 @@ public class ApiSignaturePadController
    * @throws ParseException if JWT parsing fails
    * @throws ResponseStatusException if verification fails
    */
+  /**
+   * Processes a signature captured by a signature pad.
+   * Verifies the signature JWT, extracts signature data, and notifies waiting
+   * clients about the signature completion.
+   *
+   * @param padUuid The unique identifier of the signature pad.
+   * @param signatureJwt The signature JWT containing captured signature data.
+   * @param request The HTTP servlet request.
+   * @param principal The authenticated OIDC user.
+   *
+   * @throws IOException If signature pad data access fails.
+   * @throws ParseException If JWT parsing fails.
+   * @throws Exception If other exceptions occur during processing.
+   */
+  @Operation(summary = "Process captured signature from a signature pad",
+             description = "Receives a signature JWT from a pad, verifies it, stores the signature data, and notifies waiting clients.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Signature successfully processed"),
+               @ApiResponse(responseCode = "400", description = "Invalid JWT or signature"),
+               @ApiResponse(responseCode = "403", description = "Access denied"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
   @PostMapping(path = "/signature",
                consumes = MediaType.TEXT_PLAIN_VALUE,
                produces = MediaType.APPLICATION_JSON_VALUE)
@@ -404,6 +493,25 @@ public class ApiSignaturePadController
    *
    * @throws IOException if signature pad communication fails
    */
+  /**
+   * Handles signature pad cancellation requests.
+   * Notifies waiting clients that the signature operation was cancelled
+   * by the user on the signature pad device.
+   *
+   * @param padUuid The unique identifier of the signature pad.
+   * @param json The cancellation request data.
+   *
+   * @throws IOException If signature pad communication fails.
+   */
+  @Operation(summary = "Handle signature pad cancellation",
+             description = "Notifies waiting clients that a signature operation has been cancelled by the user.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Cancellation request successfully processed"),
+               @ApiResponse(responseCode = "403", description = "Access denied"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
   @PostMapping(path = "/cancel",
                consumes = MediaType.APPLICATION_JSON_VALUE,
                produces = MediaType.APPLICATION_JSON_VALUE)
@@ -438,6 +546,25 @@ public class ApiSignaturePadController
    *
    * @throws IOException if WebSocket communication fails
    */
+  /**
+   * Shows a signature request on the specified signature pad.
+   * Sends a show event to the signature pad device to display signature
+   * interface for the specified user.
+   *
+   * @param padUuid The unique identifier of the signature pad.
+   * @param cardNumber The identifier of the user requesting the signature.
+   *
+   * @throws IOException If WebSocket communication fails.
+   */
+  @Operation(summary = "Show signature request on a signature pad",
+             description = "Sends an event to a specific signature pad to display a signature request for a given user.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Show request successfully sent"),
+               @ApiResponse(responseCode = "403", description = "Access denied"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
   @GetMapping(path = "/show",
               produces = MediaType.APPLICATION_JSON_VALUE)
   public void show(
@@ -459,6 +586,23 @@ public class ApiSignaturePadController
    *
    * @throws IOException if WebSocket communication fails
    */
+  /**
+   * Hides the signature interface on the specified signature pad.
+   * Sends a hide event to the signature pad device to clear the display.
+   *
+   * @param padUuid The unique identifier of the signature pad.
+   *
+   * @throws IOException If WebSocket communication fails.
+   */
+  @Operation(summary = "Hide signature interface on a signature pad",
+             description = "Sends an event to a specific signature pad to clear its display.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Hide request successfully sent"),
+               @ApiResponse(responseCode = "403", description = "Access denied"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
   @GetMapping(path = "/hide",
               produces = MediaType.APPLICATION_JSON_VALUE)
   public void hide(

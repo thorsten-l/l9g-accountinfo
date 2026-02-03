@@ -18,7 +18,6 @@ package l9g.account.info.crypto;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- *
  * A singleton handler for performing cryptographic operations.
  * <p>
  * This class provides a centralized way to encrypt and decrypt strings using
@@ -32,23 +31,44 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CryptoHandler
 {
+  /**
+   * The prefix used for AES-256 encrypted strings.
+   */
   public final static String AES256_PREFIX = "{AES256}";
 
+  /**
+   * The AES-256 cipher instance used for encryption and decryption.
+   */
   private final AES256 aes256;
 
+  /**
+   * Private constructor to initialize the {@code CryptoHandler} with an AES256 instance
+   * using the application's secret key.
+   */
   private CryptoHandler()
   {
     log.debug("CryptoHandler()");
     aes256 = new AES256(AppSecretKey.getInstance().getSecretKey());
   }
 
+  /**
+   * Returns the singleton instance of {@code CryptoHandler}.
+   *
+   * @return The singleton instance.
+   */
   public static CryptoHandler getInstance()
   {
     return Holder.INSTANCE;
   }
 
+  /**
+   * Inner static class to implement the singleton pattern for {@code CryptoHandler}.
+   */
   private static final class Holder
   {
+    /**
+     * The singleton instance of {@code CryptoHandler}.
+     */
     private static final CryptoHandler INSTANCE = new CryptoHandler();
 
   }
@@ -94,11 +114,25 @@ public class CryptoHandler
     return text;
   }
 
+  /**
+   * Encrypts a byte array.
+   *
+   * @param bytes The byte array to encrypt.
+   *
+   * @return The encrypted byte array.
+   */
   public byte[] encrypt(byte[] bytes)
   {
     return aes256.encrypt(bytes);
   }
 
+  /**
+   * Decrypts a byte array.
+   *
+   * @param bytes The byte array to decrypt.
+   *
+   * @return The decrypted byte array.
+   */
   public byte[] decrypt(byte[] bytes)
   {
     return aes256.decrypt(bytes);

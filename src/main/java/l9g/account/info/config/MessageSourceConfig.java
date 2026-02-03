@@ -22,6 +22,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 /**
+ * Configuration for the application's message sources, enabling internationalization (i18n).
+ * This class defines a {@link MessageSource} bean to resolve messages from
+ * resource bundles (e.g., `messages.properties`).
  *
  * @author Thorsten Ludewig <t.ludewig@gmail.com>
  */
@@ -29,14 +32,21 @@ import org.springframework.context.support.ReloadableResourceBundleMessageSource
 @Slf4j
 public class MessageSourceConfig
 {
+  /**
+   * Configures and provides a {@link MessageSource} bean for resolving messages.
+   * Messages are loaded from "classpath:messages" with UTF-8 encoding.
+   *
+   * @return A {@link ReloadableResourceBundleMessageSource} instance.
+   */
   @Bean
   public MessageSource messageSource()
   {
     log.debug("messageSource");
-    ReloadableResourceBundleMessageSource messageSource
-      = new ReloadableResourceBundleMessageSource();
+    ReloadableResourceBundleMessageSource messageSource =
+      new ReloadableResourceBundleMessageSource();
     messageSource.setBasename("classpath:messages");
     messageSource.setDefaultEncoding("UTF-8");
     return messageSource;
   }
+
 }

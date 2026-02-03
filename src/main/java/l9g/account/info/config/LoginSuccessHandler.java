@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2025 Thorsten Ludewig (t.ludewig@gmail.com).
  *
@@ -30,6 +29,10 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 /**
+ * Handles successful authentication events, storing session information.
+ * This class implements {@link AuthenticationSuccessHandler} to perform
+ * actions after a user successfully logs in, such as storing the session ID
+ * and redirecting the user to the application's main page.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -38,19 +41,36 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class LoginSuccessHandler implements AuthenticationSuccessHandler
 {
+  /**
+   * Service for storing and retrieving user sessions.
+   */
   private final SessionStoreService sessionStore;
 
+  /**
+   * Called when a user has been successfully authenticated.
+   * Stores the session ID (sid) from the OIDC user in the {@link SessionStoreService}
+   * and redirects the user to the "/app" endpoint.
+   *
+   * @param request The HttpServletRequest.
+   * @param response The HttpServletResponse.
+   * @param authentication The Authentication object representing the authenticated user.
+   *
+   * @throws IOException If an I/O error occurs during redirection.
+   * @throws ServletException If a servlet-specific error occurs.
+   */
   @Override
   public void onAuthenticationSuccess(HttpServletRequest request,
-    HttpServletResponse response, Authentication authentication) throws IOException,
-    ServletException
+    HttpServletResponse response, Authentication authentication)
+    throws IOException,
+           ServletException
   {
     log.debug("onAuthenticationSuccess");
     HttpSession session = request.getSession();
-    OidcUser user = (OidcUser) authentication.getPrincipal();
+    OidcUser user = (OidcUser)authentication.getPrincipal();
     String sid = user.getIdToken().getClaimAsString("sid");
     log.debug("sid={}, session id={}", sid, session.getId());
     sessionStore.put(sid, session);
     response.sendRedirect("/app");
   }
+
 }
