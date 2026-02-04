@@ -14,9 +14,9 @@
   
   <groupId>l9g.webapp</groupId>
   <artifactId>l9g-accountinfo</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0-SNAPSHOT</version>
   <name>L9G Account Info</name>
-  <description>Shows Account information</description>
+  <description>Issue Account Information</description>
   
   <licenses>
     <license>
@@ -47,6 +47,7 @@
   
   <properties>
     <java.version>21</java.version>
+    <l9g.crypto.version>1.0.0-SNAPSHOT</l9g.crypto.version>
     <build.profile>default</build.profile>
     <exec.inheritIo>true</exec.inheritIo>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -155,25 +156,49 @@
       <artifactId>javase</artifactId>
       <version>3.5.4</version>
     </dependency>
+    
+    <!-- L9G Crypto -->
+    <dependency>
+      <groupId>l9g.pom</groupId>
+      <artifactId>l9g-core-crypto</artifactId>
+      <version>${l9g.crypto.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>l9g.pom</groupId>
+      <artifactId>l9g-spring-crypto</artifactId>
+      <version>${l9g.crypto.version}</version>
+    </dependency>
+
   </dependencies>
 
   <build>
     <finalName>${project.artifactId}</finalName>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>3.4.0</version>
         <configuration>
           <encoding>${project.build.sourceEncoding}</encoding>
+          <useDefaultDelimiters>false</useDefaultDelimiters>
+          <delimiters>
+            <delimiter>@</delimiter>
+          </delimiters>
         </configuration>
       </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.14.0</version>
+        <version>3.14.1</version>
         <configuration>
           <encoding>${project.build.sourceEncoding}</encoding>
           <release>${java.version}</release>

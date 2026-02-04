@@ -5,6 +5,8 @@ spring:
     active: default
   config:
     import: optional:file:data/config.yaml
+  banner:
+    location: classpath:banner.txt
 
   messages:
     basename: messages
@@ -35,6 +37,7 @@ logging:
     root: INFO
     com.zaxxer.hikari.pool.HikariPool: ERROR
     org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR
+    org.hibernate.orm.connections.pooling: ERROR
 
 server:
   port: 8080

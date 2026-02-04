@@ -17,7 +17,7 @@ package l9g.account.info.db;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import l9g.account.info.crypto.CryptoHandler;
+import l9g.core.crypto.CryptoHandler;
 
 /**
  * JPA Attribute Converter for transparent encryption and decryption of String
