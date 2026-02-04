@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import l9g.account.info.dto.IssueType;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -85,29 +86,29 @@ public class SignaturePadController
              })
   @GetMapping("/signature-pad")
   public String signaturePad(
-    @RequestParam(name = "mode", required = false,
-                  defaultValue = "UNSET") String mode,
+    @RequestParam(name = "issueType", required = false,
+                  defaultValue = "UNKNOWN") IssueType issueType,
     @AuthenticationPrincipal DefaultOidcUser principal,
     HttpServletRequest request, Model model)
     throws JsonProcessingException
   {
     log.debug("signaturePad principal={}", principal);
-    log.debug("signaturePad mode={}", mode);
+    log.debug("signaturePad issueType={}", issueType);
     Locale locale = LocaleContextHolder.getLocale();
     log.debug("locale={}", locale);
 
     HttpSession session = request.getSession(true);
 
-    if("UNSET".equals(mode))
+    if(issueType == IssueType.UNKNOWN)
     {
-      if(session.getAttribute("PICKUP_MODE") != null)
+      if(session.getAttribute("ISSUE_TYPE") != null)
       {
-        mode = (String)session.getAttribute("PICKUP_MODE");
+        issueType = (IssueType)session.getAttribute("ISSUE_TYPE");
       }
     }
     else
     {
-      session.setAttribute("PICKUP_MODE", mode);
+      session.setAttribute("ISSUE_TYPE", issueType);
     }
 
     Map<String, String> publisher = new HashMap<>();
@@ -117,7 +118,7 @@ public class SignaturePadController
 
     model.addAttribute("principal", principal);
     model.addAttribute("publisher", publisher);
-    model.addAttribute("mode", mode);
+    model.addAttribute("issueType", issueType.getIssueType());
     model.addAttribute("locale", locale.toString());
     model.addAttribute("wsBaseUrl", wsBaseUrl);
     model.addAttribute("heartbeatEnabled", heartbeatEnabled);

@@ -80,7 +80,7 @@ limitations under the License.
       <div id="start-page">
 
         <div>Verantwortliche/r Herausgeber*in: <span style="font-weight: bold" th:text="${principal.fullName}" /></div>
-        <div>Ausgabemodus: <span style="font-weight: bold" th:text="${mode}" /></div>
+        <div>Ausgabeverfahren: <span style="font-weight: bold" th:text="${issueType}" /></div>
 
         <div class="mb-3">
           <label for="library-barcode" class="form-label fs-4">Bibliotheks-Barcode</label>
@@ -232,8 +232,10 @@ limitations under the License.
     <script th:inline="javascript">
       /*<![CDATA[*/
       const publisher = /*[[${publisher}]]*/ null;
+      const issueType = /*[[${issueType}]]*/ null;
       document.body.dataset.publisher = JSON.stringify(publisher);
       console.log(publisher);
+      console.log(issueType);
       /*]]>*/
     </script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>

@@ -87,18 +87,18 @@
               <div class="card appheader mt-4">
                 <div class="card-header">
                   <div class="d-flex justify-content-between align-items-center">
-                    <div class="appcard-title">Ausgabemodus</div>
+                    <div class="appcard-title">Ausgabeverfahren</div>
                   </div>
                 </div>
                 <div class="card-body">
                   <div class="text-center">
-                    <div class="btn-group" role="group" aria-label="Ausgabemodus">
-                      <input type="radio" class="btn-check" name="mode" id="mode1" value="ACCOUNT_CARD" autocomplete="off" checked>
-                      <label class="btn btn-outline-secondary" for="mode1" style="margin-right: 1em;">Accountbescheinigung & Karte</label>
-                      <input type="radio" class="btn-check" name="mode" id="mode2" value="ACCOUNT" autocomplete="off">
-                      <label class="btn btn-outline-secondary" for="mode2" style="margin-right: 1em;">Nur Accountbescheinigung</label>
-                      <input type="radio" class="btn-check" name="mode" id="mode3" value="CARD" autocomplete="off">
-                      <label class="btn btn-outline-secondary" for="mode3">Nur Karte</label>
+                    <div class="btn-group" role="group" aria-label="Ausgabeverfahren">
+                      <input type="radio" class="btn-check" name="issueType" id="issueType1" value="ACCOUNT_CARD" autocomplete="off" checked>
+                      <label class="btn btn-outline-secondary" for="issueType1" style="margin-right: 1em;">Accountbescheinigung & Karte</label>
+                      <input type="radio" class="btn-check" name="issueType" id="issueType2" value="ACCOUNT" autocomplete="off">
+                      <label class="btn btn-outline-secondary" for="issueType2" style="margin-right: 1em;">Nur Accountbescheinigung</label>
+                      <input type="radio" class="btn-check" name="issueType" id="issueType3" value="CARD" autocomplete="off">
+                      <label class="btn btn-outline-secondary" for="issueType3">Nur Karte</label>
                     </div>
                   </div>
                 </div>
@@ -311,15 +311,15 @@
 
     <script>
       const signaturePadButton = document.getElementById('signature-pad-button');
-      const modeRadios = document.querySelectorAll('input[name="mode"]');
+      const issueTypeRadios = document.querySelectorAll('input[name="issueType"]');
 
       function updateSignaturePadLink() {
-        const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+        const selectedMode = document.querySelector('input[name="issueType"]:checked').value;
         const baseUrl = '[[@{/signature-pad}]]';
-        signaturePadButton.href = `${baseUrl}?mode=${selectedMode}`;
+        signaturePadButton.href = `${baseUrl}?issueType=${selectedMode}`;
       }
 
-      modeRadios.forEach(radio => {
+      issueTypeRadios.forEach(radio => {
         radio.addEventListener('change', updateSignaturePadLink);
       });
 

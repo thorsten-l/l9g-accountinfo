@@ -116,6 +116,7 @@ okButton.addEventListener("click", async () => {
       sigpng: signaturePngBase64,
       sigsvg: signatureSvgBase64,
       cardnumber: cardNumber,
+      issuetype: issueType,
       sub: userInfo.uid,
       name: `${userInfo.firstname} ${userInfo.lastname}`,
       mail: userInfo.mail,

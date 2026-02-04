@@ -37,6 +37,7 @@ import l9g.account.info.config.LdapData;
 import l9g.account.info.crypto.EncryptedValue;
 import l9g.account.info.dto.DtoAddress;
 import l9g.account.info.dto.DtoUserInfo;
+import l9g.account.info.dto.IssueType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -338,6 +339,7 @@ public class LdapService
    * This method retrieves the user entry by card number and updates specific attributes
    * related to card issuance and user activity log.
    *
+   * @param issueType The issue type ACCOUNT, ACCOUNT_CARD, CARD.
    * @param cardNumber The card number of the user.
    * @param publisher The publisher of the update, typically the authenticated user.
    * @param remoteIp The IP address of the client initiating the request.
@@ -347,11 +349,11 @@ public class LdapService
    * @throws Exception If an error occurs during LDAP connection, search, or modification.
    * @throws IllegalStateException If a required LDAP attribute mapping is missing or the user is not found.
    */
-  public void saveCardInfoByCardnumber(String cardNumber, String publisher,
-    String remoteIp, String padUuid, String padName)
+  public void saveCardInfoByCardnumber(IssueType issueType, String cardNumber,
+    String publisher, String remoteIp, String padUuid, String padName)
     throws Exception
   {
-    log.debug("saveCardInfoByCardnumber: {} / {}", cardNumber, publisher);
+    log.debug("saveCardInfoByCardnumber: {} / {} / {}", issueType, cardNumber, publisher);
 
     LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
     Map<String, String> attributesMap = userConfig.getAttributes();
@@ -367,25 +369,41 @@ public class LdapService
 
       String dn = entry.getDN();
 
-      String attrIssued = attributesMap.get("chipcard-is-issued");
-      String attrIssuedBy = attributesMap.get("chipcard-is-issued-by");
-      String attrIssuedTs = attributesMap.get("chipcard-is-issued-timestamp");
-      String attrUserLog = attributesMap.get("user-log");
-
-      requireAttr(attrIssued, "chipcard-is-issued");
-      requireAttr(attrIssuedBy, "chipcard-is-issued-by");
-      requireAttr(attrIssuedTs, "chipcard-is-issued-timestamp");
-      requireAttr(attrUserLog, "user-log");
-
       long nowMs = System.currentTimeMillis();
 
+      String issueDescription = switch ( issueType)
+      {
+        case ACCOUNT -> "account form";
+        case ACCOUNT_CARD -> "account form and chipcard";
+        case CARD -> "chipcard";
+        default -> "unknown";
+      };
+
       String logLine = nowMs + "|" + remoteIp + "|" + publisher
-        + "|accountinfo|issued chipcard using device: '" + padName + " (" + padUuid + ")'";
+        + "|accountinfo|issued <b>" + issueDescription + "</b> using device: '" 
+        + padName + " (" + padUuid + ")'";
 
       List<Modification> mods = new ArrayList<>(4);
-      mods.add(new Modification(ModificationType.REPLACE, attrIssued, "true"));
-      mods.add(new Modification(ModificationType.REPLACE, attrIssuedBy, Objects.toString(publisher, "")));
-      mods.add(new Modification(ModificationType.REPLACE, attrIssuedTs, Long.toString(nowMs)));
+
+      if(IssueType.ACCOUNT != issueType)
+      {
+        log.debug("modify chipcard attributes");
+        String attrIssued = attributesMap.get("chipcard-is-issued");
+        String attrIssuedBy = attributesMap.get("chipcard-is-issued-by");
+        String attrIssuedTs = attributesMap.get("chipcard-is-issued-timestamp");
+
+        requireAttr(attrIssued, "chipcard-is-issued");
+        requireAttr(attrIssuedBy, "chipcard-is-issued-by");
+        requireAttr(attrIssuedTs, "chipcard-is-issued-timestamp");
+        
+        mods.add(new Modification(ModificationType.REPLACE, attrIssued, "true"));
+        mods.add(new Modification(ModificationType.REPLACE, attrIssuedBy, Objects.toString(publisher, "")));
+        mods.add(new Modification(ModificationType.REPLACE, attrIssuedTs, Long.toString(nowMs)));
+      }
+
+      log.debug("modify (add) user-log");
+      String attrUserLog = attributesMap.get("user-log");
+      requireAttr(attrUserLog, "user-log");
       mods.add(new Modification(ModificationType.ADD, attrUserLog, logLine));
 
       ModifyRequest modifyRequest = new ModifyRequest(dn, mods);
