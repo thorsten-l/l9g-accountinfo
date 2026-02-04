@@ -44,12 +44,6 @@ public class LocaleWebConfig implements WebMvcConfigurer
   private String defaultLocale;
 
   /**
-   * The issuer URI for the OAuth2/OIDC provider, loaded from Spring Security properties.
-   */
-  @Value("${spring.security.oauth2.client.provider.app.issuer-uri}")
-  private String issuerUri;
-
-  /**
    * Configures and provides a {@link LocaleResolver} bean that uses cookies to store
    * and retrieve the user's preferred locale.
    *
@@ -89,7 +83,6 @@ public class LocaleWebConfig implements WebMvcConfigurer
   public void addInterceptors(InterceptorRegistry registry)
   {
     log.debug("addInterceptors");
-    log.debug("issuer uri = {}", issuerUri);
     registry.addInterceptor(localeChangeInterceptor());
   }
 
