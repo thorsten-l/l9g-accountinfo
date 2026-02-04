@@ -126,8 +126,6 @@ public class Application
       log.info("Maximum Pool Size: " + hikariDataSource.getMaximumPoolSize());
 
       log.debug("JDBC URL: " + hikariDataSource.getJdbcUrl());
-      log.debug("Username: " + hikariDataSource.getUsername());
-      log.trace("Password: " + hikariDataSource.getPassword());
 
       log.info("-------------------------------------------------");
     };

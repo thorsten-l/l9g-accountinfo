@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Objects;
 import javax.net.ssl.SSLSocketFactory;
 import l9g.account.info.config.LdapData;
-import l9g.account.info.crypto.EncryptedValue;
 import l9g.account.info.dto.DtoAddress;
 import l9g.account.info.dto.DtoUserInfo;
 import l9g.account.info.dto.IssueType;
@@ -86,7 +85,7 @@ public class LdapService
   /**
    * The encrypted password used for binding to the LDAP server.
    */
-  @EncryptedValue("${ldap.bind.password}")
+  @Value("${ldap.bind.password}")
   private String ldapBindPassword;
 
   //- ATTRIBUTES --------------------------------------------------------------
