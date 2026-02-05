@@ -109,8 +109,7 @@ public class LdapService
     log.debug("host={}", ldapHostname);
     log.debug("port={}", ldapPort);
     log.debug("ssl={}", ldapSslEnabled);
-    log.debug("bind dn={}", ldapBindDn);
-    log.trace("bind pw={}", ldapBindPassword);
+    log.trace("bind dn={}", ldapBindDn);
 
     LDAPConnection ldapConnection;
 
