@@ -15,11 +15,11 @@
  */
 package l9g.account.info.service;
 
+import de.l9g.crypto.core.CryptoHandler;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import l9g.core.crypto.CryptoHandler;
 import l9g.account.info.db.model.SdbSecretData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

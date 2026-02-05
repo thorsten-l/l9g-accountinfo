@@ -16,11 +16,11 @@
 package l9g.account.info;
 
 import com.zaxxer.hikari.HikariDataSource;
+import de.l9g.crypto.core.CryptoHandler;
+import de.l9g.crypto.core.PasswordGenerator;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import javax.sql.DataSource;
-import l9g.core.crypto.CryptoHandler;
-import l9g.core.crypto.PasswordGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;

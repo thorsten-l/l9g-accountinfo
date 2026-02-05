@@ -17,6 +17,7 @@ package l9g.account.info.db.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import de.l9g.crypto.jpa.EncryptedAttributeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -27,7 +28,6 @@ import jakarta.persistence.Transient;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import l9g.account.info.db.EncryptedAttributeConverter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
