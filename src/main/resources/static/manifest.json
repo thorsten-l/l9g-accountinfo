@@ -1,7 +1,7 @@
 {
-  "name": "Account Details",
-  "short_name": "AccountDetails",
-  "start_url": "/",
+  "name": "AccountInfo",
+  "short_name": "AccountInfo",
+  "start_url": "/?fullscreen=true",
   "display": "fullscreen",
   "background_color": "#ffffff",
   "orientation": "portrait",
