@@ -127,7 +127,7 @@ public class ClientSecurityConfig
         // allow all
         .requestMatchers("/", "/manifest.json",
           "/manifest.webmanifest",
-          "/error/**", "/api/v1/buildinfo",
+          "/system/test/**","/error/**", "/api/v1/buildinfo",
           "/webjars/**", "/icons/**", "/css/**", "/js/**", "/images/**",
           "/actuator/**", "/flags/**", "/logout", "/oidc-backchannel-logout",
           "/admin/validate-new-pad", "/api/v1/signature-pad/validate",
