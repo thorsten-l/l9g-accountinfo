@@ -27,6 +27,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.boot.info.BuildProperties;
 
 /**
  * Handles the main home page requests for the application.
@@ -37,6 +38,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Home", description = "Application home page and entry point")
 public class HomeController
 {
+  /**
+   * Provides access to application build-time properties.
+   */
+  private final BuildProperties buildProperties;
+
   /**
    * Displays the application home page. If a user is already authenticated,
    * they will be redirected to the main application page ("/app").
@@ -68,6 +74,7 @@ public class HomeController
 
     Locale locale = LocaleContextHolder.getLocale();
     log.debug("locale={}", locale);
+    model.addAttribute("buildProperties", buildProperties);
     model.addAttribute("principal", principal);
     model.addAttribute("locale", locale.toString());
     return "home";
