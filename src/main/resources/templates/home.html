@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
   <head>
-    <title>Account Details</title>
+    <title>AccountInfo</title>
     <link rel="manifest" th:href="@{/manifest.json}"/>
     <div th:replace="~{header::head}"></div>
   </head>
@@ -21,6 +21,10 @@
         </div>        
       </main> 
       <!--end::App Main-->
+    </div>
+    
+    <div class="fixed-bottom m-2" style="font-size: 8pt;">
+      <span th:text='${buildProperties.version }'>version</span>
     </div>
 
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
