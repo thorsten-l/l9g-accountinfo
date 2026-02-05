@@ -35,3 +35,20 @@ export function showAlert(keyTitle, keyText, icon, ...args) {
     showConfirmButton: false
   });
 }
+
+export function showPermanentAlert(keyTitle, keyText, icon, ...args) {
+  const t = dict; 
+  const title = t[keyTitle] || keyTitle;
+  let text   = t[keyText]   || keyText;
+  args.forEach((v,i) => {
+    text = text.replace(`{${i}}`, v);
+  });
+  Swal.fire({
+    title,
+    text,
+    icon,
+    timerProgressBar: false,
+    confirmButtonText: ' OK ',
+    showConfirmButton: true
+  });
+}

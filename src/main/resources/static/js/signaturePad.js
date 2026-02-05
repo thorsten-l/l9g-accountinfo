@@ -20,7 +20,7 @@
 // -- Signature Pad -----------------------------------------------------------
 // ----------------------------------------------------------------------------
 import { switchLang, defaultLang } from './i18n.js';
-import { showAlert } from './alerts.js';
+import { showAlert, showPermanentAlert } from './alerts.js';
 import { userInfo, userId, cardNumber } from './userInfo.js';
 import { startCountdown, stopCountdown } from './countdown.js';
 
@@ -75,7 +75,7 @@ clearButton.addEventListener("click", () => {
 
 cancelButton.addEventListener("click", () => {
   console.log("Cancel button pressed");
-  showAlert("alert.cancel.title", "alert.cancel.text", "error");
+  showPermanentAlert("alert.cancel.title", "alert.cancel.text", "error");
   activateSignaturePad(false);
   document.dispatchEvent(new CustomEvent('signatureSubmitted'));
 
