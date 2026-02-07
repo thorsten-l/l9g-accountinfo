@@ -6,9 +6,12 @@
  * @license Apache-2.0
  */
 
+import { createLogger } from './logger.js';
 import { fetchUserInfo, userInfo } from './userInfo.js';
 import { activateSignaturePad, resizeCanvas, signaturePad, padUuid } from './signaturePad.js';
 import { showAlert } from './alerts.js';
+
+const log = createLogger("workflow");
 
 // --- DOM Element References ---
 const barcodeDetector = new BarcodeDetector({formats: ['code_39']});
@@ -84,10 +87,9 @@ function processCardNumber(code)
       cardNumber = code;
 
       barcodeCounter = barcodeCounter + 1;
-      console.log("Barcode detected:", cardNumber);
-
-      console.log("processCardNumber");
-      console.log(userInfo);
+      log.debug("Barcode detected:", cardNumber);
+      log.debug("processCardNumber");
+      log.debug(userInfo);
 
       if (userInfo.status && userInfo.status !== "OK") {
         validBarcode = false;
@@ -134,7 +136,7 @@ const scan = () => {
     if (barcodes.length > 0)
     {
       const detectedCardNumber = barcodes[0].rawValue;
-      console.log(detectedCardNumber);
+      log.debug(detectedCardNumber);
       const codePattern = /^\d{12}$/;
       if (!validBarcode && codePattern.test(detectedCardNumber))
       {
@@ -146,7 +148,7 @@ const scan = () => {
       }
     }
   }).catch(err => {
-    console.error("Barcode detection failed:", err);
+    log.error("Barcode detection failed:", err);
   });
 };
 
@@ -218,7 +220,7 @@ function checkAllUploaded()
  */
 function uploadPhoto(side, file)
 {
-  console.log("upload photo");
+  log.debug("upload photo");
   const fd = new FormData();
   
   /*
@@ -300,10 +302,10 @@ function showScanner()
  */
 function showSignaturePad()
 {
-  console.log("showSignaturePad");
+  log.debug("showSignaturePad");
   clearPage();
   document.getElementById('scanner-pages').classList.add('d-none');
-  console.log(userInfo);
+  log.debug(userInfo);
 
   // Populate user info fields for the signature pad
   document.getElementById('userinfo-name').innerText =
@@ -348,6 +350,7 @@ function showSignaturePad()
   resizeCanvas();
 }
 
+log.info("workflow started - log level: " + jsLogLevel);
 
 // --- Event Listeners for Photo Workflow ---
 btnFront.addEventListener('click', () => inputF.click());
@@ -378,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!barcodeDetector)
   {
-    console.log('Barcode-Formate nicht unterstützt');
+    log.error('Barcode-Formate nicht unterstützt');
     return;
   }
 
@@ -389,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     video.srcObject = stream;
 
-    video.play().catch(err => console.error("Play failed:", err));
+    video.play().catch(err => log.error("Play failed:", err));
 
-  }).catch(err => console.error('Kamera-Fehler: ', err));
+  }).catch(err => log.error('Kamera-Fehler: ', err));
 });

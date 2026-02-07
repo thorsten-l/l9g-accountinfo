@@ -16,7 +16,6 @@
 
 window.clearPage = function()
 {
-  console.log("clear page");
   document.getElementById('signature-pad-title').classList.add('d-none');
   document.getElementById('start-page').classList.add('d-none');
   document.getElementById('scanner').classList.add('d-none');

@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+import { createLogger } from './logger.js';
 import { padUuid } from './signaturePad.js';
+
+const log = createLogger("userinfo");
 
 export var userId;
 export var cardNumber;
@@ -53,11 +56,11 @@ export function showUserinfo(card)
   userInfo = null;
   cardNumber = card;
 
-  console.log(card);
+  log.debug(card);
 
   return fetchUserInfo(card, padUuid).then(dtoUserInfo => {
     userInfo = dtoUserInfo;
-    console.log(userInfo);
+    log.debug(userInfo);
 
     document.getElementById('userinfo-name').innerText =
             `${userInfo.firstname} ${userInfo.lastname}`;
@@ -97,56 +100,7 @@ export function showUserinfo(card)
     }
 
   }).catch(err => {
-    console.error('Fehler beim Laden der Userinfo:', err);
+    log.error('Fehler beim Laden der Userinfo:', err);
     throw err;
   });
 }
-/*
-export function getUserinfo(card)
-{
-  userId = null;
-  userInfo = null;
-  cardNumber = card;
-
-  console.log(card);
-
-  return fetchUserInfo(card, padUuid).then(dtoUserInfo => {
-    userInfo = dtoUserInfo;
-    console.log(userInfo);
-
-    document.getElementById('userinfo-jpegpoto').src = userInfo.jpegPhoto;
-    document.getElementById('userinfo-name').innerText =
-            `${userInfo.firstname} ${userInfo.lastname}`;
-
-    document.getElementById('userinfo-birthday').innerText =
-            userInfo.birthday || '';
-
-    document.getElementById('userinfo-userid').innerText =
-            userInfo.uid || '';
-    document.getElementById('userinfo-email').innerText =
-            userInfo.mail || '';
-
-    if (userInfo.semster)
-    {
-      const sem = userInfo.semster;
-      const semText = [sem.co, sem.street, sem.zip, sem.city, sem.state, sem.country]
-              .filter(Boolean)
-              .join(', ');
-      document.getElementById('userinfo-semester').innerText = semText;
-    }
-
-    if (userInfo.home)
-    {
-      const home = userInfo.home;
-      const homeText = [home.co, home.street, home.zip, home.city, home.state, home.country]
-              .filter(Boolean)
-              .join(', ');
-      document.getElementById('userinfo-home').innerText = homeText;
-    }
-  }).catch(err => {
-    console.error('Fehler beim Laden der Userinfo:', err);
-    throw err;
-  });
-}
- * 
- */

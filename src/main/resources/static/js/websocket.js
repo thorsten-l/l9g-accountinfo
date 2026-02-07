@@ -20,6 +20,7 @@
 // -- WebSocket ---------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+import { createLogger } from './logger.js';
 import { dict, switchLang, defaultLang } from './i18n.js';
 import { activateSignaturePad, resizeCanvas, signaturePad, padUuid } from './signaturePad.js';
 import { showAlert } from './alerts.js';
@@ -28,6 +29,7 @@ import { showUserinfo } from './userInfo.js';
 var ws;
 var lastHeartbeatTimestamp = null;
 
+const log = createLogger("websocket");
 const bodyEl = document.body;
 const wsBaseUrl = bodyEl.getAttribute('data-ws-base-url') || 'unknown-ws-base-url';
 const heartbeatEnabled = bodyEl.getAttribute('data-heartbeat-enabled') === 'true';
@@ -65,11 +67,11 @@ function setStatusLight(status)
 
 function checkHeartbeat()
 {
-  console.log("checkHeartbeat");
+  log.debug("checkHeartbeat");
   if (lastHeartbeatTimestamp && (Date.now() - lastHeartbeatTimestamp > 30000))
   {
     activateSignaturePad(false);
-    console.log("No heartbeat received for 30 seconds. Reconnecting...");
+    log.warn("No heartbeat received for 30 seconds. Reconnecting...");
     showAlert("alert.error.connectionLost.title", "alert.error.connectionLost.text", "error");
     ws.close();
   }
@@ -83,7 +85,7 @@ function connect()
   ws.onmessage = function (event)
   {
     var dtoEvent = JSON.parse(event.data);
-    console.log("Received event: ", dtoEvent);
+    log.debug("Received event: ", dtoEvent);
 
     if (dtoEvent.event === "heartbeat")
     {
@@ -95,14 +97,14 @@ function connect()
     if (dtoEvent.event === "show")
     {
       clearPage();
-      console.log("show event received");
+      log.debug("show event received");
       // try
       showUserinfo(dtoEvent.message).then(() => {
         activateSignaturePad(true);
         resizeCanvas();
         signaturePad.clear();
       }).catch(error => {
-        console.error('Fehler beim Laden der Userinfo:', error);
+        log.error('Fehler beim Laden der Userinfo:', error);
         if (error.status === 404)
         {
           document.dispatchEvent(new CustomEvent('signatureSubmitted'));
@@ -114,7 +116,7 @@ function connect()
 
     if (dtoEvent.event === "hide")
     {
-      console.log("hide event received");
+      log.debug("hide event received");
       switchLang(defaultLang);
       clearPage();
       signaturePad.clear();
@@ -134,14 +136,14 @@ function connect()
   {
     setStatusLight(true);
     switchLang(defaultLang);
-    console.log("WebSocket connection opened.");
+    log.info("WebSocket connection opened.");
     showAlert("alert.websocket.open.title", "alert.websocket.open.text", "success");
     lastHeartbeatTimestamp = Date.now();
   };
 
   ws.onclose = function ()
   {
-    console.log("WebSocket connection closed.");
+    log.info("WebSocket connection closed.");
     activateSignaturePad(false);
     setStatusLight(false);
     
@@ -152,7 +154,7 @@ function connect()
   ws.onerror = function (error)
   {
     setStatusLight(false);
-    console.log("WebSocket error: ", error);
+    log.error("WebSocket Error");
     switchLang(defaultLang);
     showAlert("alert.error.websocket.title", "alert.error.websocket.text", "error");
   };
@@ -160,7 +162,7 @@ function connect()
 
 function reconnect()
 {
-  console.log("reconnect");
+  log.debug("reconnect");
   setTimeout(connect, 10000);
 }
 
@@ -170,11 +172,11 @@ function reconnect()
 
 window.onload = function ()
 {
-  console.log("startup signatur pad app");
+  log.info("startup signatur pad app");
   switchLang(defaultLang);
   if (padUuid === '*undefined*')
   {
-    console.log("ERROR: signatur pad is unregistered");
+    log.error("ERROR: signatur pad is unregistered");
     document.getElementById("signature-pad-container").style.display = "none";
 
     Swal.fire(
@@ -194,7 +196,7 @@ window.onload = function ()
   }
   else
   {
-    console.log("INFO: signatur pad running");
+    log.info("signatur pad running");
     connect();
     if (heartbeatEnabled)
     {

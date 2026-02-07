@@ -19,11 +19,13 @@
 // ----------------------------------------------------------------------------
 // -- Signature Pad -----------------------------------------------------------
 // ----------------------------------------------------------------------------
+import { createLogger } from './logger.js';
 import { switchLang, defaultLang } from './i18n.js';
 import { showAlert, showPermanentAlert } from './alerts.js';
 import { userInfo, userId, cardNumber } from './userInfo.js';
 import { startCountdown, stopCountdown } from './countdown.js';
 
+const log = createLogger("signaturePad");
 const wrapper = document.getElementById("signature-pad");
 const clearButton = wrapper.querySelector("[data-action=clear]");
 const cancelButton = wrapper.querySelector("[data-action=cancel]");
@@ -74,7 +76,7 @@ clearButton.addEventListener("click", () => {
 });
 
 cancelButton.addEventListener("click", () => {
-  console.log("Cancel button pressed");
+  log.debug("Cancel button pressed");
   showPermanentAlert("alert.cancel.title", "alert.cancel.text", "error");
   activateSignaturePad(false);
   document.dispatchEvent(new CustomEvent('signatureSubmitted'));
@@ -82,7 +84,7 @@ cancelButton.addEventListener("click", () => {
   var payload = {};
   payload.userId = userId;
   payload.timestamp = Date.now();
-  console.log("payload=" + JSON.stringify(payload));
+  log.debug("payload=" + JSON.stringify(payload));
 
   const url = '/api/v1/signature-pad/cancel';
   const response = fetch(url, {
@@ -133,8 +135,10 @@ okButton.addEventListener("click", async () => {
             .setProtectedHeader({alg: 'RS256', kid: privateJwk.kid})
             .sign(privateKey);
 
-    // console.log('🔐 Signiertes JWT:', jwt);
+    // log.debug('🔐 Signiertes JWT:', jwt);
 
+    log.debug( "POST signature");
+    
     const url = '/api/v1/signature-pad/signature';
     const response = await fetch(url, {
       method: 'POST',

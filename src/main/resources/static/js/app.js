@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import './logger.js';
 import './i18n.js';
 import './userInfo.js';
 import './signaturePad.js';
