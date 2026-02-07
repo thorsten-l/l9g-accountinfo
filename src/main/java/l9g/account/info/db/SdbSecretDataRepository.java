@@ -50,5 +50,14 @@ public interface SdbSecretDataRepository extends
    * @return An {@link Optional} containing a list of found {@link SdbSecretData} entities, or empty if none found.
    */
   Optional<List<SdbSecretData>> findByKeyAndTypeOrderByModifyTimestampDesc(String key, SdbSecretType type);
+  
+  /**
+   * Finds a list of {@link SdbSecretData} entities by their type, ordered by name in ascending order.
+   *
+   * @param type The type of the secret data to find.
+   *
+   * @return An {@link Optional} containing a list of found {@link SdbSecretData} entities, or empty if none found.
+   */
+  Optional<List<SdbSecretData>> findByTypeOrderByNameAsc(SdbSecretType type);
 
 }

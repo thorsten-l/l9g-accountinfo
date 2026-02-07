@@ -15,6 +15,7 @@
  */
 package l9g.account.info.controller.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import java.io.IOException;
@@ -40,9 +41,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
- * REST controller for administrative API endpoints related to 
+ * REST controller for administrative API endpoints related to
  * account and signature pad information.
  */
 @Slf4j
@@ -289,6 +293,136 @@ public class ApiAdminController
     if(secretData != null && secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
     {
       return ResponseEntity.ok(authService.authCheck(secretData.getKey(), false));
+    }
+
+    return ResponseEntity.notFound().build();
+  }
+
+  /**
+   * Retrieves a list of signature pads.
+   * Requires administrator privileges.
+   *
+   * @param principal The authenticated OIDC user, used for authorization.
+   *
+   * @return A {@link ResponseEntity} containing a list of maps, each representing a signature pad.
+   *
+   * @throws Exception If an error occurs during data retrieval.
+   */
+  @Operation(summary = "Retrieve all signature pads",
+             description = "Fetches a list of all registered signature pads, including their metadata. Requires ADMIN role.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "List of signature pads successfully retrieved"),
+               @ApiResponse(responseCode = "403", description = "Access denied"),
+               @ApiResponse(responseCode = "404", description = "No signature pads found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
+  @GetMapping(path = "/pads", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<Map<String, Object>>> pads(
+    @AuthenticationPrincipal DefaultOidcUser principal)
+    throws Exception
+  {
+    log.debug("principal={}", principal);
+
+    List<Map<String, Object>> result = new ArrayList<>();
+
+    List<SdbSecretData> list = dbService.findSdbSecretDataByType(SdbSecretType.SIGNATURE_PAD_JSON);
+
+    if(list != null && list.size() > 0)
+    {
+      list.forEach(secretData ->
+      {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("dbid", secretData.getId());
+        map.put("padid", secretData.getKey());
+        map.put("name", secretData.getName());
+        map.put("description", secretData.getDescription());
+        try
+        {
+          map.put("createTimestamp", secretData.getCreateTimestamp());
+          Object createdBy = objectMapper.readValue(secretData.getModifiedBy(),
+            map.getClass());
+          map.put("createdBy", createdBy);
+          map.put("modifyTimestamp", secretData.getModifyTimestamp());
+          Object modifiedBy = objectMapper.readValue(secretData.getModifiedBy(),
+            map.getClass());
+          map.put("modifiedBy", modifiedBy);
+        }
+        catch(JsonProcessingException ex)
+        {
+          log.error("parse error {}", ex);
+        }
+        map.put("hidden", secretData.isHidden());
+        map.put("immutable", secretData.isImmutable());
+        result.add(map);
+      });
+
+      return ResponseEntity.ok(result);
+    }
+
+    return ResponseEntity.notFound().build();
+  }
+  
+  /**
+   * Retrieves a list of signatures.
+   * Requires administrator privileges.
+   *
+   * @param principal The authenticated OIDC user, used for authorization.
+   *
+   * @return A {@link ResponseEntity} containing a list of maps, each representing a signature.
+   *
+   * @throws Exception If an error occurs during data retrieval.
+   */
+  @Operation(summary = "Retrieve all signatures",
+             description = "Fetches a list of all stored signatures, including their metadata. Requires ADMIN role.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "List of signatures successfully retrieved"),
+               @ApiResponse(responseCode = "403", description = "Access denied"),
+               @ApiResponse(responseCode = "404", description = "No signatures found"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
+  @GetMapping(path = "/signatures", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<Map<String, Object>>> signatures(
+    @AuthenticationPrincipal DefaultOidcUser principal)
+    throws Exception
+  {
+    log.debug("principal={}", principal);
+
+    List<Map<String, Object>> result = new ArrayList<>();
+
+    List<SdbSecretData> list = dbService.findSdbSecretDataByType(SdbSecretType.ID_SIGNATURE_JWT);
+
+    if(list != null && list.size() > 0)
+    {
+      list.forEach(secretData ->
+      {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("dbid", secretData.getId());
+        map.put("padid", secretData.getKey());
+        try
+        {
+          Map description = objectMapper.readValue(secretData.getDescription(),
+            map.getClass());
+          description.put("username", secretData.getName());
+          map.put("signedBy", description);
+          map.put("createTimestamp", secretData.getCreateTimestamp());
+          Object createdBy = objectMapper.readValue(secretData.getModifiedBy(),
+            map.getClass());
+          map.put("createdBy", createdBy);
+          map.put("modifyTimestamp", secretData.getModifyTimestamp());
+          Object modifiedBy = objectMapper.readValue(secretData.getModifiedBy(),
+            map.getClass());
+          map.put("modifiedBy", modifiedBy);
+        }
+        catch(JsonProcessingException ex)
+        {
+          log.error("parse error {}", ex);
+        }
+        result.add(map);
+      });
+
+      return ResponseEntity.ok(result);
     }
 
     return ResponseEntity.notFound().build();

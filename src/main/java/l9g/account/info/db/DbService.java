@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import l9g.account.info.db.model.SdbProperty;
 import java.util.Optional;
-import l9g.account.info.controller.api.AuthService;
 import l9g.account.info.service.FileStorageService;
 import l9g.account.info.db.model.SdbSecretData;
 import l9g.account.info.db.model.SdbSecretType;
@@ -360,6 +359,18 @@ public class DbService
   public SdbSecretData findSdbSecretDataById(String id)
   {
     return sdbSecretDataRepository.findById(id).orElse(null);
+  }
+
+  /**
+   * Finds a list of {@link SdbSecretData} entries by their type, ordered by name in ascending order.
+   *
+   * @param type The type of the secret data to find.
+   *
+   * @return A list of {@link SdbSecretData} objects, or null if none found.
+   */
+  public List<SdbSecretData> findSdbSecretDataByType(SdbSecretType type)
+  {
+    return sdbSecretDataRepository.findByTypeOrderByNameAsc(type).orElse(null);
   }
 
 }

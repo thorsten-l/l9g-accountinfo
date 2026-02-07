@@ -69,6 +69,8 @@ springdoc:
 
 app:
   development: false
+  javascript:
+    log-level: info
   oauth2:
     registration-id: app
     client-id: accountinfo
