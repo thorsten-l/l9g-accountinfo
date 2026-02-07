@@ -57,6 +57,9 @@ public class SignaturePadController
   @Value("${app.ws-url}")
   private String wsBaseUrl;
 
+  @Value("${app.javascript.log-level}")
+  private String jsLogLevel;
+
   /**
    * Flag indicating whether heartbeat functionality is enabled for connection monitoring
    */
@@ -119,6 +122,7 @@ public class SignaturePadController
     model.addAttribute("principal", principal);
     model.addAttribute("publisher", publisher);
     model.addAttribute("issueType", issueType.getIssueType());
+    model.addAttribute("jsLogLevel", jsLogLevel);
     model.addAttribute("locale", locale.toString());
     model.addAttribute("wsBaseUrl", wsBaseUrl);
     model.addAttribute("heartbeatEnabled", heartbeatEnabled);
