@@ -67,6 +67,10 @@ public class LdapData
      */
     private String filter;
 
+    private String filterCustomerNumber;
+
+    private String filterCommonName;
+
     /**
      * A map of attributes to retrieve from the LDAP entries, mapping desired names to LDAP attribute names.
      */

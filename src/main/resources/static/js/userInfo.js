@@ -50,6 +50,34 @@ export function fetchUserInfo(card, padUuid)
   });
 }
 
+export function fetchCardNumberByCustomerNumber(customerNumber, padUuid)
+{
+  userId = null;
+  userInfo = null;
+  
+  return fetch(`/api/v1/search/customer?customer=${encodeURIComponent(customerNumber)}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'SIGNATURE_PAD_UUID': padUuid
+    }
+  }).then(response => {
+    if (!response.ok)
+    {
+      const error = new Error(`Server-Fehler: ${response.status}`);
+      error.status = response.status;
+      log.error("ERROR ", error);
+      throw error;
+    }
+    return response.json();
+  }).then(data => {
+    cardNumber = data.card;
+    log.debug("fetchCardNumberByCustomerNumber ", cardNumber);
+    return data;
+  });
+}
+
+
 export function showUserinfo(card)
 {
   userId = null;

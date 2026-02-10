@@ -249,6 +249,63 @@ public class LdapService
     return entry;
   }
 
+  private DtoUserInfo userInfoFromEntry(
+    LDAPConnection connection, SearchResultEntry entry)
+    throws LDAPException
+  {
+    DtoUserInfo userInfo = null;
+
+    LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
+    LdapData.LdapConfig localityConfig = ldapDataConfig.getLocality();
+
+    if(entry != null)
+    {
+      Map<String, String> map = userConfig.getAttributes();
+
+      String status = "OK";
+      String jpegPhoto = null;
+      String firstname = mapAttributeValue(entry, map, "firstname");
+      String lastname = mapAttributeValue(entry, map, "lastname");
+      String uid = mapAttributeValue(entry, map, "username");
+      String mail = mapAttributeValue(entry, map, "mail");
+      String birthday = mapAttributeValue(entry, map, "birthday");
+
+      String localityBaseDn = String.format(localityConfig.getBaseDn(), entry.getDN());
+
+      log.debug("localityBaseDn={}", localityBaseDn);
+
+      SearchRequest searchRequestLocality = new SearchRequest(
+        localityBaseDn, scopeFromString(localityConfig.getScope()),
+        localityConfig.getFilter(),
+        localityConfig.getAttributes().values().toArray(String[] :: new)
+      );
+
+      SearchResult searchResultLocality = connection.search(searchRequestLocality);
+
+      DtoAddress semester = null;
+      DtoAddress home = null;
+
+      map = localityConfig.getAttributes();
+
+      for(SearchResultEntry localityEntry : searchResultLocality.getSearchEntries())
+      {
+        if(localityEntry.getDN().toLowerCase().startsWith("cn=home,"))
+        {
+          home = dtoAddressFromEntry(localityEntry, map);
+        }
+        else if(localityEntry.getDN().toLowerCase().startsWith("cn=semester,"))
+        {
+          semester = dtoAddressFromEntry(localityEntry, map);
+        }
+      }
+
+      userInfo = new DtoUserInfo(status, jpegPhoto, firstname, lastname, uid,
+        mail, birthday, semester, home);
+    }
+
+    return userInfo;
+  }
+
   /**
    * Retrieves comprehensive user information as a {@link DtoUserInfo} object based on a card number.
    * This method performs LDAP searches for user and locality data using configured filters and attributes.
@@ -268,58 +325,9 @@ public class LdapService
 
     try(LDAPConnection connection = getConnection())
     {
-
-      LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
-      LdapData.LdapConfig localityConfig = ldapDataConfig.getLocality();
-
       SearchResultEntry entry = findUserEntryByCardNumber(connection, cardNumber);
-
       log.debug("entry={}", entry);
-
-      if(entry != null)
-      {
-        Map<String, String> map = userConfig.getAttributes();
-
-        String status = "OK";
-        String jpegPhoto = null;
-        String firstname = mapAttributeValue(entry, map, "firstname");
-        String lastname = mapAttributeValue(entry, map, "lastname");
-        String uid = mapAttributeValue(entry, map, "username");
-        String mail = mapAttributeValue(entry, map, "mail");
-        String birthday = mapAttributeValue(entry, map, "birthday");
-
-        String localityBaseDn = String.format(localityConfig.getBaseDn(), entry.getDN());
-
-        log.debug("localityBaseDn={}", localityBaseDn);
-
-        SearchRequest searchRequestLocality = new SearchRequest(
-          localityBaseDn, scopeFromString(localityConfig.getScope()),
-          localityConfig.getFilter(),
-          localityConfig.getAttributes().values().toArray(String[] :: new)
-        );
-
-        SearchResult searchResultLocality = connection.search(searchRequestLocality);
-
-        DtoAddress semester = null;
-        DtoAddress home = null;
-
-        map = localityConfig.getAttributes();
-
-        for(SearchResultEntry localityEntry : searchResultLocality.getSearchEntries())
-        {
-          if(localityEntry.getDN().toLowerCase().startsWith("cn=home,"))
-          {
-            home = dtoAddressFromEntry(localityEntry, map);
-          }
-          else if(localityEntry.getDN().toLowerCase().startsWith("cn=semester,"))
-          {
-            semester = dtoAddressFromEntry(localityEntry, map);
-          }
-        }
-
-        userInfo = new DtoUserInfo(status, jpegPhoto, firstname, lastname, uid,
-          mail, birthday, semester, home);
-      }
+      userInfo = userInfoFromEntry(connection, entry);
     }
     catch(Exception e)
     {
@@ -330,6 +338,46 @@ public class LdapService
 
     log.debug("userInfo={}", userInfo);
     return userInfo;
+  }
+
+  public String findCardNumberByCustomerNumber(String customerNumber)
+    throws Exception
+  {
+    log.debug("searching for customer number {} within ldap.", customerNumber);
+    log.debug("ldapDataConfig={}", ldapDataConfig);
+    String cardNumber = null;
+
+    try(LDAPConnection connection = getConnection())
+    {
+
+      LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
+      String filter = String.format(userConfig.getFilterCustomerNumber(), customerNumber, customerNumber, customerNumber);
+      log.debug("LDAP filter: {}", filter);
+
+      SearchRequest searchRequest = new SearchRequest(
+        userConfig.getBaseDn(), scopeFromString(userConfig.getScope()),
+        filter, userConfig.getAttributes().values().toArray(String[] :: new)
+      );
+      log.debug("searchRequest={}", searchRequest);
+
+      SearchResult searchResult = connection.search(searchRequest);
+      log.debug("searchResult={}", searchResult);
+
+      if(searchResult.getEntryCount() == 1)
+      {
+        SearchResultEntry entry = searchResult.getSearchEntries().getFirst();
+        cardNumber = entry.getAttributeValue("soniaChipcardBarcode");
+      }
+    }
+    catch(Exception e)
+    {
+      log.error("Error during LDAP search for customer number {}: {}",
+        customerNumber, e.getMessage());
+      throw e;
+    }
+
+    log.debug("cardNumber={}", cardNumber);
+    return cardNumber;
   }
 
   /**
@@ -369,16 +417,20 @@ public class LdapService
 
       long nowMs = System.currentTimeMillis();
 
-      String issueDescription = switch ( issueType)
+      String issueDescription = switch(issueType)
       {
-        case ACCOUNT -> "account form";
-        case ACCOUNT_CARD -> "account form and chipcard";
-        case CARD -> "chipcard";
-        default -> "unknown";
+        case ACCOUNT ->
+          "account form";
+        case ACCOUNT_CARD ->
+          "account form and chipcard";
+        case CARD ->
+          "chipcard";
+        default ->
+          "unknown";
       };
 
       String logLine = nowMs + "|" + remoteIp + "|" + publisher
-        + "|accountinfo|issued <b>" + issueDescription + "</b> using device: '" 
+        + "|accountinfo|issued <b>" + issueDescription + "</b> using device: '"
         + padName + " (" + padUuid + ")'";
 
       List<Modification> mods = new ArrayList<>(4);
@@ -393,7 +445,7 @@ public class LdapService
         requireAttr(attrIssued, "chipcard-is-issued");
         requireAttr(attrIssuedBy, "chipcard-is-issued-by");
         requireAttr(attrIssuedTs, "chipcard-is-issued-timestamp");
-        
+
         mods.add(new Modification(ModificationType.REPLACE, attrIssued, "true"));
         mods.add(new Modification(ModificationType.REPLACE, attrIssuedBy, Objects.toString(publisher, "")));
         mods.add(new Modification(ModificationType.REPLACE, attrIssuedTs, Long.toString(nowMs)));

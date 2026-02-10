@@ -7,7 +7,7 @@
  */
 
 import { createLogger } from './logger.js';
-import { fetchUserInfo, userInfo } from './userInfo.js';
+import { fetchUserInfo, userInfo, fetchCardNumberByCustomerNumber } from './userInfo.js';
 import { activateSignaturePad, resizeCanvas, signaturePad, padUuid } from './signaturePad.js';
 import { showAlert } from './alerts.js';
 
@@ -91,7 +91,8 @@ function processCardNumber(code)
       log.debug("processCardNumber");
       log.debug(userInfo);
 
-      if (userInfo.status && userInfo.status !== "OK") {
+      if (userInfo.status && userInfo.status !== "OK")
+      {
         validBarcode = false;
         return Promise.reject(new Error(userInfo.status));
       }
@@ -102,7 +103,7 @@ function processCardNumber(code)
       document.getElementById('userinfo-birthday-preview').innerText = `${userInfo.birthday}`;
       document.getElementById('userinfo-semester-preview').innerText = "";
       document.getElementById('userinfo-home-preview').innerText = "";
-      
+
       if (userInfo.semester)
       {
         const sem = userInfo.semester;
@@ -203,6 +204,29 @@ function handleSendBarcode()
 }
 
 /**
+ * Handles the manual submission of the customer number from the input field.
+ */
+function handleSendCustomerNumber()
+{
+  const customerNumber = document.getElementById('customer-number');
+  const customerNumberValue = customerNumber.value;
+
+  log.debug("handleSendCustomerNumber 2 : ", customerNumberValue);
+
+  const number = customerNumberValue.trim();
+  showMsg(`Code ${number} wird geprüft...`, 'info');
+
+  fetchCardNumberByCustomerNumber(customerNumberValue, padUuid).then(data => {
+    log.debug("data=", data);
+    return processCardNumber(data.card);
+  }).catch(error => {
+    showAlert("FEHLER", `${error.message} - Nummer nicht gefunden.`, "error");
+  });
+
+}
+
+
+/**
  * Checks if both front and back photos have been uploaded and shows the next button.
  */
 function checkAllUploaded()
@@ -222,17 +246,17 @@ function uploadPhoto(side, file)
 {
   log.debug("upload photo");
   const fd = new FormData();
-  
+
   /*
    *      sub: userInfo.uid,
-      name: `${userInfo.firstname} ${userInfo.lastname}`,
-      mail: userInfo.mail,
+   name: `${userInfo.firstname} ${userInfo.lastname}`,
+   mail: userInfo.mail,
    */
-  
+
   fd.append('fullname', `${userInfo.firstname} ${userInfo.lastname}`);
   fd.append('userid', userInfo.uid);
   fd.append('mail', userInfo.mail);
-  
+
   fd.append('paduuid', padUuid);
   fd.append('side', side);
   fd.append('file', file, file.name);
@@ -364,6 +388,7 @@ document.getElementById('btn-show-scanner').addEventListener('click', showScanne
 document.getElementById('btn-cancel-scan').addEventListener('click', showStartPage);
 document.getElementById('btn-cancel-photo').addEventListener('click', showStartPage);
 document.getElementById('btn-send-barcode').addEventListener('click', handleSendBarcode);
+document.getElementById('btn-send-customer-number').addEventListener('click', handleSendCustomerNumber);
 document.getElementById('btn-next').addEventListener('click', showSignaturePad);
 document.addEventListener('signatureSubmitted', showStartPage);
 
