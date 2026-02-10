@@ -7,7 +7,7 @@
  */
 
 import { createLogger } from './logger.js';
-import { fetchUserInfo, userInfo, fetchCardNumberByCustomerNumber } from './userInfo.js';
+import { fetchUserInfo, userInfo, fetchCardNumberByCustomerNumber, fetchPersons } from './userInfo.js';
 import { activateSignaturePad, resizeCanvas, signaturePad, padUuid } from './signaturePad.js';
 import { showAlert } from './alerts.js';
 
@@ -29,6 +29,10 @@ const previewF = document.getElementById('preview-front');
 const previewB = document.getElementById('preview-back');
 const imgFront = document.getElementById('img-front');
 const imgBack = document.getElementById('img-back');
+const commonNameInput = document.getElementById('common-name-input');
+const commonNameResults = document.getElementById('common-name-results');
+const btnClearCommonName = document.getElementById('btn-clear-common-name');
+const btnSendCommonName = document.getElementById('btn-send-common-name');
 
 // --- State Variables ---
 var barcodeCounter = 0;
@@ -37,6 +41,34 @@ var cardNumber = null;
 var uploadedFront = false;
 var uploadedBack = false;
 var scanIntervalId = null;
+var selectedCardNumber = null;
+
+/**
+ * Handles input on the common-name-input field, triggering personSearch if the input
+ * length is 5 or more.
+ */
+function handleCommonNameInput() {
+  const input = commonNameInput.value.trim();
+  if (input.length >= 5) {
+    personSearch(input);
+  } else {
+    commonNameResults.classList.add('d-none'); // Hide results if input is too short
+    commonNameResults.innerHTML = ''; // Clear previous results
+  }
+}
+
+/**
+ * Handles selection from the common-name-results dropdown.
+ */
+function handleCommonNameSelection() {
+  const selectedOption = commonNameResults.options[commonNameResults.selectedIndex];
+  if (selectedOption) {
+    commonNameInput.value = selectedOption.text;
+    selectedCardNumber = selectedOption.value;
+    log.debug("Selected card number:", selectedCardNumber);
+    commonNameResults.classList.add('d-none'); // Hide results after selection
+  }
+}
 
 /**
  * Resets the page state to its initial values.
@@ -374,6 +406,39 @@ function showSignaturePad()
   resizeCanvas();
 }
 
+function personSearch( query )
+{
+  log.debug("personSearch query=", query);
+
+  // Clear previous results
+  commonNameResults.innerHTML = '';
+  selectedCardNumber = null;
+
+  fetchPersons(query, padUuid)
+    .then(persons => {
+      log.debug("personSearch - persons:", persons);
+      if (persons && persons.length > 0) {
+        persons.forEach(person => {
+          const option = document.createElement('option');
+          option.value = person.barcodeNumber; // Use barcodeNumber as the value
+          option.textContent = `${person.firstname}, ${person.lastname}, ${person.birthday || ''}`; // Display name and birthday
+          commonNameResults.appendChild(option);
+        });
+        log.debug("personSearch - Removing 'd-none' class from commonNameResults.");
+        commonNameResults.classList.remove('d-none');
+      } else {
+        log.debug("personSearch - Adding 'd-none' class to commonNameResults.");
+        commonNameResults.classList.add('d-none');
+      }
+    })
+    .catch(error => {
+      log.error("personSearch - Error fetching persons:", error);
+      commonNameResults.classList.add('d-none');
+      commonNameResults.innerHTML = '';
+      showAlert("FEHLER", `Personensuche fehlgeschlagen: ${error.message}`, "error");
+    });
+}
+
 log.info("workflow started - log level: " + jsLogLevel);
 
 // --- Event Listeners for Photo Workflow ---
@@ -391,6 +456,29 @@ document.getElementById('btn-send-barcode').addEventListener('click', handleSend
 document.getElementById('btn-send-customer-number').addEventListener('click', handleSendCustomerNumber);
 document.getElementById('btn-next').addEventListener('click', showSignaturePad);
 document.addEventListener('signatureSubmitted', showStartPage);
+
+// --- Event Listeners for Common Name Search ---
+commonNameInput.addEventListener('keyup', handleCommonNameInput);
+commonNameResults.addEventListener('change', handleCommonNameSelection);
+
+btnClearCommonName.addEventListener('click', () => {
+  commonNameInput.value = '';
+  commonNameResults.innerHTML = '';
+  commonNameResults.classList.add('d-none');
+  selectedCardNumber = null;
+});
+
+btnSendCommonName.addEventListener('click', () => {
+  if (selectedCardNumber) {
+    log.debug("Sending selected card number:", selectedCardNumber);
+    processCardNumber(selectedCardNumber)
+            .catch(error => {
+              showAlert("FEHLER", `${error.message}`, "error");
+            });
+  } else {
+    showAlert("FEHLER", "Bitte wähle einen Namen aus der Liste aus.", "error");
+  }
+});
 
 
 /**

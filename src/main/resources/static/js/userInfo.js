@@ -78,6 +78,27 @@ export function fetchCardNumberByCustomerNumber(customerNumber, padUuid)
 }
 
 
+export function fetchPersons(query, padUuid)
+{
+  return fetch(`/api/v1/search/person?query=${encodeURIComponent(query)}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'SIGNATURE_PAD_UUID': padUuid
+    }
+  }).then(response => {
+    if (!response.ok)
+    {
+      const error = new Error(`Server-Fehler: ${response.status}`);
+      error.status = response.status;
+      log.error("ERROR ", error);
+      throw error;
+    }
+    return response.json();
+  });
+}
+
+
 export function showUserinfo(card)
 {
   userId = null;

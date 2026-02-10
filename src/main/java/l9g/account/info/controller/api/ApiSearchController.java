@@ -30,7 +30,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import l9g.account.info.dto.DtoUserInfo;
 import org.springframework.http.ResponseEntity;
 
 /**
@@ -65,13 +67,13 @@ public class ApiSearchController
    *
    * @throws Exception If an error occurs during authentication or data retrieval.
    */
-  @Operation(summary = "Retrieve user information",
-             description = "Fetches comprehensive user data for display on signature pad devices, based on card number.",
+  @Operation(summary = "Retrieve cardnumber from customer number",
+             description = "Retrieve cardnumber from customer number.",
              responses =
              {
-               @ApiResponse(responseCode = "200", description = "User information successfully retrieved"),
+               @ApiResponse(responseCode = "200", description = "Cardnumber successfully retrieved"),
                @ApiResponse(responseCode = "401", description = "Unauthorized if signature pad is not authenticated"),
-               @ApiResponse(responseCode = "404", description = "User not found"),
+               @ApiResponse(responseCode = "404", description = "Customer not found"),
                @ApiResponse(responseCode = "500", description = "Internal server error")
              })
   @GetMapping(
@@ -96,6 +98,32 @@ public class ApiSearchController
       Map<String, String> map = new HashMap<>();
       map.put("card", cardNumber);
       return ResponseEntity.ok(map);
+    }
+
+    return ResponseEntity.notFound().build();
+  }
+
+
+  @GetMapping(
+    produces = MediaType.APPLICATION_JSON_VALUE, path = "person")
+  public ResponseEntity<List<DtoUserInfo>> personList(
+    @RequestHeader("SIGNATURE_PAD_UUID") String padUuid,
+    @RequestParam("query") String query,
+    @AuthenticationPrincipal DefaultOidcUser principal
+  )
+    throws Exception
+  {
+    log.debug("personList called for query '{}'", query);
+    log.debug("principal={}", principal);
+
+    // Authenticate signature pad
+    authService.authCheck(padUuid, true);
+
+    List<DtoUserInfo> persons = ldapService.listPersons(query);
+
+    if(persons != null && persons.size() > 0)
+    {
+      return ResponseEntity.ok(persons);
     }
 
     return ResponseEntity.notFound().build();

@@ -194,6 +194,19 @@ label {
   object-fit: cover;
 }
 
+select option {
+  border-bottom: 1px solid #e9ecef;
+  margin: 6px;
+}
+
+.common-name-results {
+  overflow-y: scroll;
+}
+
+select {
+  overflow-y: scroll;
+}
+
 .d-none {
   display: none !important;
 }

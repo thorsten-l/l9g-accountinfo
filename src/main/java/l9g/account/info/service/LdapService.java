@@ -312,7 +312,7 @@ public class LdapService
       }
 
       userInfo = new DtoUserInfo(status, jpegPhoto, firstname, lastname, uid,
-        mail, birthday, semester, home);
+        mail, birthday, null, semester, home);
     }
 
     return userInfo;
@@ -383,12 +383,11 @@ public class LdapService
       log.debug("searchRequest={}", searchRequest);
 
       SearchResult searchResult = connection.search(searchRequest);
-      log.debug("searchResult={}", searchResult);
 
       if(searchResult.getEntryCount() == 1)
       {
         SearchResultEntry entry = searchResult.getSearchEntries().getFirst();
-        cardNumber = entry.getAttributeValue("soniaChipcardBarcode");
+        cardNumber = mapAttributeValue(entry, userConfig.getAttributes(), "barcode");
       }
     }
     catch(Exception e)
@@ -400,6 +399,66 @@ public class LdapService
 
     log.debug("cardNumber={}", cardNumber);
     return cardNumber;
+  }
+
+  public List<DtoUserInfo> listPersons(String query)
+    throws Exception
+  {
+    log.debug("searching for persons {} within ldap.", query);
+    log.debug("ldapDataConfig={}", ldapDataConfig);
+    List<DtoUserInfo> personList = null;
+
+    try(LDAPConnection connection = getConnection())
+    {
+      LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
+
+      query = query.trim().toLowerCase();
+      String filter = String.format(userConfig.getFilterCommonName(), "", query, "");
+
+      String[] queryToken = query.split("\\s+");
+
+      if(queryToken.length > 1)
+      {
+        filter = String.format(userConfig.getFilterCommonName(), queryToken[0].trim(), queryToken[1].trim(), "");
+      }
+
+      log.debug("LDAP filter: {}", filter);
+
+      SearchRequest searchRequest = new SearchRequest(
+        userConfig.getBaseDn(), scopeFromString(userConfig.getScope()),
+        filter, userConfig.getAttributes().values().toArray(String[] :: new)
+      );
+
+      log.debug("searchRequest={}", searchRequest);
+
+      SearchResult searchResult = connection.search(searchRequest);
+
+      log.debug("searchResult.entries={}", searchResult.getEntryCount());
+
+      if(searchResult.getEntryCount() > 0)
+      {
+        personList = new ArrayList<>();
+        List<SearchResultEntry> entries = searchResult.getSearchEntries();
+        for(SearchResultEntry entry : entries)
+        {
+          personList.add(new DtoUserInfo(
+            mapAttributeValue(entry, userConfig.getAttributes(), "firstname"),
+            mapAttributeValue(entry, userConfig.getAttributes(), "lastname"),
+            mapAttributeValue(entry, userConfig.getAttributes(), "birthday"),
+            mapAttributeValue(entry, userConfig.getAttributes(), "barcode")
+          ));
+        }
+      }
+    }
+    catch(Exception e)
+    {
+      log.error("Error during LDAP search for personsr {}: {}",
+        query, e.getMessage());
+      throw e;
+    }
+
+    log.debug("cardNumber={}", personList);
+    return personList;
   }
 
   /**

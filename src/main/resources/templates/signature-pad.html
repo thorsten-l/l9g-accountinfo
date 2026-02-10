@@ -87,7 +87,7 @@ limitations under the License.
             Bibliotheks-Barcode
           </div>
           <div class="card-body">
-            <input type="number" class="form-control form-control-lg" id="library-barcode" placeholder="12-stelligen Barcode eingeben">
+            <input type="number" class="form-control form-control-lg" id="library-barcode" placeholder="12-stelligen Barcode">
           </div>
           <div class="card-footer">
             <button type="button" class="btn btn-secondary btn-lg me-2" onclick="document.getElementById('library-barcode').value = ''"><i class="fas fa-eraser"></i> Löschen</button>
@@ -101,7 +101,7 @@ limitations under the License.
             Kundennummer / Matrikelnummer / PID
           </div>
           <div class="card-body">
-            <input type="number" class="form-control form-control-lg" id="customer-number" placeholder="Kundennummer / Matrikelnummer / PID eingeben">
+            <input type="number" class="form-control form-control-lg" id="customer-number" placeholder="Kundennummer / Matrikelnummer / PID">
           </div>
           <div class="card-footer">
             <button type="button" class="btn btn-secondary btn-lg me-2" onclick="document.getElementById('customer-number').value = ''"><i class="fas fa-eraser"></i> Löschen</button>
@@ -109,159 +109,173 @@ limitations under the License.
           </div>
         </div>
 
+        <div class="card mt-3">
+          <div class="card-header fs-4">
+            Personensuche
+          </div>
+          <div class="card-body">
+            <input type="text" class="form-control form-control-lg" id="common-name-input" placeholder="Vorname Nachname" autocomplete="off">
+            <select id="common-name-results" class="form-control form-control-lg mt-2 d-none" size="10"></select>
+          </div>
+          <div class="card-footer">
+            <button type="button" class="btn btn-secondary btn-lg me-2" id="btn-clear-common-name"><i class="fas fa-eraser"></i> Löschen</button>
+            <button type="button" class="btn btn-primary btn-lg me-2" id="btn-send-common-name"><i class="fas fa-paper-plane"></i> Senden</button>
+          </div>
+        </div>
+
       </div>
 
 
-    <!-- 1. Scanner-Section -->
-    <div id="scanner" class="d-none">
-      <p class="fs-4">Smartcard Barcode einlesen:</p>
-      <div class="card-viewfinder">
-        <video id="video" autoplay muted playsinline></video>
+      <!-- 1. Scanner-Section -->
+      <div id="scanner" class="d-none">
+        <p class="fs-4">Smartcard Barcode einlesen:</p>
+        <div class="card-viewfinder">
+          <video id="video" autoplay muted playsinline></video>
+        </div>
+        <div id="message" class="mt-3 alert alert-info d-none"></div>
+        <button type="button" class="btn btn-danger btn-lg mt-3" id="btn-cancel-scan"><i class="fas fa-times"></i> Abbruch</button>
       </div>
-      <div id="message" class="mt-3 alert alert-info d-none"></div>
-      <button type="button" class="btn btn-danger btn-lg mt-3" id="btn-cancel-scan"><i class="fas fa-times"></i> Abbruch</button>
+
+      <!-- 2. Foto-Section -->
+      <div id="photo-section" class="mt-0 d-none">
+        <div class="mt-0 userinfo-container-preview">
+          <div class="userinfo-text">
+            <div id="userinfo-name-preview" class="userinfo-name"></div>
+            <div>
+              <span style="font-weight: bold">Birthday: </span><span id="userinfo-birthday-preview"></span>
+            </div>
+            <div>
+              <span style="font-weight: bold">Home: </span><span id="userinfo-home-preview"></span>
+            </div>
+            <div>
+              <span style="font-weight: bold">Semester: </span><span id="userinfo-semester-preview"></span>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 fs-4">Ausweis-Fotos aufnehmen:</p>
+        <button id="btn-front" class="btn btn-primary btn-lg me-2">
+          <i class="fas fa-camera"></i> Vorderseite
+        </button>
+        <button id="btn-back" class="btn btn-secondary btn-lg me-2">
+          <i class="fas fa-camera"></i> Rückseite
+        </button>
+        <button id="btn-cancel-photo" class="btn btn-lg btn-danger">
+          <i class="fas fa-times"></i> Abbruch
+        </button>
+
+        <div id="photo-msg" class="mt-3"></div>
+
+        <!-- Live-Vorschau der Aufnahmen im ID-Karten-Format -->
+        <div id="preview-front" class="photo-viewfinder">
+          <img id="img-front" alt="Vorderseite Vorschau"/>
+        </div>
+        <div id="preview-back" class="photo-viewfinder">
+          <img id="img-back" alt="Rückseite Vorschau"/>
+        </div>
+
+        <!-- Neuer Weiter-Button -->
+        <div class="text-center mt-4">
+          <button type="button" class="btn btn-lg btn-success" id="btn-next"><i class="fas fa-times"></i> Weiter zur Unterschrift</button>
+        </div>
+
+      </div>
+
+      <!-- versteckte File-Inputs -->
+      <input type="file" id="file-front" accept="image/*" capture="environment" class="d-none"/>
+      <input type="file" id="file-back"  accept="image/*" capture="environment" class="d-none"/>
     </div>
 
-    <!-- 2. Foto-Section -->
-    <div id="photo-section" class="mt-0 d-none">
-      <div class="mt-0 userinfo-container-preview">
+    <div id="signpad-standby">
+      <div id="signpad-logo-container" class="d-none signpad-logo-container">
+        <div class="signpad-logo"><i class="fas fa-signature me-1"></i>
+          <span data-i18n="nav.signaturePad">Signature Pad</span>
+        </div>
+      </div>
+      <div class="heartbeat-container">
+        <div class="heartbeat"><i class="fas fa-heartbeat me-1"></i>
+          <span id="heartbeat" data-i18n="heartbeat.disabled">disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="signpad-active" style="display: none">
+      <div class="userinfo-container">
         <div class="userinfo-text">
-          <div id="userinfo-name-preview" class="userinfo-name"></div>
-          <div>
-            <span style="font-weight: bold">Birthday: </span><span id="userinfo-birthday-preview"></span>
+          <div id="userinfo-name" class="userinfo-name"></div>
+
+          <label for="userinfo-birthday" data-i18n="label.birthday">Birthday</label>
+          <div id="userinfo-birthday"></div>
+
+          <label for="userinfo-email" data-i18n="label.email">E-Mail</label>
+          <div id="userinfo-email"></div>
+
+          <div id="userinfo-semester-container" style="display: none">
+            <label data-i18n="label.semesterAddress">Semester Address</label>
+            <div id="userinfo-semester"></div>
           </div>
-          <div>
-            <span style="font-weight: bold">Home: </span><span id="userinfo-home-preview"></span>
+
+          <div id="userinfo-home-container" style="display: none">
+            <label data-i18n="label.homeAddress">Home Address</label>
+            <div id="userinfo-home"></div>
           </div>
-          <div>
-            <span style="font-weight: bold">Semester: </span><span id="userinfo-semester-preview"></span>
+        </div>
+      </div>
+
+      <div class="pie-container">
+        <svg viewBox="0 0 100 100">
+        <!-- Hintergrundkreis -->
+        <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
+        <!-- Vordergrund-Kreis, dessen stroke-dashoffset wir anpassen -->
+        <circle id="pie" class="pie-fg" cx="50" cy="50" r="40"
+                stroke-dasharray="251.327" stroke-dashoffset="0">
+        </circle>
+        </svg>
+        <div id="pie-label" class="pie-label">180 s</div>
+      </div>
+
+      <div class="user-consens" id="consent-text" data-i18n="consentText">
+        By signing this document, I accept the IT usage policy of this university.
+      </div>
+
+      <div id="signature-pad-container" class="signature-container">
+        <div id="signature-pad" class="signature-pad">
+          <div class="signature-pad--body">
+            <canvas></canvas>
           </div>
-        </div>
-      </div>
-      <p class="mt-2 fs-4">Ausweis-Fotos aufnehmen:</p>
-      <button id="btn-front" class="btn btn-primary btn-lg me-2">
-        <i class="fas fa-camera"></i> Vorderseite
-      </button>
-      <button id="btn-back" class="btn btn-secondary btn-lg me-2">
-        <i class="fas fa-camera"></i> Rückseite
-      </button>
-      <button id="btn-cancel-photo" class="btn btn-lg btn-danger">
-        <i class="fas fa-times"></i> Abbruch
-      </button>
-
-      <div id="photo-msg" class="mt-3"></div>
-
-      <!-- Live-Vorschau der Aufnahmen im ID-Karten-Format -->
-      <div id="preview-front" class="photo-viewfinder">
-        <img id="img-front" alt="Vorderseite Vorschau"/>
-      </div>
-      <div id="preview-back" class="photo-viewfinder">
-        <img id="img-back" alt="Rückseite Vorschau"/>
-      </div>
-
-      <!-- Neuer Weiter-Button -->
-      <div class="text-center mt-4">
-        <button type="button" class="btn btn-lg btn-success" id="btn-next"><i class="fas fa-times"></i> Weiter zur Unterschrift</button>
-      </div>
-
-    </div>
-
-    <!-- versteckte File-Inputs -->
-    <input type="file" id="file-front" accept="image/*" capture="environment" class="d-none"/>
-    <input type="file" id="file-back"  accept="image/*" capture="environment" class="d-none"/>
-  </div>
-
-  <div id="signpad-standby">
-    <div id="signpad-logo-container" class="d-none signpad-logo-container">
-      <div class="signpad-logo"><i class="fas fa-signature me-1"></i>
-        <span data-i18n="nav.signaturePad">Signature Pad</span>
-      </div>
-    </div>
-    <div class="heartbeat-container">
-      <div class="heartbeat"><i class="fas fa-heartbeat me-1"></i>
-        <span id="heartbeat" data-i18n="heartbeat.disabled">disabled</span>
-      </div>
-    </div>
-  </div>
-
-  <div id="signpad-active" style="display: none">
-    <div class="userinfo-container">
-      <div class="userinfo-text">
-        <div id="userinfo-name" class="userinfo-name"></div>
-
-        <label for="userinfo-birthday" data-i18n="label.birthday">Birthday</label>
-        <div id="userinfo-birthday"></div>
-
-        <label for="userinfo-email" data-i18n="label.email">E-Mail</label>
-        <div id="userinfo-email"></div>
-
-        <div id="userinfo-semester-container" style="display: none">
-          <label data-i18n="label.semesterAddress">Semester Address</label>
-          <div id="userinfo-semester"></div>
-        </div>
-
-        <div id="userinfo-home-container" style="display: none">
-          <label data-i18n="label.homeAddress">Home Address</label>
-          <div id="userinfo-home"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="pie-container">
-      <svg viewBox="0 0 100 100">
-      <!-- Hintergrundkreis -->
-      <circle class="pie-bg" cx="50" cy="50" r="40"></circle>
-      <!-- Vordergrund-Kreis, dessen stroke-dashoffset wir anpassen -->
-      <circle id="pie" class="pie-fg" cx="50" cy="50" r="40"
-              stroke-dasharray="251.327" stroke-dashoffset="0">
-      </circle>
-      </svg>
-      <div id="pie-label" class="pie-label">180 s</div>
-    </div>
-
-    <div class="user-consens" id="consent-text" data-i18n="consentText">
-      By signing this document, I accept the IT usage policy of this university.
-    </div>
-
-    <div id="signature-pad-container" class="signature-container">
-      <div id="signature-pad" class="signature-pad">
-        <div class="signature-pad--body">
-          <canvas></canvas>
-        </div>
-        <div class="signature-pad--footer text-center">
-          <div class="description mb-2" data-i18n="signature.signAbove">Sign above</div>
-          <div class="signature-pad--actions grid-4">
-            <button class="btn btn-secondary btn-lg" data-action="clear" style="text-wrap: nowrap">
-              <i class="fas fa-eraser me-2"></i>
-              <span data-i18n="btn.clear">Clear</span>
-            </button>
-            <div></div>
-            <button class="btn btn-danger btn-lg" data-action="cancel" style="text-wrap: nowrap">
-              <i class="fas fa-times-circle me-2"></i>
-              <span data-i18n="btn.cancel">Cancel</span>
-            </button>
-            <button class="btn btn-success btn-lg" data-action="ok" style="text-wrap: nowrap">
-              <i class="fas fa-check-circle me-2"></i>
-              <span data-i18n="btn.ok">OK</span>
-            </button>
+          <div class="signature-pad--footer text-center">
+            <div class="description mb-2" data-i18n="signature.signAbove">Sign above</div>
+            <div class="signature-pad--actions grid-4">
+              <button class="btn btn-secondary btn-lg" data-action="clear" style="text-wrap: nowrap">
+                <i class="fas fa-eraser me-2"></i>
+                <span data-i18n="btn.clear">Clear</span>
+              </button>
+              <div></div>
+              <button class="btn btn-danger btn-lg" data-action="cancel" style="text-wrap: nowrap">
+                <i class="fas fa-times-circle me-2"></i>
+                <span data-i18n="btn.cancel">Cancel</span>
+              </button>
+              <button class="btn btn-success btn-lg" data-action="ok" style="text-wrap: nowrap">
+                <i class="fas fa-check-circle me-2"></i>
+                <span data-i18n="btn.ok">OK</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script th:inline="javascript">
-    /*<![CDATA[*/
-    const publisher = /*[[${publisher}]]*/ null;
-    const issueType = /*[[${issueType}]]*/ null;
-    const jsLogLevel = /*[[${jsLogLevel}]]*/ null;
-    /*]]>*/
-  </script>
-  <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
-  <script th:src="@{/webjars/signature_pad/dist/signature_pad.umd.min.js}"></script>
-  <script th:src="@{/js/sweetalert2/sweetalert2.all.min.js}"></script>
-  <script th:src="@{/js/jose/index.umd.min.js}"></script>
-  <script type="module" th:src="@{/js/app.js}"></script>
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      const publisher = /*[[${publisher}]]*/ null;
+      const issueType = /*[[${issueType}]]*/ null;
+      const jsLogLevel = /*[[${jsLogLevel}]]*/ null;
+      /*]]>*/
+    </script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/webjars/signature_pad/dist/signature_pad.umd.min.js}"></script>
+    <script th:src="@{/js/sweetalert2/sweetalert2.all.min.js}"></script>
+    <script th:src="@{/js/jose/index.umd.min.js}"></script>
+    <script type="module" th:src="@{/js/app.js}"></script>
 
-</body>
+  </body>
 </html>
