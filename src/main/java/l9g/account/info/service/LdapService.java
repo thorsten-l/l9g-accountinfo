@@ -253,6 +253,18 @@ public class LdapService
     LDAPConnection connection, SearchResultEntry entry)
     throws LDAPException
   {
+    /**
+     * Constructs a {@link DtoUserInfo} object from an LDAP {@link SearchResultEntry}.
+     * This method retrieves various user attributes and constructs address objects by querying
+     * related locality entries in LDAP.
+     *
+     * @param connection The active {@link LDAPConnection}.
+     * @param entry The {@link SearchResultEntry} for the user.
+     *
+     * @return A {@link DtoUserInfo} object populated with the user's details, or null if the input entry is null.
+     *
+     * @throws LDAPException If an LDAP-specific error occurs during data retrieval.
+     */
     DtoUserInfo userInfo = null;
 
     LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
@@ -340,6 +352,16 @@ public class LdapService
     return userInfo;
   }
 
+  /**
+   * Searches the LDAP directory for a card number associated with a given customer number.
+   * This method uses a specific filter to query user entries by customer number.
+   *
+   * @param customerNumber The customer number to search for.
+   *
+   * @return The card number as a {@code String} if a matching user is found, otherwise {@code null}.
+   *
+   * @throws Exception If an error occurs during LDAP connection or search operations.
+   */
   public String findCardNumberByCustomerNumber(String customerNumber)
     throws Exception
   {

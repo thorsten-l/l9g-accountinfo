@@ -55,15 +55,13 @@ public class ApiSearchController
   private final LdapService ldapService;
 
   /**
-   * Retrieves user information for the specified user ID.
-   * Returns comprehensive user data including personal details, addresses,
-   * and profile photo for display on signature pad devices.
+   * Retrieves card number for the specified customer number.
    *
    * @param padUuid The unique identifier of the requesting signature pad.
-   * @param cardNumber The identifier of the user whose information is requested.
+   * @param customerNumber The identifier of the user whose information is requested.
    * @param principal The authenticated OIDC user.
    *
-   * @return User information data transfer object containing all user details.
+   * @return A {@code ResponseEntity} containing a map with the card number if found, otherwise a not found response.
    *
    * @throws Exception If an error occurs during authentication or data retrieval.
    */
@@ -78,7 +76,7 @@ public class ApiSearchController
              })
   @GetMapping(
     produces = MediaType.APPLICATION_JSON_VALUE, path = "customer")
-  public ResponseEntity<Map<String,String>> customerNumber(
+  public ResponseEntity<Map<String, String>> customerNumber(
     @RequestHeader("SIGNATURE_PAD_UUID") String padUuid,
     @RequestParam("customer") String customerNumber,
     @AuthenticationPrincipal DefaultOidcUser principal
@@ -95,7 +93,7 @@ public class ApiSearchController
 
     if(cardNumber != null)
     {
-      Map<String,String> map = new HashMap<>();
+      Map<String, String> map = new HashMap<>();
       map.put("card", cardNumber);
       return ResponseEntity.ok(map);
     }
