@@ -7,7 +7,7 @@
  */
 
 import { createLogger } from './logger.js';
-import { fetchUserInfo, userInfo, fetchCardNumberByCustomerNumber, fetchPersons } from './userInfo.js';
+import { fetchUserInfo, userInfo, fetchPersons } from './userInfo.js';
 import { activateSignaturePad, resizeCanvas, signaturePad, padUuid } from './signaturePad.js';
 import { showAlert } from './alerts.js';
 
@@ -37,11 +37,11 @@ const btnSendCommonName = document.getElementById('btn-send-common-name');
 // --- State Variables ---
 var barcodeCounter = 0;
 var validBarcode = false;
-var cardNumber = null;
+var customerNumber = null;
 var uploadedFront = false;
 var uploadedBack = false;
 var scanIntervalId = null;
-var selectedCardNumber = null;
+var selectedCustomerNumber = null;
 
 /**
  * Handles input on the common-name-input field, triggering personSearch if the input
@@ -64,8 +64,8 @@ function handleCommonNameSelection() {
   const selectedOption = commonNameResults.options[commonNameResults.selectedIndex];
   if (selectedOption) {
     commonNameInput.value = selectedOption.text;
-    selectedCardNumber = selectedOption.value;
-    log.debug("Selected card number:", selectedCardNumber);
+    selectedCustomerNumber = selectedOption.value;
+    log.debug("Selected customer number:", selectedCustomerNumber);
     commonNameResults.classList.add('d-none'); // Hide results after selection
   }
 }
@@ -76,10 +76,15 @@ function handleCommonNameSelection() {
 function resetPage()
 {
   validBarcode = false;
-  cardNumber = null;
+  customerNumber = null;
   uploadedFront = false;
   uploadedBack = false;
-
+  
+  commonNameInput.value = '';
+  commonNameResults.innerHTML = '';
+  commonNameResults.classList.add('d-none');
+  selectedCustomerNumber = null;
+  
   clearPage();
 }
 
@@ -113,13 +118,15 @@ function showPhotoMsg(text, type)
  */
 function processCardNumber(code)
 {
+  log.debug("processCardNumber code=", code);
+  
   return fetchUserInfo(code, padUuid).then(_userInfo => {
     if (!validBarcode & (validBarcode = true))
     {
-      cardNumber = code;
+      customerNumber = code;
 
       barcodeCounter = barcodeCounter + 1;
-      log.debug("Barcode detected:", cardNumber);
+      log.debug("Number detected:", customerNumber);
       log.debug("processCardNumber");
       log.debug(userInfo);
 
@@ -127,6 +134,10 @@ function processCardNumber(code)
       {
         validBarcode = false;
         return Promise.reject(new Error(userInfo.status));
+      }
+      else
+      {
+        customerNumber = userInfo.customer;
       }
 
       stopScanner();
@@ -170,7 +181,7 @@ const scan = () => {
     {
       const detectedCardNumber = barcodes[0].rawValue;
       log.debug(detectedCardNumber);
-      const codePattern = /^\d{12}$/;
+      const codePattern = /^\d{10}$|^\d{12}$/;
       if (!validBarcode && codePattern.test(detectedCardNumber))
       {
         showMsg(`Code ${detectedCardNumber} erkannt, prüfe...`, 'info');
@@ -216,11 +227,16 @@ function handleSendBarcode()
   const barcodeInput = document.getElementById('library-barcode');
   const barcodeValue = barcodeInput.value;
 
+  log.debug("handleSendBarcode barcodeValue=", barcodeValue);
+
   // resetPage();
 
-  if (barcodeValue && barcodeValue.trim().length === 12)
+  if (barcodeValue && ( barcodeValue.trim().length === 8 
+          || barcodeValue.trim().length === 10 
+          || barcodeValue.trim().length === 12 ) )
   {
     const code = barcodeValue.trim();
+    log.debug(`Code ${code} wird geprüft...`);
     showMsg(`Code ${code} wird geprüft...`, 'info');
 
     processCardNumber(code)
@@ -230,33 +246,10 @@ function handleSendBarcode()
   }
   else
   {
-    showAlert("FEHLER", "Bitte gib einen gültigen Barcode ein.", "error");
+    showAlert("FEHLER", "Bitte gib eine gültige Nummer ein.", "error");
     showStartPage();
   }
 }
-
-/**
- * Handles the manual submission of the customer number from the input field.
- */
-function handleSendCustomerNumber()
-{
-  const customerNumber = document.getElementById('customer-number');
-  const customerNumberValue = customerNumber.value;
-
-  log.debug("handleSendCustomerNumber 2 : ", customerNumberValue);
-
-  const number = customerNumberValue.trim();
-  showMsg(`Code ${number} wird geprüft...`, 'info');
-
-  fetchCardNumberByCustomerNumber(customerNumberValue, padUuid).then(data => {
-    log.debug("data=", data);
-    return processCardNumber(data.card);
-  }).catch(error => {
-    showAlert("FEHLER", `${error.message} - Nummer nicht gefunden.`, "error");
-  });
-
-}
-
 
 /**
  * Checks if both front and back photos have been uploaded and shows the next button.
@@ -307,7 +300,7 @@ function uploadPhoto(side, file)
  */
 function handlePhoto(side, file)
 {
-  if (!cardNumber || !file)
+  if (!customerNumber || !file)
     return;
   const reader = new FileReader();
   reader.onload = e => {
@@ -412,7 +405,7 @@ function personSearch( query )
 
   // Clear previous results
   commonNameResults.innerHTML = '';
-  selectedCardNumber = null;
+  selectedCustomerNumber = null;
 
   fetchPersons(query, padUuid)
     .then(persons => {
@@ -420,7 +413,7 @@ function personSearch( query )
       if (persons && persons.length > 0) {
         persons.forEach(person => {
           const option = document.createElement('option');
-          option.value = person.barcodeNumber; // Use barcodeNumber as the value
+          option.value = person.customer; // Use customer number as the value
           option.textContent = `${person.firstname}, ${person.lastname}, ${person.birthday || ''}`; // Display name and birthday
           commonNameResults.appendChild(option);
         });
@@ -453,7 +446,6 @@ document.getElementById('btn-show-scanner').addEventListener('click', showScanne
 document.getElementById('btn-cancel-scan').addEventListener('click', showStartPage);
 document.getElementById('btn-cancel-photo').addEventListener('click', showStartPage);
 document.getElementById('btn-send-barcode').addEventListener('click', handleSendBarcode);
-document.getElementById('btn-send-customer-number').addEventListener('click', handleSendCustomerNumber);
 document.getElementById('btn-next').addEventListener('click', showSignaturePad);
 document.addEventListener('signatureSubmitted', showStartPage);
 
@@ -465,13 +457,13 @@ btnClearCommonName.addEventListener('click', () => {
   commonNameInput.value = '';
   commonNameResults.innerHTML = '';
   commonNameResults.classList.add('d-none');
-  selectedCardNumber = null;
+  selectedCustomerNumber = null;
 });
 
 btnSendCommonName.addEventListener('click', () => {
-  if (selectedCardNumber) {
-    log.debug("Sending selected card number:", selectedCardNumber);
-    processCardNumber(selectedCardNumber)
+  if (selectedCustomerNumber) {
+    log.debug("Sending selected customer number:", selectedCustomerNumber);
+    processCardNumber(selectedCustomerNumber)
             .catch(error => {
               showAlert("FEHLER", `${error.message}`, "error");
             });

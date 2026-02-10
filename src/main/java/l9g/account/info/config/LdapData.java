@@ -67,8 +67,6 @@ public class LdapData
      */
     private String filter;
 
-    private String filterCustomerNumber;
-
     private String filterCommonName;
 
     /**

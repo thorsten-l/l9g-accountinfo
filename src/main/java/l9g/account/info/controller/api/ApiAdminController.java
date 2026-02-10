@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import l9g.account.info.db.DbService;
 import l9g.account.info.db.model.SdbSecretData;
@@ -190,6 +189,14 @@ public class ApiAdminController
     return ResponseEntity.notFound().build();
   }
 
+  private void putIfNotNull(Map<String, Object> map, String key, Object object)
+  {
+    if(object != null)
+    {
+      map.put(key, object);
+    }
+  }
+
   /**
    * Retrieves user information as a JSON object from the database by its ID.
    * This endpoint processes a JWT stored in the database to extract user details.
@@ -234,7 +241,7 @@ public class ApiAdminController
       {
         log.debug("jwt json = {}", signedJWT.getJWTClaimsSet().toJSONObject());
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new LinkedHashMap<>();
 
         Object publisherObj = objectMapper.readValue(
           signedJWT.getJWTClaimsSet().getClaimAsString("publisher"),
@@ -246,7 +253,10 @@ public class ApiAdminController
         map.put("sigpad", signedJWT.getJWTClaimsSet().getClaimAsString("sigpad"));
         map.put("iss", signedJWT.getJWTClaimsSet().getClaimAsString("iss"));
         map.put("name", signedJWT.getJWTClaimsSet().getClaimAsString("name"));
-        map.put("cardnumber", signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"));
+        putIfNotNull(map, "birthday", signedJWT.getJWTClaimsSet().getClaimAsString("birthday"));
+        putIfNotNull(map, "barcode", signedJWT.getJWTClaimsSet().getClaimAsString("barcode"));
+        map.put("customer", signedJWT.getJWTClaimsSet().getClaimAsString("customer"));
+        map.put("employee-type", signedJWT.getJWTClaimsSet().getClaimAsString("employeetype"));
         map.put("publisher", publisherObj);
         Date iat = (Date)signedJWT.getJWTClaimsSet().getClaim("iat");
         map.put("iat", iat.getTime() / 1000);
@@ -362,7 +372,7 @@ public class ApiAdminController
 
     return ResponseEntity.notFound().build();
   }
-  
+
   /**
    * Retrieves a list of signatures.
    * Requires administrator privileges.

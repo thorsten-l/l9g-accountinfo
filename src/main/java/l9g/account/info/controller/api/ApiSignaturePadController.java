@@ -449,14 +449,14 @@ public class ApiSignaturePadController
       log.debug("name={}", signedJWT.getJWTClaimsSet().getClaimAsString("name"));
       log.debug("mail={}", signedJWT.getJWTClaimsSet().getClaimAsString("mail"));
       log.debug("issuetype={}", signedJWT.getJWTClaimsSet().getClaimAsString("issuetype"));
-      log.debug("cardnumber={}", signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"));
+      log.debug("customer={}", signedJWT.getJWTClaimsSet().getClaimAsString("customer"));
       log.debug("publisher={}", signedJWT.getJWTClaimsSet().getClaim("publisher"));
 
       dbService.saveSignedJWT(signedJWT);
 
-      ldapService.saveCardInfoByCardnumber(
+      ldapService.saveCardInfoByCustomerNumber(
         IssueType.fromString(signedJWT.getJWTClaimsSet().getClaimAsString("issuetype")),
-        signedJWT.getJWTClaimsSet().getClaimAsString("cardnumber"),
+        signedJWT.getJWTClaimsSet().getClaimAsString("customer"),
         principal.getFullName() + ", " + principal.getPreferredUsername(),
         request.getRemoteAddr(), padUuid, signedJWT.getJWTClaimsSet().getClaimAsString("sigpad")
       );

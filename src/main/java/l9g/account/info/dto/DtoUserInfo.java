@@ -39,7 +39,11 @@ public record DtoUserInfo(
   @Schema(description = "User's birth date as string (format might vary, e.g., YYYY-MM-DD)")
   String birthday,
   @Schema(description = "User's chipcard barcode number")
-  String barcodeNumber,
+  String barcode,
+  @Schema(description = "User's customer number")
+  String customer,
+  @Schema(description = "User's employee type number")
+  String employeeType,
   @Schema(description = "Semester or temporary address information")
   DtoAddress semester,
   @Schema(description = "Home address information")
@@ -55,12 +59,12 @@ public record DtoUserInfo(
    */
   public DtoUserInfo(String status)
   {
-    this(status, null, null, null, null, null, null, null, null, null);
+    this(status, null, null, null, null, null, null, null, null, null, null, null);
   }
   
-  public DtoUserInfo(String fristname, String lastname, String birthday, String barcodeNumber)
+  public DtoUserInfo(String fristname, String lastname, String birthday, String barcode, String customer)
   {
-    this("OK", null, fristname, lastname, null, null, birthday, barcodeNumber, null, null);
+    this("OK", null, fristname, lastname, null, null, birthday, barcode, customer, null, null, null);
   }
 
 }

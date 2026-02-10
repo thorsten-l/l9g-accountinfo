@@ -26,12 +26,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import l9g.account.info.dto.DtoUserInfo;
 import org.springframework.http.ResponseEntity;
 
@@ -55,54 +51,6 @@ public class ApiSearchController
    * Service for interacting with LDAP (Lightweight Directory Access Protocol) directory.
    */
   private final LdapService ldapService;
-
-  /**
-   * Retrieves card number for the specified customer number.
-   *
-   * @param padUuid The unique identifier of the requesting signature pad.
-   * @param customerNumber The identifier of the user whose information is requested.
-   * @param principal The authenticated OIDC user.
-   *
-   * @return A {@code ResponseEntity} containing a map with the card number if found, otherwise a not found response.
-   *
-   * @throws Exception If an error occurs during authentication or data retrieval.
-   */
-  @Operation(summary = "Retrieve cardnumber from customer number",
-             description = "Retrieve cardnumber from customer number.",
-             responses =
-             {
-               @ApiResponse(responseCode = "200", description = "Cardnumber successfully retrieved"),
-               @ApiResponse(responseCode = "401", description = "Unauthorized if signature pad is not authenticated"),
-               @ApiResponse(responseCode = "404", description = "Customer not found"),
-               @ApiResponse(responseCode = "500", description = "Internal server error")
-             })
-  @GetMapping(
-    produces = MediaType.APPLICATION_JSON_VALUE, path = "customer")
-  public ResponseEntity<Map<String, String>> customerNumber(
-    @RequestHeader("SIGNATURE_PAD_UUID") String padUuid,
-    @RequestParam("customer") String customerNumber,
-    @AuthenticationPrincipal DefaultOidcUser principal
-  )
-    throws Exception
-  {
-    log.debug("customerNumber called for customer number '{}'", customerNumber);
-    log.debug("principal={}", principal);
-
-    // Authenticate signature pad
-    authService.authCheck(padUuid, true);
-
-    String cardNumber = ldapService.findCardNumberByCustomerNumber(customerNumber);
-
-    if(cardNumber != null)
-    {
-      Map<String, String> map = new HashMap<>();
-      map.put("card", cardNumber);
-      return ResponseEntity.ok(map);
-    }
-
-    return ResponseEntity.notFound().build();
-  }
-
 
   @GetMapping(
     produces = MediaType.APPLICATION_JSON_VALUE, path = "person")

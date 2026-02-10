@@ -84,28 +84,15 @@ limitations under the License.
 
         <div class="card mt-2">
           <div class="card-header fs-4">
-            Bibliotheks-Barcode
+            Kundennummer / Matrikelnummer / Barcode
           </div>
           <div class="card-body">
-            <input type="number" class="form-control form-control-lg" id="library-barcode" placeholder="12-stelligen Barcode">
+            <input type="number" class="form-control form-control-lg" id="library-barcode" placeholder="Nummer eingeben">
           </div>
           <div class="card-footer">
             <button type="button" class="btn btn-secondary btn-lg me-2" onclick="document.getElementById('library-barcode').value = ''"><i class="fas fa-eraser"></i> Löschen</button>
             <button type="button" class="btn btn-primary btn-lg me-2" id="btn-send-barcode"><i class="fas fa-paper-plane"></i> Senden</button>
             <button type="button" class="btn btn-info btn-lg" id="btn-show-scanner"><i class="fas fa-barcode"></i> Barcodescanner</button>
-          </div>
-        </div>
-
-        <div class="card mt-3">
-          <div class="card-header fs-4">
-            Kundennummer / Matrikelnummer / PID
-          </div>
-          <div class="card-body">
-            <input type="number" class="form-control form-control-lg" id="customer-number" placeholder="Kundennummer / Matrikelnummer / PID">
-          </div>
-          <div class="card-footer">
-            <button type="button" class="btn btn-secondary btn-lg me-2" onclick="document.getElementById('customer-number').value = ''"><i class="fas fa-eraser"></i> Löschen</button>
-            <button type="button" class="btn btn-primary btn-lg me-2" id="btn-send-customer-number"><i class="fas fa-paper-plane"></i> Senden</button>
           </div>
         </div>
 
@@ -128,7 +115,7 @@ limitations under the License.
 
       <!-- 1. Scanner-Section -->
       <div id="scanner" class="d-none">
-        <p class="fs-4">Smartcard Barcode einlesen:</p>
+        <p class="fs-4">Barcode einlesen:</p>
         <div class="card-viewfinder">
           <video id="video" autoplay muted playsinline></video>
         </div>

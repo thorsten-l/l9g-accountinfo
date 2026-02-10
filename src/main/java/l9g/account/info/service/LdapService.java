@@ -223,14 +223,14 @@ public class LdapService
    *
    * @throws LDAPException If an LDAP-specific error occurs during the search.
    */
-  public SearchResultEntry findUserEntryByCardNumber(
+  public SearchResultEntry findUserEntryByCustomerNumber(
     LDAPConnection connection, String cardNumber)
     throws LDAPException
   {
     SearchResultEntry entry = null;
 
     LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
-    String filter = String.format(userConfig.getFilter(), cardNumber);
+    String filter = String.format(userConfig.getFilter(), cardNumber, cardNumber, cardNumber, cardNumber);
     log.debug("LDAP filter: {}", filter);
 
     SearchRequest searchRequest = new SearchRequest(
@@ -281,6 +281,9 @@ public class LdapService
       String uid = mapAttributeValue(entry, map, "username");
       String mail = mapAttributeValue(entry, map, "mail");
       String birthday = mapAttributeValue(entry, map, "birthday");
+      String barcode = mapAttributeValue(entry, map, "barcode");
+      String customer = mapAttributeValue(entry, map, "customer");
+      String employeeType = mapAttributeValue(entry, map, "employee-type");
 
       String localityBaseDn = String.format(localityConfig.getBaseDn(), entry.getDN());
 
@@ -312,7 +315,7 @@ public class LdapService
       }
 
       userInfo = new DtoUserInfo(status, jpegPhoto, firstname, lastname, uid,
-        mail, birthday, null, semester, home);
+        mail, birthday, barcode, customer, employeeType, semester, home);
     }
 
     return userInfo;
@@ -322,83 +325,34 @@ public class LdapService
    * Retrieves comprehensive user information as a {@link DtoUserInfo} object based on a card number.
    * This method performs LDAP searches for user and locality data using configured filters and attributes.
    *
-   * @param cardNumber The card number to search for.
+   * @param customerNumber The card number to search for.
    *
    * @return A {@link DtoUserInfo} object containing the user's details, or null if the user is not found.
    *
    * @throws Exception If an error occurs during LDAP connection, search, or data processing.
    */
-  public DtoUserInfo findUserInfoByCardNumber(String cardNumber)
+  public DtoUserInfo findUserInfoByCustomerNumber(String customerNumber)
     throws Exception
   {
-    log.debug("searching for cardnumber {} within ldap.", cardNumber);
+    log.debug("searching for customerNumber {} within ldap.", customerNumber);
     log.debug("ldapDataConfig={}", ldapDataConfig);
     DtoUserInfo userInfo = null;
 
     try(LDAPConnection connection = getConnection())
     {
-      SearchResultEntry entry = findUserEntryByCardNumber(connection, cardNumber);
+      SearchResultEntry entry = findUserEntryByCustomerNumber(connection, customerNumber);
       log.debug("entry={}", entry);
       userInfo = userInfoFromEntry(connection, entry);
     }
     catch(Exception e)
     {
       log.error("Error during LDAP search for cardNumber {}: {}",
-        cardNumber, e.getMessage());
+        customerNumber, e.getMessage());
       throw e;
     }
 
     log.debug("userInfo={}", userInfo);
     return userInfo;
-  }
-
-  /**
-   * Searches the LDAP directory for a card number associated with a given customer number.
-   * This method uses a specific filter to query user entries by customer number.
-   *
-   * @param customerNumber The customer number to search for.
-   *
-   * @return The card number as a {@code String} if a matching user is found, otherwise {@code null}.
-   *
-   * @throws Exception If an error occurs during LDAP connection or search operations.
-   */
-  public String findCardNumberByCustomerNumber(String customerNumber)
-    throws Exception
-  {
-    log.debug("searching for customer number {} within ldap.", customerNumber);
-    log.debug("ldapDataConfig={}", ldapDataConfig);
-    String cardNumber = null;
-
-    try(LDAPConnection connection = getConnection())
-    {
-
-      LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
-      String filter = String.format(userConfig.getFilterCustomerNumber(), customerNumber, customerNumber, customerNumber);
-      log.debug("LDAP filter: {}", filter);
-
-      SearchRequest searchRequest = new SearchRequest(
-        userConfig.getBaseDn(), scopeFromString(userConfig.getScope()),
-        filter, userConfig.getAttributes().values().toArray(String[] :: new)
-      );
-      log.debug("searchRequest={}", searchRequest);
-
-      SearchResult searchResult = connection.search(searchRequest);
-
-      if(searchResult.getEntryCount() == 1)
-      {
-        SearchResultEntry entry = searchResult.getSearchEntries().getFirst();
-        cardNumber = mapAttributeValue(entry, userConfig.getAttributes(), "barcode");
-      }
-    }
-    catch(Exception e)
-    {
-      log.error("Error during LDAP search for customer number {}: {}",
-        customerNumber, e.getMessage());
-      throw e;
-    }
-
-    log.debug("cardNumber={}", cardNumber);
-    return cardNumber;
   }
 
   public List<DtoUserInfo> listPersons(String query)
@@ -445,7 +399,8 @@ public class LdapService
             mapAttributeValue(entry, userConfig.getAttributes(), "firstname"),
             mapAttributeValue(entry, userConfig.getAttributes(), "lastname"),
             mapAttributeValue(entry, userConfig.getAttributes(), "birthday"),
-            mapAttributeValue(entry, userConfig.getAttributes(), "barcode")
+            mapAttributeValue(entry, userConfig.getAttributes(), "barcode"),
+            mapAttributeValue(entry, userConfig.getAttributes(), "customer")
           ));
         }
       }
@@ -467,7 +422,7 @@ public class LdapService
    * related to card issuance and user activity log.
    *
    * @param issueType The issue type ACCOUNT, ACCOUNT_CARD, CARD.
-   * @param cardNumber The card number of the user.
+   * @param customerNumber The card number of the user.
    * @param publisher The publisher of the update, typically the authenticated user.
    * @param remoteIp The IP address of the client initiating the request.
    * @param padUuid The UUID of the signature pad used for the operation.
@@ -476,11 +431,11 @@ public class LdapService
    * @throws Exception If an error occurs during LDAP connection, search, or modification.
    * @throws IllegalStateException If a required LDAP attribute mapping is missing or the user is not found.
    */
-  public void saveCardInfoByCardnumber(IssueType issueType, String cardNumber,
+  public void saveCardInfoByCustomerNumber(IssueType issueType, String customerNumber,
     String publisher, String remoteIp, String padUuid, String padName)
     throws Exception
   {
-    log.debug("saveCardInfoByCardnumber: {} / {} / {}", issueType, cardNumber, publisher);
+    log.debug("saveCardInfoByCardnumber: {} / {} / {}", issueType, customerNumber, publisher);
 
     LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
     Map<String, String> attributesMap = userConfig.getAttributes();
@@ -488,10 +443,10 @@ public class LdapService
     try(LDAPConnection connection = getConnection())
     {
 
-      SearchResultEntry entry = findUserEntryByCardNumber(connection, cardNumber);
+      SearchResultEntry entry = findUserEntryByCustomerNumber(connection, customerNumber);
       if(entry == null)
       {
-        throw new IllegalStateException("User not found for cardNumber=" + cardNumber);
+        throw new IllegalStateException("User not found for customerNumber=" + customerNumber);
       }
 
       String dn = entry.getDN();
@@ -516,8 +471,12 @@ public class LdapService
 
       List<Modification> mods = new ArrayList<>(4);
 
+      String barcode = mapAttributeValue(entry, attributesMap, "barcode");
+      
       if(IssueType.ACCOUNT != issueType)
       {
+        if ( barcode != null && barcode.length() > 0 )
+        {
         log.debug("modify chipcard attributes");
         String attrIssued = attributesMap.get("chipcard-is-issued");
         String attrIssuedBy = attributesMap.get("chipcard-is-issued-by");
@@ -530,6 +489,11 @@ public class LdapService
         mods.add(new Modification(ModificationType.REPLACE, attrIssued, "true"));
         mods.add(new Modification(ModificationType.REPLACE, attrIssuedBy, Objects.toString(publisher, "")));
         mods.add(new Modification(ModificationType.REPLACE, attrIssuedTs, Long.toString(nowMs)));
+        }
+        else
+        {
+          log.warn("user as no chipcard barccode : {}", dn);
+        }
       }
 
       log.debug("modify (add) user-log");
@@ -544,7 +508,7 @@ public class LdapService
     }
     catch(Exception e)
     {
-      log.error("Error during LDAP modify for cardNumber {}: {}", cardNumber, e.getMessage(), e);
+      log.error("Error during LDAP modify for cardNumber {}: {}", customerNumber, e.getMessage(), e);
       throw e;
     }
   }

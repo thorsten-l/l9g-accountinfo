@@ -89,7 +89,7 @@ public class ApiUserInfoController
     // Authenticate signature pad
     authService.authCheck(padUuid, true);
 
-    DtoUserInfo userInfo = ldapService.findUserInfoByCardNumber(cardNumber);
+    DtoUserInfo userInfo = ldapService.findUserInfoByCustomerNumber(cardNumber);
     if(userInfo != null)
     {
       return userInfo;
