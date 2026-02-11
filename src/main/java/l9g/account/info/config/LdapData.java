@@ -67,7 +67,15 @@ public class LdapData
      */
     private String filter;
 
+    /**
+     * The LDAP filter expression to apply to the person search.
+     */
     private String filterCommonName;
+    
+    /**
+     * User attribute enabled = value
+     */
+    private String enabledValue;
 
     /**
      * A map of attributes to retrieve from the LDAP entries, mapping desired names to LDAP attribute names.

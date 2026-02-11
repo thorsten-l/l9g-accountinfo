@@ -472,28 +472,42 @@ public class LdapService
       List<Modification> mods = new ArrayList<>(4);
 
       String barcode = mapAttributeValue(entry, attributesMap, "barcode");
-      
+
       if(IssueType.ACCOUNT != issueType)
       {
-        if ( barcode != null && barcode.length() > 0 )
+        if(barcode != null && barcode.length() > 0)
         {
-        log.debug("modify chipcard attributes");
-        String attrIssued = attributesMap.get("chipcard-is-issued");
-        String attrIssuedBy = attributesMap.get("chipcard-is-issued-by");
-        String attrIssuedTs = attributesMap.get("chipcard-is-issued-timestamp");
+          log.debug("modify chipcard attributes");
+          String attrIssued = attributesMap.get("chipcard-is-issued");
+          String attrIssuedBy = attributesMap.get("chipcard-is-issued-by");
+          String attrIssuedTs = attributesMap.get("chipcard-is-issued-timestamp");
 
-        requireAttr(attrIssued, "chipcard-is-issued");
-        requireAttr(attrIssuedBy, "chipcard-is-issued-by");
-        requireAttr(attrIssuedTs, "chipcard-is-issued-timestamp");
+          requireAttr(attrIssued, "chipcard-is-issued");
+          requireAttr(attrIssuedBy, "chipcard-is-issued-by");
+          requireAttr(attrIssuedTs, "chipcard-is-issued-timestamp");
 
-        mods.add(new Modification(ModificationType.REPLACE, attrIssued, "true"));
-        mods.add(new Modification(ModificationType.REPLACE, attrIssuedBy, Objects.toString(publisher, "")));
-        mods.add(new Modification(ModificationType.REPLACE, attrIssuedTs, Long.toString(nowMs)));
+          mods.add(new Modification(ModificationType.REPLACE,
+            attrIssued, "true"));
+          mods.add(new Modification(ModificationType.REPLACE,
+            attrIssuedBy, Objects.toString(publisher, "")));
+          mods.add(new Modification(ModificationType.REPLACE,
+            attrIssuedTs, Long.toString(nowMs)));
         }
         else
         {
           log.warn("user as no chipcard barccode : {}", dn);
         }
+      }
+
+      String enabledAttribute = userConfig.getAttributes().get("enabled");
+      String enabledValue = userConfig.getEnabledValue();
+
+      if(enabledAttribute != null &&  ! enabledAttribute.isBlank()
+        && enabledValue != null &&  ! enabledValue.isBlank())
+      {
+        log.debug("enable user");
+        mods.add(new Modification(ModificationType.REPLACE,
+          enabledAttribute, enabledValue));
       }
 
       log.debug("modify (add) user-log");
