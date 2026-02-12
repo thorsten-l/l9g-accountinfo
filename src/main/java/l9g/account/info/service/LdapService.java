@@ -502,17 +502,24 @@ public class LdapService
       String enabledAttribute = userConfig.getAttributes().get("enabled");
       String enabledValue = userConfig.getEnabledValue();
 
+      log.debug("modify (add) user-log");
+      String attrUserLog = attributesMap.get("user-log");
+      requireAttr(attrUserLog, "user-log");
+
       if(enabledAttribute != null &&  ! enabledAttribute.isBlank()
         && enabledValue != null &&  ! enabledValue.isBlank())
       {
         log.debug("enable user");
         mods.add(new Modification(ModificationType.REPLACE,
           enabledAttribute, enabledValue));
+
+        String enabledlogLine = nowMs + "|" + remoteIp + "|" + publisher
+          + "|accountinfo|<b>account enabled</b> using device: '"
+          + padName + " (" + padUuid + ")'";
+        mods.add(new Modification(
+          ModificationType.ADD, attrUserLog, enabledlogLine));
       }
 
-      log.debug("modify (add) user-log");
-      String attrUserLog = attributesMap.get("user-log");
-      requireAttr(attrUserLog, "user-log");
       mods.add(new Modification(ModificationType.ADD, attrUserLog, logLine));
 
       ModifyRequest modifyRequest = new ModifyRequest(dn, mods);
