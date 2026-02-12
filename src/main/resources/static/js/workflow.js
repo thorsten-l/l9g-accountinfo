@@ -42,27 +42,51 @@ var uploadedFront = false;
 var uploadedBack = false;
 var scanIntervalId = null;
 var selectedCustomerNumber = null;
+var currentAbortController = null;
+var debounceTimer = null;
 
 /**
  * Handles input on the common-name-input field, triggering personSearch if the input
  * length is 5 or more.
  */
-function handleCommonNameInput() {
+function handleCommonNameInput()
+{
   const input = commonNameInput.value.trim();
-  if (input.length >= 5) {
-    personSearch(input);
-  } else {
+  clearTimeout(debounceTimer);
+
+  if (input.length < 5)
+  {
+    if (currentAbortController)
+    {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
     commonNameResults.classList.add('d-none'); // Hide results if input is too short
     commonNameResults.innerHTML = ''; // Clear previous results
+    return;
   }
+
+  // Debounce: 300ms warten, dann erst AbortController erzeugen und suchen
+  debounceTimer = setTimeout(() => {
+    if (currentAbortController)
+    {
+      currentAbortController.abort();
+    }
+
+    currentAbortController = new AbortController();
+    personSearch(input, currentAbortController);
+  }, 300);
+
 }
 
 /**
  * Handles selection from the common-name-results dropdown.
  */
-function handleCommonNameSelection() {
+function handleCommonNameSelection()
+{
   const selectedOption = commonNameResults.options[commonNameResults.selectedIndex];
-  if (selectedOption) {
+  if (selectedOption)
+  {
     commonNameInput.value = selectedOption.text;
     selectedCustomerNumber = selectedOption.value;
     log.debug("Selected customer number:", selectedCustomerNumber);
@@ -79,12 +103,12 @@ function resetPage()
   customerNumber = null;
   uploadedFront = false;
   uploadedBack = false;
-  
+
   commonNameInput.value = '';
   commonNameResults.innerHTML = '';
   commonNameResults.classList.add('d-none');
   selectedCustomerNumber = null;
-  
+
   clearPage();
 }
 
@@ -119,7 +143,7 @@ function showPhotoMsg(text, type)
 function processCardNumber(code)
 {
   log.debug("processCardNumber code=", code);
-  
+
   return fetchUserInfo(code, padUuid).then(_userInfo => {
     if (!validBarcode & (validBarcode = true))
     {
@@ -231,9 +255,9 @@ function handleSendBarcode()
 
   // resetPage();
 
-  if (barcodeValue && ( barcodeValue.trim().length === 8 
-          || barcodeValue.trim().length === 10 
-          || barcodeValue.trim().length === 12 ) )
+  if (barcodeValue && (barcodeValue.trim().length === 8
+          || barcodeValue.trim().length === 10
+          || barcodeValue.trim().length === 12))
   {
     const code = barcodeValue.trim();
     log.debug(`Code ${code} wird geprüft...`);
@@ -399,37 +423,53 @@ function showSignaturePad()
   resizeCanvas();
 }
 
-function personSearch( query )
+function personSearch(query, abortController)
 {
   log.debug("personSearch query=", query);
 
-  // Clear previous results
-  commonNameResults.innerHTML = '';
-  selectedCustomerNumber = null;
+  fetchPersons(query, padUuid, abortController.signal).then(persons => {
 
-  fetchPersons(query, padUuid)
-    .then(persons => {
-      log.debug("personSearch - persons:", persons);
-      if (persons && persons.length > 0) {
-        persons.forEach(person => {
-          const option = document.createElement('option');
-          option.value = person.customer; // Use customer number as the value
-          option.textContent = `${person.firstname}, ${person.lastname}, ${person.birthday || ''}`; // Display name and birthday
-          commonNameResults.appendChild(option);
-        });
-        log.debug("personSearch - Removing 'd-none' class from commonNameResults.");
-        commonNameResults.classList.remove('d-none');
-      } else {
-        log.debug("personSearch - Adding 'd-none' class to commonNameResults.");
-        commonNameResults.classList.add('d-none');
-      }
-    })
-    .catch(error => {
-      log.error("personSearch - Error fetching persons:", error);
+    if (abortController.signal.aborted)
+    {
+      return;
+    }
+
+    log.debug("personSearch - persons:", persons);
+
+    // Clear previous results
+    commonNameResults.innerHTML = '';
+    selectedCustomerNumber = null;
+
+    if (persons && persons.length > 0)
+    {
+      persons.forEach(person => {
+        const option = document.createElement('option');
+        option.value = person.customer; // Use customer number as the value
+        option.textContent = `${person.firstname}, ${person.lastname}, ${person.birthday || ''}`; // Display name and birthday
+        commonNameResults.appendChild(option);
+      });
+      log.debug("personSearch - Removing 'd-none' class from commonNameResults.");
+      commonNameResults.classList.remove('d-none');
+    }
+    else
+    {
+      log.debug("personSearch - Adding 'd-none' class to commonNameResults.");
       commonNameResults.classList.add('d-none');
-      commonNameResults.innerHTML = '';
-      showAlert("FEHLER", `Personensuche fehlgeschlagen: ${error.message}`, "error");
-    });
+    }
+  }).catch(error => {
+
+    if (error.name === 'AbortError')
+    {
+      log.debug("personSearch - Request aborted (superseded by newer request)");
+      return;
+    }
+
+    log.error("personSearch - Error fetching persons:", error);
+
+    commonNameResults.classList.add('d-none');
+    commonNameResults.innerHTML = '';
+    showAlert("FEHLER", `Personensuche fehlgeschlagen: ${error.message}`, "error");
+  });
 }
 
 log.info("workflow started - log level: " + jsLogLevel);
@@ -461,13 +501,16 @@ btnClearCommonName.addEventListener('click', () => {
 });
 
 btnSendCommonName.addEventListener('click', () => {
-  if (selectedCustomerNumber) {
+  if (selectedCustomerNumber)
+  {
     log.debug("Sending selected customer number:", selectedCustomerNumber);
     processCardNumber(selectedCustomerNumber)
             .catch(error => {
               showAlert("FEHLER", `${error.message}`, "error");
             });
-  } else {
+  }
+  else
+  {
     showAlert("FEHLER", "Bitte wähle einen Namen aus der Liste aus.", "error");
   }
 });

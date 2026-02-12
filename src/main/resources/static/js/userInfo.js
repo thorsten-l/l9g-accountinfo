@@ -78,14 +78,15 @@ export function fetchCardNumberByCustomerNumber(customerNumber, padUuid)
 }
 
 
-export function fetchPersons(query, padUuid)
+export function fetchPersons(query, padUuid, signal)
 {
   return fetch(`/api/v1/search/person?query=${encodeURIComponent(query)}`, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
       'SIGNATURE_PAD_UUID': padUuid
-    }
+    },
+    signal: signal
   }).then(response => {
     if (!response.ok)
     {
