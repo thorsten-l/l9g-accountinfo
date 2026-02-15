@@ -14,7 +14,7 @@
   
   <groupId>l9g.webapp</groupId>
   <artifactId>l9g-accountinfo</artifactId>
-  <version>1.5.5</version>
+  <version>1.6.0</version>
   <name>L9G Account Info</name>
   <description>Issue Account Information</description>
   
