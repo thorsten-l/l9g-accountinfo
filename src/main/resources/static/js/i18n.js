@@ -18,9 +18,6 @@
 // -- I18N --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-import { createLogger } from './logger.js';
-const log = createLogger("i18n");
-
 export const defaultLang = 'de';
 export let dict = {};
 
@@ -67,7 +64,7 @@ export async function switchLang(lang)
   }
   catch (e)
   {
-    log.error(e);
+    console.error(e);
   }
 }
 

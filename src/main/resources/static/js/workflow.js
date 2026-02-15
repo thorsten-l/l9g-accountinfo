@@ -468,7 +468,7 @@ function personSearch(query, abortController)
 
     commonNameResults.classList.add('d-none');
     commonNameResults.innerHTML = '';
-    showAlert("FEHLER", `Personensuche fehlgeschlagen: ${error.message}`, "error");
+    // showAlert("FEHLER", `Personensuche fehlgeschlagen: ${error.message}`, "error");
   });
 }
 
