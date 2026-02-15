@@ -114,6 +114,8 @@ public class SignaturePadController
       session.setAttribute("ISSUE_TYPE", issueType);
     }
 
+    log.info("PAD_START: {}, {}, {}", request.getSession(true).getId(), principal.getName(), issueType.getIssueType());
+    
     Map<String, String> publisher = new HashMap<>();
     publisher.put("name", principal.getFullName());
     publisher.put("username", principal.getPreferredUsername());

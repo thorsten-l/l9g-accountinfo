@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * REST API controller for user information retrieval.
@@ -79,10 +80,13 @@ public class ApiUserInfoController
   public DtoUserInfo userinfo(
     @RequestHeader("SIGNATURE_PAD_UUID") String padUuid,
     @RequestParam("card") String cardNumber,
+    HttpServletRequest request,
     @AuthenticationPrincipal DefaultOidcUser principal
   )
     throws Exception
   {
+    log.info("USER_SEARCH: {}, {}, {}, {}", request.getSession(true).getId(), 
+      principal.getName(), padUuid, cardNumber);
     log.debug("userinfo called for card number '{}'", cardNumber);
     log.debug("principal={}", principal);
 
@@ -92,6 +96,9 @@ public class ApiUserInfoController
     DtoUserInfo userInfo = ldapService.findUserInfoByCustomerNumber(cardNumber);
     if(userInfo != null)
     {
+      log.info("USER_FOUND: {}, {}, {}, {}, {}, {}", request.getSession(true).getId(), 
+              principal.getName(), padUuid, userInfo.customer(), 
+              userInfo.barcode(), userInfo.uid());
       return userInfo;
     }
 

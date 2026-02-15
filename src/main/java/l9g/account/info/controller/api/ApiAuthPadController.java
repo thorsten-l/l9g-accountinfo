@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -46,11 +47,11 @@ public class ApiAuthPadController
   @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<String> personList(
     @RequestHeader("SIGNATURE_PAD_UUID") String padUuid,
-    @AuthenticationPrincipal DefaultOidcUser principal
+    @AuthenticationPrincipal DefaultOidcUser principal, HttpServletRequest request
   )
     throws Exception
   {
-    log.info("principal={}, padUuid={}", principal, padUuid);
+    log.info("PAD_AUTH: {}, {}, {}", request.getSession(true).getId(), principal.getName(), padUuid);
 
     authService.authCheck(padUuid, true);
 

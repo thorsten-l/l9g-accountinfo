@@ -440,8 +440,8 @@ public class ApiSignaturePadController
         .withZone(ZoneId.of("Europe/Berlin"));
       String iatReadable = fmt.format(iatInstant);
 
-      log.info("JWT verified. Issuer: {} / {}", issuer, kid);
-      log.info("Issued At (iat): {} (epoch: {})", iatReadable, iatEpoch);
+      log.debug("JWT verified. Issuer: {} / {}", issuer, kid);
+      log.debug("Issued At (iat): {} (epoch: {})", iatReadable, iatEpoch);
       log.debug("sub={}", signedJWT.getJWTClaimsSet().getSubject());
       log.debug("sigpng length: {}, sigsvg length: {}",
         sigpngBase64.length(), sigsvgBase64.length());
@@ -459,6 +459,12 @@ public class ApiSignaturePadController
         signedJWT.getJWTClaimsSet().getClaimAsString("customer"),
         principal.getFullName() + ", " + principal.getPreferredUsername(),
         request.getRemoteAddr(), padUuid, signedJWT.getJWTClaimsSet().getClaimAsString("sigpad")
+      );
+
+      log.info("SIGNATURE_OK: {}, {}, {}, {}, {}",
+        request.getSession(true).getId(), principal.getName(), padUuid,
+        signedJWT.getJWTClaimsSet().getSubject(),
+        signedJWT.getJWTClaimsSet().getClaimAsString("issuetype")
       );
 
       // Notify waiting client with signature data
@@ -520,12 +526,18 @@ public class ApiSignaturePadController
                produces = MediaType.APPLICATION_JSON_VALUE)
   public void cancel(
     @RequestHeader("SIGNATURE_PAD_UUID") String padUuid,
-    @RequestBody Map<String, Object> json
+    @RequestBody Map<String, Object> json,
+    HttpServletRequest request,
+    @AuthenticationPrincipal DefaultOidcUser principal
   )
     throws IOException
   {
     log.debug("cancel button pressed");
-    log.info("json: {}", json);
+    log.debug("json: {}", json);
+
+    log.info("SIGNATURE_CANCEL: {}, {}, {}, {}",
+      request.getSession(true).getId(), principal.getName(), padUuid, json.get("userId")
+    );
 
     // Authenticate signature pad
     authService.authCheck(padUuid, true);

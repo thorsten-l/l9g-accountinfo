@@ -272,7 +272,7 @@ public class DbService
    * @throws JsonProcessingException If there is an error processing JSON.
    * @throws IOException If an I/O error occurs during file processing.
    */
-  public void saveSecretFileData(String publisher, String fullname,
+  public SdbSecretData saveSecretFileData(String publisher, String fullname,
     String username, String mail, String padUuid, String side, MultipartFile file)
     throws JsonProcessingException, IOException
   {
@@ -290,6 +290,7 @@ public class DbService
 
     sdbSecretDataRepository.save(data);
     fileStorageService.save(data);
+    return data;
   }
 
   /**

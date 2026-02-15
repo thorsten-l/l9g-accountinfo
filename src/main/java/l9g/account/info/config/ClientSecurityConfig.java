@@ -181,6 +181,20 @@ public class ClientSecurityConfig
     return (HttpServletRequest request, HttpServletResponse response,
       Authentication authentication) ->
     {
+      String sessionId = "no-session";
+      if (request.getSession(false) != null)
+      {
+        sessionId = request.getSession().getId();
+      }
+
+      String username = "anonymous";
+      if (authentication != null
+        && authentication.getPrincipal() instanceof OidcUser oidcUser)
+      {
+        username = oidcUser.getName();
+      }
+
+      log.info("LOGOUT: {}, {}", sessionId, username);
       new SecurityContextLogoutHandler().logout(request, response, authentication);
     };
   }

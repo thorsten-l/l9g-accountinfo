@@ -70,6 +70,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler
     String sid = user.getIdToken().getClaimAsString("sid");
     log.debug("sid={}, session id={}", sid, session.getId());
     sessionStore.put(sid, session);
+    log.info("LOGIN: {}, {}", session.getId(), user.getName());
     response.sendRedirect("/app");
   }
 

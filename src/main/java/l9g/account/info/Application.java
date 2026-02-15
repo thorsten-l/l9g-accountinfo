@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -98,13 +99,19 @@ public class Application
    * @return A {@link org.springframework.boot.CommandLineRunner} instance.
    */
   @Bean
-  public CommandLineRunner commandLineRunner(DataSource dataSource)
+  public CommandLineRunner commandLineRunner(DataSource dataSource, BuildProperties buildProperties)
   {
     return args ->
     {
-      HikariDataSource hikariDataSource = (HikariDataSource)dataSource;
+      log.info("");
+      log.info("");
+      log.info("--- Application Info ----------------------------");
+      log.info("Name: {}", buildProperties.getName());
+      log.info("Version: {}", buildProperties.getVersion());
+      log.info("Build: {}", buildProperties.getTime());
       log.info("--- Database Info -------------------------------");
 
+      HikariDataSource hikariDataSource = (HikariDataSource)dataSource;
       try(Connection connection = dataSource.getConnection())
       {
         DatabaseMetaData metaData = connection.getMetaData();

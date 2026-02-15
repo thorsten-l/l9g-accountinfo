@@ -61,7 +61,7 @@ public class AuthService
   SignaturePad authCheck(String padUuid, boolean checkValidity)
     throws ResponseStatusException
   {
-    log.info("Pad UUID: {} ({})", padUuid, checkValidity ? "true" : "false");
+    log.debug("Pad UUID: {} ({})", padUuid, checkValidity ? "true" : "false");
 
     SignaturePad signaturePad = null;
 
@@ -72,6 +72,7 @@ public class AuthService
     }
     catch(Throwable t)
     {
+      log.info("PADERROR: {} Unable to read signature pad storage.", padUuid);
       throw new ResponseStatusException(
         HttpStatus.NOT_FOUND,
         "ERROR: Unable to read signature pad storage."
@@ -80,6 +81,7 @@ public class AuthService
 
     if(signaturePad == null)
     {
+      log.info("PADERROR: {} Signature pad UUID not found!", padUuid);
       throw new ResponseStatusException(
         HttpStatus.NOT_FOUND,
         "Signature pad UUID not found!"
@@ -88,6 +90,7 @@ public class AuthService
 
     if(checkValidity &&  ! signaturePad.isValidated())
     {
+      log.info("PADERROR: {} Signature pad UUID not valid!", padUuid);
       throw new ResponseStatusException(
         HttpStatus.NOT_FOUND,
         "Signature pad UUID not valid!"

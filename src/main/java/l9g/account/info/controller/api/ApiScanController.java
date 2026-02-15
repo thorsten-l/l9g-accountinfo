@@ -27,12 +27,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import l9g.account.info.db.model.SdbSecretData;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -129,6 +130,7 @@ public class ApiScanController
    *
    * @return A {@link ResponseEntity} with an {@link ApiResponse} indicating success or failure.
    */
+  /*
   @Operation(summary = "Process card scan",
              description = "Receives a card number from a scan request and validates it. Currently hardcoded for testing."
   )
@@ -152,7 +154,8 @@ public class ApiScanController
     return ResponseEntity
       .ok(new ApiResponse("OK", "Kartennummer erhalten"));
   }
-
+*/
+  
   /**
    * Uploads a photo associated with a user and signature pad.
    * This endpoint receives multipart file data along with user and signature pad details.
@@ -180,6 +183,7 @@ public class ApiScanController
     @RequestParam("paduuid") String padUuid,
     @RequestParam("side") String side,
     @RequestParam("file") MultipartFile file,
+    HttpServletRequest request,
     @AuthenticationPrincipal DefaultOidcUser principal
   )
     throws IOException
@@ -189,13 +193,18 @@ public class ApiScanController
     // TODO: hier Foto und cardNumber + side verarbeiten (z.B. abspeichern)
     String filename = file.getOriginalFilename();
     long size = file.getSize();
-    System.out.printf("padUuid=%s, Seite=%s, Datei=%s (%d Bytes)%n",
-      padUuid, side, filename, size);
+    //System.out.printf("padUuid=%s, Seite=%s, Datei=%s (%d Bytes)%n",
+    //  padUuid, side, filename, size);
 
-    dbService.saveSecretFileData(
+    
+    SdbSecretData data = dbService.saveSecretFileData(
       publisherService.principalToPublisherJSON(principal),
       fullname, userid, mail, padUuid, side, file);
 
+    log.info("PHOTO_UPLOAD: {}, {}, {}, {}, {}, {}", 
+      request.getSession(true).getId(), principal.getName(), padUuid,
+      userid, side, data.getId());
+    
     return ResponseEntity
       .status(HttpStatus.CREATED)
       .body(new ApiResponse("OK", "Foto " + side + " hochgeladen"));
