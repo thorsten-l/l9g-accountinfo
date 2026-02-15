@@ -2,6 +2,7 @@
 private/
 target/
 *.log
+*.log.*
 *.tmp
 *.bak
 config.yaml
