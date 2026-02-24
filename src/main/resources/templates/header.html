@@ -21,6 +21,7 @@ limitations under the License.
     <meta name="mobile-web-app-capable" content="yes"></meta>
     <meta name="apple-mobile-web-app-capable" content="yes"></meta>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"></meta>
+    <link th:rel="manifest" th:href="@{/manifest.json}" />
     <link th:rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
     <link th:rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"></link>
     <link th:rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.css}" ></link>
@@ -28,6 +29,13 @@ limitations under the License.
     <link th:rel="stylesheet" th:href="@{/css/flag-icons.min.css}" ></link>
     <link th:rel="stylesheet" th:href="@{/css/adminlte.min.css}"></link>
     <link th:rel="stylesheet" th:href="@{/css/main.css}"></link>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('portrait').catch(err => console.warn("Orientation lock failed:", err));
+        }
+      });
+    </script>
   </div>
 
   <div th:fragment="header" th:remove="tag">
