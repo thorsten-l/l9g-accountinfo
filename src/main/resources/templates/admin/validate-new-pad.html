@@ -15,16 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:th="http://www.thymeleaf.org">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
   <head>
     <title>Validate New Pad</title>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <link th:rel="stylesheet"
-          th:href="@{/webjars/bootstrap/css/bootstrap.min.css}"/>
-    <link th:rel="stylesheet"
-          th:href="@{/webjars/font-awesome/css/all.min.css}"/>
+    <div th:replace="~{header::head}"></div>
     <style>
       .validation-alert {
         position: fixed;
@@ -35,40 +29,68 @@ limitations under the License.
         z-index: 1050;
       }
       .goto-pad-btn {
-        margin-top: 1rem;
+        margin-top: 1.5rem;
         text-align: center;
+      }
+      .env-table th {
+        width: 30%;
+        background-color: #f8f9fa;
       }
     </style>
   </head>
   <body>
-    <div class="container mt-5">
-      <h1 class="mb-4">Validate New Pad</h1>
+    <div th:replace="~{header::header}"></div>
 
-      <div class="mb-4">
-        Name: <em><span th:text="${pad.name}">PAD-NAME</span></em> <br/>
-        Key ID: <em><span th:text="${pad.keyId}">PAD-KeyID</span></em>
+    <!--begin::App Main-->
+    <main class="app-main">
+      <div class="container mt-5">
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <div class="card shadow mb-4">
+              <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                  <i class="fa-solid fa-check-double me-2"></i>
+                  Validate New Pad
+                </h3>
+              </div>
+              <div class="card-body p-4">
+                <div class="mb-4 bg-light p-3 rounded border">
+                  <div class="mb-1"><strong>Pad Name:</strong> <em th:text="${pad.name}">PAD-NAME</em></div>
+                  <div class="small text-muted"><strong>Key ID:</strong> <em th:text="${pad.keyId}">PAD-KeyID</em></div>
+                </div>
+
+                <h5 class="mb-3"><i class="fa-solid fa-microchip me-2"></i>Client Environment</h5>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered env-table">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Property</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="env-info">
+                      <!-- rows populated by JavaScript -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Container for Goto Signature Pad button -->
+                <div id="goto-pad-container" class="goto-pad-btn"></div>
+                
+                <div class="mt-4 text-center">
+                    <a th:href="@{/admin}" class="btn btn-outline-secondary">
+                      <i class="fa-solid fa-circle-arrow-left me-2"></i>Back to Admin
+                    </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+    </main>
 
-      <h2 class="h5 mb-3">Client Environment</h2>
-      <div class="table-responsive">
-        <table class="table table-sm table-bordered">
-          <thead class="table-light">
-            <tr>
-              <th>Property</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody id="env-info">
-            <!-- rows populated by JavaScript -->
-          </tbody>
-        </table>
-      </div>
+    <div th:replace="~{footer::footer}"></div>
 
-      <!-- Container for Goto Signature Pad button -->
-      <div id="goto-pad-container" class="goto-pad-btn"></div>
-    </div>
-
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
     <script th:src="@{/js/jose/index.umd.min.js}"></script>
 
     <script th:inline="javascript">
@@ -134,9 +156,9 @@ limitations under the License.
         {
           const container = document.getElementById('goto-pad-container');
           const btn = document.createElement('a');
-          btn.className = 'btn btn-success';
+          btn.className = 'btn btn-success btn-lg';
           btn.href = '/signature-pad';
-          btn.innerHTML = '<i class="fas fa-signature me-1"></i>Goto Signature Pad';
+          btn.innerHTML = '<i class="fa-solid fa-signature me-2"></i>Goto Signature Pad';
           container.appendChild(btn);
         }
 

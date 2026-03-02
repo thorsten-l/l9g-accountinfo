@@ -80,3 +80,5 @@ app:
   base-url: http://localhost:8080
   ws-url: ws://localhost:8080
   storage-location: "./data/secrets"
+  vault:
+    masterkey-ttl: 120000

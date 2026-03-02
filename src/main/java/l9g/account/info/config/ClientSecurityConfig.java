@@ -18,10 +18,12 @@ package l9g.account.info.config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Collection;
+import l9g.account.info.vault.VaultService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authorization.AuthorizationDecision;
 import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -62,6 +64,8 @@ public class ClientSecurityConfig
 
   private final LoginSuccessHandler loginSuccessHandler;
 
+  private final VaultService vaultService;
+
   /**
    * Content Security Policy directives for enhanced security.
    * This policy defines allowed content sources for various types of resources.
@@ -78,9 +82,11 @@ public class ClientSecurityConfig
   public ClientSecurityConfig(
     AppAuthoritiesConverter appAuthoritiesConverter,
     LoginSuccessHandler loginSuccessHandler,
+    VaultService vaultService,
     @Value("${app.base-url}") String appBaseUrl
   )
   {
+    this.vaultService = vaultService;
     this.appAuthoritiesConverter = appAuthoritiesConverter;
     this.loginSuccessHandler = loginSuccessHandler;
     this.CSP_POLICY = "default-src 'self'; "
@@ -136,6 +142,25 @@ public class ClientSecurityConfig
           "/favicon**"
         )
         .permitAll()
+        .requestMatchers("/admin/vault/managekeys")
+        .access((authentication, context) ->
+        {
+          boolean hasAdminRole = authentication.get().getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+          boolean isUnsealed = vaultService.getUnlockedKey() != null;
+          return new AuthorizationDecision(hasAdminRole && isUnsealed);
+        })
+        .requestMatchers(
+          "/admin/vault/enrollment", "/api/v1/admin/vault/adminkey")
+        .access((authentication, context) ->
+        {
+          boolean hasAdminRole = authentication.get().getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+          boolean isUnsealed = vaultService.getUnlockedKey() != null;
+          boolean noKeysExist = vaultService.adminKeysIsEmpty();
+          return new AuthorizationDecision(
+            hasAdminRole && (isUnsealed || noKeysExist));
+        })
         .requestMatchers("/admin", "/admin/**", "/api/v1/admin", "/api/v1/admin/**", "/v3/api-docs")
         .hasRole("ADMIN")
         .requestMatchers("/app", "/app/**")

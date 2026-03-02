@@ -29,6 +29,7 @@ import l9g.account.info.ws.SignaturePadWebSocketHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import l9g.account.info.vault.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -57,6 +58,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Tag(name = "Admin", description = "Administration and management of signature pads")
 public class AdminController
 {
+  private final VaultService vaultService;
+
   /**
    * WebSocket handler for managing real-time communication with signature pads
    */
@@ -88,9 +91,9 @@ public class AdminController
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
   @GetMapping(
-  {
-    "", "/"
-  })
+    {
+      "", "/"
+    })
   public String home(@AuthenticationPrincipal DefaultOidcUser principal, Model model)
   {
     log.debug("admin home principal = {}", principal);
@@ -99,6 +102,10 @@ public class AdminController
     model.addAttribute("locale", locale.toString());
     model.addAttribute("signaturePadSessions", getSignaturePadSessions());
     model.addAttribute("principal", principal);
+
+    model.addAttribute("unlockTimeLeft", vaultService.getUnlockTimeLeft() + 1);
+    model.addAttribute("adminKeysIsEmpty", vaultService.adminKeysIsEmpty());
+    model.addAttribute("isUnsealed", (vaultService.getUnlockedKey() != null));
 
     return "admin/home";
   }
@@ -164,6 +171,10 @@ public class AdminController
     Locale locale = LocaleContextHolder.getLocale();
     log.debug("locale={}", locale);
     model.addAttribute("locale", locale.toString());
+    model.addAttribute("principal", principal);
+    model.addAttribute("unlockTimeLeft", 1);
+    model.addAttribute("adminKeysIsEmpty", false);
+    model.addAttribute("isUnsealed", false);
     return "admin/register-new-pad";
   }
 
@@ -202,6 +213,10 @@ public class AdminController
 
     model.addAttribute("locale", locale.toString());
     model.addAttribute("pad", signaturePad);
+    model.addAttribute("principal", principal);
+    model.addAttribute("unlockTimeLeft", 1);
+    model.addAttribute("adminKeysIsEmpty", false);
+    model.addAttribute("isUnsealed", false);
     return "admin/connect-new-pad";
   }
 
@@ -265,6 +280,10 @@ public class AdminController
     model.addAttribute("locale", locale.toString());
     model.addAttribute("pad", signaturePad);
     model.addAttribute("padJwkJson", privateJwk);
+    model.addAttribute("principal", null);
+    model.addAttribute("unlockTimeLeft", 1);
+    model.addAttribute("adminKeysIsEmpty", false);
+    model.addAttribute("isUnsealed", false);
     return "admin/validate-new-pad";
   }
 

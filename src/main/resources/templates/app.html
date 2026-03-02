@@ -303,11 +303,8 @@
     <div class="fixed-bottom m-2" style="font-size: 8pt;">
       <span th:text='${buildProperties.version }'>version</span>
     </div>
-
-    <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
-    <script th:src="@{/webjars/popper.js/umd/popper.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
-
+    
+    <div th:replace="~{footer::footer}"></div>
     <script sec:authorize="!hasRole('ROLE_ADMIN')">
       function validateUUIDv4(uuid) {
         return uuid && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(uuid);
