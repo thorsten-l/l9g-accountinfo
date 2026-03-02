@@ -43,6 +43,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import l9g.account.info.vault.VaultService;
 
 /**
  * REST controller for administrative API endpoints related to
@@ -50,11 +51,13 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping(path = "/api/v1/admin")
+@RequestMapping(path = "/api/v1/admin/secret")
 @RequiredArgsConstructor
 @Tag(name = "Admin API", description = "Admin API for managing account and signature pad data")
 public class ApiAdminController
 {
+  private final VaultService vaultService;
+  
   /**
    * Database service for accessing and managing stored data.
    */

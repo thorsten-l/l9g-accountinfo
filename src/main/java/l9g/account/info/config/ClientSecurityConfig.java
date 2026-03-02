@@ -161,13 +161,23 @@ public class ClientSecurityConfig
           return new AuthorizationDecision(
             hasAdminRole && (isUnsealed || noKeysExist));
         })
-        .requestMatchers("/admin", "/admin/**", "/api/v1/admin", "/api/v1/admin/**", "/v3/api-docs")
+        .requestMatchers("/api/v1/admin/secret", "/api/v1/admin/secret/**")
+        .access((authentication, context) ->
+        {
+          boolean hasAdminRole = authentication.get().getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+          boolean isUnsealed = vaultService.getUnlockedKey() != null;
+          boolean keysExist =  ! vaultService.adminKeysIsEmpty();
+          return new AuthorizationDecision(
+            hasAdminRole && isUnsealed && keysExist);
+        })
+        .requestMatchers("/admin", "/admin/**", "/v3/api-docs", 
+          "/api/v1/admin", "/api/v1/admin/**")
         .hasRole("ADMIN")
         .requestMatchers("/app", "/app/**")
         .hasRole("PUBLISHER")
         .anyRequest()
-        .authenticated()
-    )
+        .authenticated())
       .headers(
         headers -> headers
           .frameOptions(frameOptions -> frameOptions.disable())

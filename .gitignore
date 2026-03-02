@@ -13,4 +13,4 @@ l9g-accountinfo.jar
 GEMINI.md
 secrets
 secret.bin
-**/vault*
+data/vault*
