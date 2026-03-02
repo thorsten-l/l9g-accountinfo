@@ -16,6 +16,9 @@
 package l9g.account.info.vault;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.l9g.crypto.core.AES256;
+import de.l9g.crypto.core.CryptoHandler;
+import static de.l9g.crypto.core.CryptoHandler.AES256_PREFIX;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +46,8 @@ public class VaultService
   private SecretKey masterKey;
 
   private long masterKeyTimestamp;
+
+  private AES256 aes256;
 
   public VaultService(@Value("${app.vault.masterkey-ttl}") long masterkeyTTL)
   {
@@ -109,24 +114,30 @@ public class VaultService
 
   public long getUnlockTimeLeft()
   {
-    long timeLeft = (masterkeyTTL + masterKeyTimestamp 
+    long timeLeft = (masterkeyTTL + masterKeyTimestamp
       - System.currentTimeMillis()) / 1000;
-    return (timeLeft > 0 ) ? timeLeft : 0;
+    return (timeLeft > 0) ? timeLeft : 0;
   }
-  
+
   public synchronized SecretKey getUnlockedKey()
   {
     if(masterkeyTTL > 0
       && (System.currentTimeMillis() - masterKeyTimestamp) > masterkeyTTL)
     {
       masterKey = null;
+      aes256 = null;
     }
     return masterKey;
   }
 
   public synchronized void setUnlockedKey(SecretKey masterKey)
   {
+    if(masterKey == null)
+    {
+      throw new VaultSealedException("MasterKey must not be null.");
+    }
     this.masterKey = masterKey;
+    this.aes256 = new AES256(masterKey.getEncoded());
     this.masterKeyTimestamp = System.currentTimeMillis();
   }
 
@@ -141,6 +152,50 @@ public class VaultService
     {
       log.warn("VaultAdminKey with credentialId {} not found for removal.", credentialId);
     }
+  }
+
+  private void checkVaultIsUnsealed()
+  {
+    if(aes256 == null)
+    {
+      throw new VaultSealedException("Vault is seald!");
+    }
+  }
+
+  public synchronized String encrypt(String plainText)
+  {
+    checkVaultIsUnsealed();
+    return CryptoHandler.AES256_PREFIX + aes256.encrypt(plainText);
+  }
+
+  public synchronized String decrypt(String encryptedText)
+  {
+    checkVaultIsUnsealed();
+
+    String text;
+
+    if(encryptedText != null && encryptedText.startsWith(AES256_PREFIX))
+    {
+      text = aes256.decrypt(encryptedText.substring(AES256_PREFIX.length()));
+    }
+    else
+    {
+      text = encryptedText;
+    }
+
+    return text;
+  }
+
+  public synchronized byte[] encrypt(byte[] plainData)
+  {
+    checkVaultIsUnsealed();
+    return aes256.encrypt(plainData);
+  }
+
+  public synchronized byte[] decrypt(byte[] cryptData)
+  {
+    checkVaultIsUnsealed();
+    return aes256.decrypt(cryptData);
   }
 
   private synchronized void saveAdminKeys()

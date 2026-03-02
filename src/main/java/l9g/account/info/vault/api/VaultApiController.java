@@ -147,9 +147,9 @@ public class VaultApiController
       SecretKey masterKey = new SecretKeySpec(decryptedMasterKeyBytes, "AES");
       vaultService.setUnlockedKey(masterKey);
 
-      log.info("Server unsealed by {} using {}",
+      log.info("Server unsealed by {} ({}) using {}", oidcUser.getFullName(),
         oidcUser.getPreferredUsername(), vaultAdminKey.description());
-      log.debug("  - vault admin key = {}", vaultAdminKey);
+      log.trace("  - vault admin key = {}", vaultAdminKey);
       //log.trace("decrypted masterkey base64 = {}",
       //Base64.getEncoder().encodeToString(decryptedMasterKeyBytes));
     }
