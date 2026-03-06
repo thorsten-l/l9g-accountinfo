@@ -45,6 +45,11 @@ limitations under the License.
                     <span class="fw-bold">Tablet-Registrierung</span>
                     <div class="small text-muted ms-5">Neues Android Tablet registrieren</div>
                   </a>
+                  <a th:href="@{/admin/manage-pads}" class="btn btn-outline-primary btn-lg text-start p-3 text-dark">
+                    <i class="fa-solid fa-tablets me-3 fa-fw"></i>
+                    <span class="fw-bold">Tablet-Bearbeitung</span>
+                    <div class="small text-muted ms-5">Registrierte Tablets verwalten (Bearbeiten/Löschen)</div>
+                  </a>
                   <div th:if="${isUnsealed || adminKeysIsEmpty}" th:remove="tag">
                     <a th:href="@{/admin/vault/enrollment}" class="btn btn-outline-primary btn-lg text-start p-3">
                       <i class="fa-solid fa-user-plus me-3 fa-fw"></i>

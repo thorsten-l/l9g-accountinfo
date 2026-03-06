@@ -15,11 +15,18 @@
  */
 package l9g.account.info.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import l9g.account.info.db.DbService;
+import l9g.account.info.db.model.SdbSecretData;
+import l9g.account.info.db.model.SdbSecretType;
 import l9g.account.info.service.PublisherService;
 import l9g.account.info.service.SignaturePad;
 import l9g.account.info.service.SignaturePadService;
@@ -59,6 +66,16 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminController
 {
   private final VaultService vaultService;
+
+  /**
+   * Database service for accessing and managing stored data.
+   */
+  private final DbService dbService;
+
+  /**
+   * Object mapper for JSON serialization/deserialization.
+   */
+  private final ObjectMapper objectMapper;
 
   /**
    * WebSocket handler for managing real-time communication with signature pads
@@ -179,6 +196,158 @@ public class AdminController
   }
 
   /**
+   * Displays the management page for signature pads.
+   * Retrieves all non-hidden signature pads and adds them to the model.
+   *
+   * @param principal The authenticated OIDC user
+   * @param model Spring MVC model for passing data to the view
+   *
+   * @return the name of the manage-pads template to render
+   */
+  @Operation(summary = "Display the signature pad management page",
+             description = "Shows a list of all non-hidden signature pads for management.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Management page successfully displayed"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
+             })
+  @GetMapping("/manage-pads")
+  public String managePads(@AuthenticationPrincipal DefaultOidcUser principal,
+    @RequestParam(name = "showHidden", defaultValue = "false") boolean showHidden,
+    Model model)
+  {
+    log.debug("manage-pads principal={} showHidden={}", principal, showHidden);
+    Locale locale = LocaleContextHolder.getLocale();
+    model.addAttribute("locale", locale.toString());
+    model.addAttribute("principal", principal);
+    model.addAttribute("showHidden", showHidden);
+
+    model.addAttribute("unlockTimeLeft", vaultService.getUnlockTimeLeft() + 1);
+    model.addAttribute("adminKeysIsEmpty", vaultService.adminKeysIsEmpty());
+    model.addAttribute("isUnsealed", (vaultService.getUnlockedKey() != null));
+
+    List<Map<String, Object>> pads = new ArrayList<>();
+
+    List<SdbSecretData> list;
+    if(showHidden)
+    {
+      list = dbService.findSdbSecretDataByType(SdbSecretType.SIGNATURE_PAD_JSON);
+    }
+    else
+    {
+      list = dbService.findSdbSecretDataByType(SdbSecretType.SIGNATURE_PAD_JSON, false);
+    }
+
+    if(list != null && list.size() > 0)
+    {
+      list.forEach(secretData ->
+      {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("dbid", secretData.getId());
+        map.put("padid", secretData.getKey());
+        map.put("name", secretData.getName());
+        map.put("description", secretData.getDescription());
+        try
+        {
+          map.put("createTimestamp", secretData.getCreateTimestamp());
+          Object createdBy = objectMapper.readValue(secretData.getCreatedBy(),
+            map.getClass());
+          map.put("createdBy", createdBy);
+          map.put("modifyTimestamp", secretData.getModifyTimestamp());
+          Object modifiedBy = objectMapper.readValue(secretData.getModifiedBy(),
+            map.getClass());
+          map.put("modifiedBy", modifiedBy);
+        }
+        catch(JsonProcessingException ex)
+        {
+          log.error("parse error {}", ex);
+        }
+        map.put("hidden", secretData.isHidden());
+        map.put("immutable", secretData.isImmutable());
+        pads.add(map);
+      });
+    }
+
+    model.addAttribute("pads", pads);
+
+    return "admin/manage-pads";
+  }
+
+  /**
+   * Shows a signature pad by setting its hidden status to false.
+   * Requires administrator privileges.
+   *
+   * @param dbId The database ID of the signature pad to show.
+   *
+   * @return a redirect to the signature pad management page.
+   */
+  @Operation(summary = "Show a signature pad",
+             description = "Sets the hidden status of a signature pad to false, making it visible in standard views.",
+             responses =
+             {
+               @ApiResponse(responseCode = "302", description = "Redirected to management page after showing"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
+             })
+  @GetMapping("/show-pad")
+  public String showPad(@RequestParam("id") String dbId)
+  {
+    log.debug("show-pad id={}", dbId);
+    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, true);
+
+    if(secretData != null && secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
+    {
+      if( ! secretData.isImmutable())
+      {
+        secretData.setHidden(false);
+        dbService.saveSecretData(secretData);
+      }
+      else
+      {
+        log.warn("Attempt to show immutable secret data: {}", dbId);
+      }
+    }
+
+    return "redirect:/admin/manage-pads?showHidden=true";
+  }
+
+  /**
+   * Hides a signature pad by setting its hidden status to true.
+   * Requires administrator privileges.
+   *
+   * @param dbId The database ID of the signature pad to hide.
+   *
+   * @return a redirect to the signature pad management page.
+   */
+  @Operation(summary = "Hide a signature pad",
+             description = "Sets the hidden status of a signature pad to true, removing it from standard views.",
+             responses =
+             {
+               @ApiResponse(responseCode = "302", description = "Redirected to management page after hiding"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
+             })
+  @GetMapping("/hide-pad")
+  public String hidePad(@RequestParam("id") String dbId)
+  {
+    log.debug("hide-pad id={}", dbId);
+    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, false);
+
+    if(secretData != null && secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
+    {
+      if( ! secretData.isImmutable())
+      {
+        secretData.setHidden(true);
+        dbService.saveSecretData(secretData);
+      }
+      else
+      {
+        log.warn("Attempt to hide immutable secret data: {}", dbId);
+      }
+    }
+
+    return "redirect:/admin/manage-pads";
+  }
+
+  /**
    * Processes the creation of a new signature pad with the specified name.
    * Creates a new signature pad instance and displays connection instructions.
    *
@@ -198,7 +367,8 @@ public class AdminController
                @ApiResponse(responseCode = "500", description = "Internal server error if signature pad creation fails")
              })
   @PostMapping("/connect-new-pad")
-  public String connectNewPad(@RequestParam("name") String padName, @AuthenticationPrincipal DefaultOidcUser principal, Model model)
+  public String connectNewPad(@RequestParam("name") String padName, 
+    @AuthenticationPrincipal DefaultOidcUser principal, Model model)
     throws IOException
   {
     log.debug("connect-new-pad called principal={}", principal);

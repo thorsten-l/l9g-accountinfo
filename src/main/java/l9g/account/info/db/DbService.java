@@ -351,24 +351,41 @@ public class DbService
   }
 
   /**
-   * Finds an {@link SdbSecretData} entry by its database ID.
+   * Saves or updates an {@link SdbSecretData} entry in the database.
    *
-   * @param id The database ID of the secret data.
-   *
-   * @return The {@link SdbSecretData} object, or null if not found.
+   * @param secretData The {@link SdbSecretData} object to save.
    */
-  public SdbSecretData findSdbSecretDataById(String id)
+  public void saveSecretData(SdbSecretData secretData)
   {
-    return sdbSecretDataRepository.findById(id).orElse(null);
+    sdbSecretDataRepository.save(secretData);
   }
 
   /**
-   * Finds a list of {@link SdbSecretData} entries by their type, ordered by name in ascending order.
+   * Finds an {@link SdbSecretData} entry by its database ID and hidden status.
+   *
+   * @param id The database ID of the secret data.
+   * @param hidden The hidden status of the secret data.
+   *
+   * @return The {@link SdbSecretData} object, or null if not found.
+   */
+  public SdbSecretData findSdbSecretDataById(String id, boolean hidden)
+  {
+    return sdbSecretDataRepository.findByIdAndHidden(id, hidden).orElse(null);
+  }
+
+  /**
+   * Finds a list of {@link SdbSecretData} entries by their type and hidden status, ordered by name in ascending order.
    *
    * @param type The type of the secret data to find.
+   * @param hidden The hidden status of the secret data.
    *
    * @return A list of {@link SdbSecretData} objects, or null if none found.
    */
+  public List<SdbSecretData> findSdbSecretDataByType(SdbSecretType type, boolean hidden)
+  {
+    return sdbSecretDataRepository.findByTypeAndHiddenOrderByNameAsc(type, hidden).orElse(null);
+  }
+
   public List<SdbSecretData> findSdbSecretDataByType(SdbSecretType type)
   {
     return sdbSecretDataRepository.findByTypeOrderByNameAsc(type).orElse(null);

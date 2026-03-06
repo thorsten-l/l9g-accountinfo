@@ -135,7 +135,7 @@ public class ApiAdminController
     log.debug("dbId={}", dbId);
     log.debug("principal={}", principal);
 
-    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId);
+    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, false);
 
     if(secretData != null && secretData.getType() == SdbSecretType.ID_SIGNATURE_JWT)
     {
@@ -179,7 +179,7 @@ public class ApiAdminController
     log.debug("dbId={}", dbId);
     log.debug("principal={}", principal);
 
-    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId);
+    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, false);
 
     if(secretData != null && secretData.getType() == SdbSecretType.ID_SIGNATURE_JWT)
     {
@@ -233,7 +233,7 @@ public class ApiAdminController
     log.debug("dbId={}", dbId);
     log.debug("principal={}", principal);
 
-    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId);
+    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, false);
 
     if(secretData != null && secretData.getType() == SdbSecretType.ID_SIGNATURE_JWT)
     {
@@ -301,7 +301,7 @@ public class ApiAdminController
     log.debug("dbId={}", dbId);
     log.debug("principal={}", principal);
 
-    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId);
+    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, false);
 
     if(secretData != null && secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
     {
@@ -339,7 +339,7 @@ public class ApiAdminController
 
     List<Map<String, Object>> result = new ArrayList<>();
 
-    List<SdbSecretData> list = dbService.findSdbSecretDataByType(SdbSecretType.SIGNATURE_PAD_JSON);
+    List<SdbSecretData> list = dbService.findSdbSecretDataByType(SdbSecretType.SIGNATURE_PAD_JSON, false);
 
     if(list != null && list.size() > 0)
     {
@@ -404,7 +404,7 @@ public class ApiAdminController
 
     List<Map<String, Object>> result = new ArrayList<>();
 
-    List<SdbSecretData> list = dbService.findSdbSecretDataByType(SdbSecretType.ID_SIGNATURE_JWT);
+    List<SdbSecretData> list = dbService.findSdbSecretDataByType(SdbSecretType.ID_SIGNATURE_JWT, false);
 
     if(list != null && list.size() > 0)
     {
