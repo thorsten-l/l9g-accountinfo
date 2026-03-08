@@ -59,6 +59,22 @@ public class SignaturePadService
   }
 
   /**
+   * Retrieves a signature pad by its unique identifier and hidden status.
+   *
+   * @param uuid The unique identifier of the signature pad.
+   * @param hidden The hidden status of the signature pad.
+   *
+   * @return The {@link SignaturePad} instance or null if not found.
+   *
+   * @throws IOException If data access fails.
+   */
+  public SignaturePad findSignaturePadByUUID(String uuid, boolean hidden)
+    throws IOException
+  {
+    return dbService.findSignaturePadbyUUID(uuid, hidden);
+  }
+
+  /**
    * Retrieves a signature pad by its unique identifier.
    *
    * @param uuid The unique identifier of the signature pad.
@@ -70,7 +86,7 @@ public class SignaturePadService
   public SignaturePad findSignaturePadByUUID(String uuid)
     throws IOException
   {
-    return dbService.findSignaturePadbyUUID(uuid);
+    return findSignaturePadByUUID(uuid, false);
   }
 
   /**

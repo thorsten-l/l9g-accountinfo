@@ -310,9 +310,13 @@
         return uuid && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(uuid);
       }
 
-      function signOut() {
+      function signOut(reason) {
         const logoutForm = document.getElementById('logoutForm');
+        const logoutReason = document.getElementById('logoutReason');
         if (logoutForm) {
+          if (logoutReason && reason) {
+            logoutReason.value = reason;
+          }
           logoutForm.submit();
         }
         else {
@@ -324,7 +328,7 @@
 
       if (!validateUUIDv4(signaturePadUUID)) {
         console.log("SIGNATURE_PAD_UUID not found or invalid.");
-        signOut();
+        signOut('invalid_pad_uuid');
       } else {
         
         const csrfTokenInput = document.querySelector(
@@ -346,11 +350,11 @@
         }).then(response => {
           if (!response.ok) {
             console.log(`Auth pad check failed with status: ${response.status}`);
-            signOut();
+            signOut('auth_pad_failed');
           }
         }).catch(error => {
           console.error('Error during auth pad check:', error);
-          signOut();
+          signOut('auth_pad_error');
         });
       }
     </script>

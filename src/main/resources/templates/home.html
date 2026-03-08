@@ -28,7 +28,33 @@
 
     <script th:src="@{/webjars/jquery/jquery.min.js}"></script>
     <script th:src="@{/webjars/popper.js/umd/popper.min.js}"></script>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/sweetalert2/sweetalert2.all.min.js}"></script>
+
+    <script th:if="${logoutReason != null}" th:inline="javascript">
+      /*<![CDATA[*/
+      const logoutReason = /*[[${logoutReason}]]*/ 'unknown';
+      const title = /*[[#{logout_reason.title}]]*/ 'Abmeldung';
+      let text = /*[[#{'logout_reason.' + ${logoutReason}}]]*/ 'Sie wurden abgemeldet.';
+      
+      // Fallback if message key doesn't exist
+      if (text.startsWith('logout_reason.')) {
+        text = 'Sie wurden abgemeldet (Grund: ' + logoutReason + ').';
+      }
+
+      Swal.fire({
+        icon: 'info',
+        title: title,
+        text: text,
+        confirmButtonText: 'OK'
+      }).then(() => {
+        // Remove parameter from URL
+        const url = new URL(window.location);
+        url.searchParams.delete('logoutReason');
+        window.history.replaceState({}, document.title, url);
+      });
+      /*]]>*/
+    </script>
 
   </body>
 </html>

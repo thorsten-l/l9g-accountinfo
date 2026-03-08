@@ -52,6 +52,17 @@ public interface SdbSecretDataRepository extends
   Optional<List<SdbSecretData>> findByKeyAndTypeOrderByModifyTimestampDesc(String key, SdbSecretType type);
 
   /**
+   * Finds a list of {@link SdbSecretData} entities by their key, type and hidden status, ordered by modification timestamp in descending order.
+   *
+   * @param key The key of the secret data to find.
+   * @param type The type of the secret data to find.
+   * @param hidden The hidden status of the secret data.
+   *
+   * @return An {@link Optional} containing a list of found {@link SdbSecretData} entities, or empty if none found.
+   */
+  Optional<List<SdbSecretData>> findByKeyAndTypeAndHiddenOrderByModifyTimestampDesc(String key, SdbSecretType type, boolean hidden);
+
+  /**
    * Finds an {@link SdbSecretData} entity by its ID and hidden status.
    *
    * @param id The ID of the secret data to find.

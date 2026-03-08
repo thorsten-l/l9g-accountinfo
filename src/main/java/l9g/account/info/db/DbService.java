@@ -113,62 +113,38 @@ public class DbService
       log.info("\n\n*** INITIALIZE DATABASE ***\n");
       sdbPropertiesRepository.save(new SdbProperty(KEY_SYSTEM_USER,
         KEY_DB_INITIALIZED, "true"));
-
-      /*
-      SdbSecretData data = new SdbSecretData(KEY_SYSTEM_USER, "data1", SdbSecretType.SIGNATURE_PAD_JSON);
-      data.setSecret("This shoud be a SIGNATURE_PAD_JSON.");
-      sdbSecretDataRepository.save(data);
-      Thread.sleep(2000);
-
-      data = new SdbSecretData(KEY_SYSTEM_USER, "data2", SdbSecretType.ID_BACK_IMAGE);
-      data.setValue("This shoud be a ID_BACK_IMAGE.".getBytes());
-      sdbSecretDataRepository.save(data);
-      fileStorageService.save(data);
-      Thread.sleep(2000);
-
-      data = new SdbSecretData(KEY_SYSTEM_USER, "data2", SdbSecretType.ID_BACK_IMAGE);
-      data.setValue("This shoud be a ID_BACK_IMAGE.".getBytes());
-      sdbSecretDataRepository.save(data);
-      fileStorageService.save(data);
-      Thread.sleep(2000);
-
-      data = new SdbSecretData(KEY_SYSTEM_USER, "data2", SdbSecretType.ID_BACK_IMAGE);
-      data.setValue("This shoud be a ID_BACK_IMAGE.".getBytes());
-      sdbSecretDataRepository.save(data);
-      fileStorageService.save(data);
-      Thread.sleep(2000);
-
-      data = new SdbSecretData(KEY_SYSTEM_USER, "data3", SdbSecretType.ID_FRONT_IMAGE);
-      data.setValue("This shoud be a ID_FRONT_IMAGE.".getBytes());
-      sdbSecretDataRepository.save(data);
-      fileStorageService.save(data);
-      Thread.sleep(2000);
-
-      data = new SdbSecretData(KEY_SYSTEM_USER, "data4", SdbSecretType.ID_SIGNATURE_JWT);
-      data.setValue("This shoud be a ID_SIGNATURE_JWT.".getBytes());
-      sdbSecretDataRepository.save(data);
-      fileStorageService.save(data);
-      Thread.sleep(2000);
-       */
     }
     else
     {
       log.info("Database already initialized.");
     }
+  }
 
-    /*
-    SdbSecretData data = sdbSecretDataRepository.findByKeyOrderByModifyTimestampDesc("data1").get().getFirst();
-    log.debug("data1={}\n{}", data, data.getSecret());
+  /**
+   * Finds the latest {@link SdbSecretData} entry for a given UUID and type.
+   *
+   * @param uuid The UUID of the secret data.
+   * @param type The type of the secret data.
+   * @param hidden The hidden status of the secret data.
+   *
+   * @return The latest {@link SdbSecretData} object, or null if not found.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   */
+  private SdbSecretData findSdbSecretData(String uuid, SdbSecretType type, boolean hidden)
+    throws JsonProcessingException
+  {
+    Optional<List<SdbSecretData>> optional = sdbSecretDataRepository
+      .findByKeyAndTypeAndHiddenOrderByModifyTimestampDesc(uuid, type, hidden);
 
-    data = sdbSecretDataRepository.findByKeyOrderByModifyTimestampDesc("data2").get().getFirst();
-    log.debug("data2={}\n{}", data, new String(fileStorageService.load(data)));
+    SdbSecretData secretData = null;
 
-    data = sdbSecretDataRepository.findByKeyOrderByModifyTimestampDesc("data3").get().getFirst();
-    log.debug("data3={}\n{}", data, new String(fileStorageService.load(data)));
+    if(optional.isPresent() &&  ! optional.get().isEmpty())
+    {
+      secretData = optional.get().getFirst();
+    }
 
-    data = sdbSecretDataRepository.findByKeyOrderByModifyTimestampDesc("data4").get().getFirst();
-    log.debug("data4={}\n{}", data, new String(fileStorageService.load(data)));
-     */
+    return secretData;
   }
 
   /**
@@ -198,6 +174,34 @@ public class DbService
   }
 
   /**
+   * Finds a {@link SignaturePad} by its UUID and hidden status.
+   *
+   * @param uuid The UUID of the signature pad.
+   * @param hidden The hidden status of the signature pad.
+   *
+   * @return The {@link SignaturePad} object, or null if not found.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   */
+  public SignaturePad findSignaturePadbyUUID(String uuid, boolean hidden)
+    throws JsonProcessingException
+  {
+    SignaturePad signaturePad = null;
+
+    SdbSecretData secretData = findSdbSecretData(
+      uuid, SdbSecretType.SIGNATURE_PAD_JSON, hidden);
+
+    if(secretData != null)
+    {
+      signaturePad = objectMapper.readValue(
+        secretData.getSecret(), SignaturePad.class);
+      log.debug("signaturePad={}", signaturePad);
+    }
+
+    return signaturePad;
+  }
+
+  /**
    * Finds a {@link SignaturePad} by its UUID.
    *
    * @param uuid The UUID of the signature pad.
@@ -209,19 +213,7 @@ public class DbService
   public SignaturePad findSignaturePadbyUUID(String uuid)
     throws JsonProcessingException
   {
-    SignaturePad signaturePad = null;
-
-    SdbSecretData secretData = findSdbSecretData(
-      uuid, SdbSecretType.SIGNATURE_PAD_JSON);
-
-    if(secretData != null)
-    {
-      signaturePad = objectMapper.readValue(
-        secretData.getSecret(), SignaturePad.class);
-      log.debug("signaturePad={}", signaturePad);
-    }
-
-    return signaturePad;
+    return findSignaturePadbyUUID(uuid, false);
   }
 
   /**

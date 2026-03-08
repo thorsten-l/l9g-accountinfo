@@ -26,6 +26,7 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.boot.info.BuildProperties;
 
@@ -63,9 +64,10 @@ public class HomeController
   @GetMapping("/")
   public String home(
     Model model,
-    @AuthenticationPrincipal DefaultOidcUser principal)
+    @AuthenticationPrincipal DefaultOidcUser principal,
+    @RequestParam(name = "logoutReason", required = false) String logoutReason)
   {
-    log.debug("home", principal);
+    log.debug("home principal={} logoutReason={}", principal, logoutReason);
 
     if(principal != null)
     {
@@ -77,6 +79,7 @@ public class HomeController
     model.addAttribute("buildProperties", buildProperties);
     model.addAttribute("principal", principal);
     model.addAttribute("locale", locale.toString());
+    model.addAttribute("logoutReason", logoutReason);
     return "home";
   }
 
