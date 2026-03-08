@@ -46,6 +46,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Security configuration for the client-side of the application.
@@ -134,7 +135,8 @@ public class ClientSecurityConfig
           "/manifest.webmanifest",
           "/system/test/**", "/error/**", "/api/v1/buildinfo",
           "/webjars/**", "/icons/**", "/css/**", "/js/**", "/images/**",
-          "/actuator/**", "/flags/**", "/logout", "/oidc-backchannel-logout",
+          "/actuator/**", "/flags/**", "/logout", "/logout**", 
+          "/oidc-backchannel-logout",
           "/admin/validate-new-pad", "/api/v1/signature-pad/validate",
           "/ws/signature-pad",
           "/android**",
@@ -202,7 +204,7 @@ public class ClientSecurityConfig
       )
       // permit even POST, PUT and DELETE requests
       .csrf(csrf -> csrf.ignoringRequestMatchers(
-      "/oidc-backchannel-logout", "/api/v1/signature-pad/**"));
+      "/oidc-backchannel-logout", "/api/v1/signature-pad/**", "/logout", "/logout**"));
 
     return http.build();
   }
@@ -249,7 +251,38 @@ public class ClientSecurityConfig
     log.debug("oidcLogoutSuccessHandler");
     OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler =
       new OidcClientInitiatedLogoutSuccessHandler(
-        clientRegistrationRepository);
+        clientRegistrationRepository)
+    {
+      @Override
+      protected String determineTargetUrl(HttpServletRequest request,
+        HttpServletResponse response, Authentication authentication)
+      {
+        String targetUrl = super.determineTargetUrl(request, response, authentication);
+        String logoutReason = request.getParameter("logoutReason");
+
+        if(logoutReason != null &&  ! logoutReason.isBlank())
+        {
+          UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(targetUrl);
+          String postLogoutRedirectUri = builder.build().getQueryParams()
+            .getFirst("post_logout_redirect_uri");
+
+          if(postLogoutRedirectUri != null)
+          {
+            String newPostLogoutRedirectUri = UriComponentsBuilder
+              .fromUriString(postLogoutRedirectUri)
+              .queryParam("logoutReason", logoutReason)
+              .build().toUriString();
+
+            builder.replaceQueryParam("post_logout_redirect_uri",
+              newPostLogoutRedirectUri);
+            targetUrl = builder.build().toUriString();
+          }
+        }
+
+        log.debug("OIDC Logout Redirect URI: {}", targetUrl);
+        return targetUrl;
+      }
+    };
     oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}");
     return oidcLogoutSuccessHandler;
   }
