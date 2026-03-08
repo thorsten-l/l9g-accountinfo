@@ -23,6 +23,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -82,6 +83,31 @@ public class GlobalExceptionHandler
   {
     ModelAndView modelAndView = new ModelAndView("error/404");
     modelAndView.addObject("pageErrorRequestUri", request.getRequestURI());
+    return modelAndView;
+  }
+
+  /**
+   * Handles ResponseStatusException.
+   * This ensures that the correct HTTP status code is returned.
+   *
+   * @param request The current HttpServletRequest.
+   * @param response The current HttpServletResponse.
+   * @param ex The caught ResponseStatusException.
+   *
+   * @return A ModelAndView for the appropriate error page.
+   */
+  @ExceptionHandler(ResponseStatusException.class)
+  public ModelAndView handleResponseStatusException(HttpServletRequest request,
+    jakarta.servlet.http.HttpServletResponse response,
+    ResponseStatusException ex)
+  {
+    log.debug("handleResponseStatusException : {} - {}", ex.getStatusCode(),
+      ex.getReason());
+    response.setStatus(ex.getStatusCode().value());
+    ModelAndView modelAndView = new ModelAndView("error/"
+      + ex.getStatusCode().value());
+    modelAndView.addObject("pageErrorRequestUri", request.getRequestURI());
+    modelAndView.addObject("pageErrorException", ex.getReason());
     return modelAndView;
   }
 
