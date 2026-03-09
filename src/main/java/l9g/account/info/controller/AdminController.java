@@ -249,6 +249,8 @@ public class AdminController
         map.put("description", secretData.getDescription());
         try
         {
+          SignaturePad signaturePad = objectMapper.readValue(secretData.getSecret(), SignaturePad.class);
+          map.put("validated", signaturePad.isValidated());
           map.put("createTimestamp", secretData.getCreateTimestamp());
           Object createdBy = objectMapper.readValue(secretData.getCreatedBy(),
             map.getClass());
@@ -271,6 +273,52 @@ public class AdminController
     model.addAttribute("pads", pads);
 
     return "admin/manage-pads";
+  }
+
+  /**
+   * Displays detailed information about a specific signature pad.
+   *
+   * @param principal The authenticated OIDC user
+   * @param padUuid The UUID of the signature pad to display
+   * @param model Spring MVC model for passing data to the view
+   *
+   * @return the name of the show-pad-info template to render
+   * @throws IOException if data access fails
+   */
+  @Operation(summary = "Display signature pad details",
+             description = "Shows all information associated with a specific signature pad.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "Details page successfully displayed"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN"),
+               @ApiResponse(responseCode = "404", description = "Signature pad not found")
+             })
+  @GetMapping("/show-pad-info")
+  public String showPadInfo(@AuthenticationPrincipal DefaultOidcUser principal,
+    @RequestParam("padid") String padUuid, Model model) throws IOException
+  {
+    log.debug("show-pad-info principal={} padid={}", principal, padUuid);
+    SignaturePad signaturePad = signaturePadService.findSignaturePadByUUID(padUuid, false);
+    if(signaturePad == null)
+    {
+      signaturePad = signaturePadService.findSignaturePadByUUID(padUuid, true);
+    }
+
+    if(signaturePad == null)
+    {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Signature pad not found");
+    }
+
+    Locale locale = LocaleContextHolder.getLocale();
+    model.addAttribute("locale", locale.toString());
+    model.addAttribute("principal", principal);
+    model.addAttribute("pad", signaturePad);
+
+    model.addAttribute("unlockTimeLeft", vaultService.getUnlockTimeLeft() + 1);
+    model.addAttribute("adminKeysIsEmpty", vaultService.adminKeysIsEmpty());
+    model.addAttribute("isUnsealed", (vaultService.getUnlockedKey() != null));
+
+    return "admin/show-pad-info";
   }
 
   /**
@@ -345,6 +393,56 @@ public class AdminController
     }
 
     return "redirect:/admin/manage-pads";
+  }
+
+  /**
+   * Deletes a signature pad from the database.
+   * Only non-validated signature pads can be deleted.
+   * Requires administrator privileges.
+   *
+   * @param dbId The database ID of the signature pad to delete.
+   * @param showHidden current state of showHidden toggle
+   *
+   * @return a redirect to the signature pad management page.
+   */
+  @Operation(summary = "Delete a signature pad",
+             description = "Permanently deletes a signature pad from the database if it has not been validated.",
+             responses =
+             {
+               @ApiResponse(responseCode = "302", description = "Redirected to management page after deletion"),
+               @ApiResponse(responseCode = "400", description = "Bad request if signature pad is validated"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
+             })
+  @GetMapping("/delete-pad")
+  public String deletePad(@RequestParam("id") String dbId, 
+    @RequestParam(name = "showHidden", defaultValue = "false") boolean showHidden)
+  {
+    log.debug("delete-pad id={}", dbId);
+    SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, true);
+    if(secretData == null)
+    {
+      secretData = dbService.findSdbSecretDataById(dbId, false);
+    }
+
+    if(secretData != null && secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
+    {
+      try
+      {
+        SignaturePad pad = objectMapper.readValue(secretData.getSecret(), SignaturePad.class);
+        if(pad.isValidated())
+        {
+          log.error("Forbidden deletion of validated pad: {}", dbId);
+          throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Validated pads cannot be deleted.");
+        }
+        dbService.deleteSecretDataById(dbId);
+      }
+      catch(JsonProcessingException e)
+      {
+        log.error("Error parsing pad data for deletion: {}", dbId);
+      }
+    }
+
+    return "redirect:/admin/manage-pads?showHidden=" + showHidden;
   }
 
   /**
@@ -462,7 +560,7 @@ public class AdminController
    * Shows status information while waiting for user interaction with the signature pad.
    *
    * @param padUUID the unique identifier of the signature pad
-   * @param card the identifier of the user requesting the signature
+   * @param cardNumber the identifier of the user requesting the signature
    * @param model Spring MVC model for passing data to the view
    *
    * @return the name of the wait-for-response template to render

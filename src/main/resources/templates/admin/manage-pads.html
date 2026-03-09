@@ -66,17 +66,27 @@ limitations under the License.
                           <td th:text="${pad.description}">Description</td>
                           <td th:text='${pad.createdBy.name + ", " + pad.createdBy.mail }'>Created By</td>
                           <td th:text="${#dates.format(pad.createTimestamp, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</td>
-                          <td class="text-center pe-4">
-                             <!-- edit and hide actions can be added here -->
-                             <button th:if="${!pad.immutable && !pad.hidden}" class="btn btn-outline-warning btn-sm border-0" 
-                                    th:onclick="hidePad([[${pad.dbid}]], [[${pad.name}]])" title="Verstecken">
-                              <i class="fa-solid fa-eye-slash"></i>
-                            </button>
-                            <button th:if="${!pad.immutable && pad.hidden}" class="btn btn-outline-success btn-sm border-0" 
-                                    th:onclick="showPad([[${pad.dbid}]], [[${pad.name}]])" title="Anzeigen">
-                              <i class="fa-solid fa-eye"></i>
-                            </button>
-                            <span th:if="${pad.immutable}" class="badge bg-secondary">Immutable</span>
+                          <td class="pe-4">
+                            <div class="d-flex justify-content-center gap-1">
+                              <!-- edit and hide actions can be added here -->
+                              <a class="btn btn-outline-info btn-sm border-0" 
+                                 th:href="@{/admin/show-pad-info(padid=${pad.padid})}" title="Details">
+                                <i class="fa-solid fa-circle-info"></i>
+                              </a>
+                              <button th:if="${!pad.immutable && !pad.hidden}" class="btn btn-outline-warning btn-sm border-0" 
+                                      th:onclick="hidePad([[${pad.dbid}]], [[${pad.name}]])" title="Verstecken">
+                                <i class="fa-solid fa-eye-slash"></i>
+                              </button>
+                              <button th:if="${!pad.immutable && pad.hidden}" class="btn btn-outline-success btn-sm border-0" 
+                                      th:onclick="showPad([[${pad.dbid}]], [[${pad.name}]])" title="Anzeigen">
+                                <i class="fa-solid fa-eye"></i>
+                              </button>
+                              <button th:if="${!pad.validated}" class="btn btn-outline-danger btn-sm border-0" 
+                                      th:onclick="deletePad([[${pad.dbid}]], [[${pad.name}]])" title="Löschen">
+                                <i class="fa-solid fa-trash-can"></i>
+                              </button>
+                              <span th:if="${pad.immutable}" class="badge bg-secondary">Immutable</span>
+                            </div>
                           </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(pads)}">
@@ -100,23 +110,37 @@ limitations under the License.
         </div>
       </main>
     </div>
-    
+
     <div th:replace="~{footer::footer}"></div>
 
     <script>
-      function toggleHidden(showHidden) {
+      function toggleHidden(showHidden)
+      {
         window.location.href = `/admin/manage-pads?showHidden=${showHidden}`;
       }
 
-      async function hidePad(dbid, name) {
-        if (confirm(`Möchten Sie das Tablet "${name}" wirklich verstecken?`)) {
+      async function hidePad(dbid, name)
+      {
+        if (confirm(`Möchten Sie das Tablet "${name}" wirklich verstecken?`))
+        {
           window.location.href = `/admin/hide-pad?id=${encodeURIComponent(dbid)}`;
         }
       }
 
-      async function showPad(dbid, name) {
-        if (confirm(`Möchten Sie das Tablet "${name}" wieder anzeigen?`)) {
+      async function showPad(dbid, name)
+      {
+        if (confirm(`Möchten Sie das Tablet "${name}" wieder anzeigen?`))
+        {
           window.location.href = `/admin/show-pad?id=${encodeURIComponent(dbid)}`;
+        }
+      }
+
+      async function deletePad(dbid, name)
+      {
+        if (confirm(`Möchten Sie das Tablet "${name}" wirklich unwiderruflich löschen?`))
+        {
+          const showHidden = document.getElementById('showHiddenToggle').checked;
+          window.location.href = `/admin/delete-pad?id=${encodeURIComponent(dbid)}&showHidden=${showHidden}`;
         }
       }
     </script>

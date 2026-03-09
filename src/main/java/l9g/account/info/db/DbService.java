@@ -34,8 +34,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Service responsible for managing database operations related to application
@@ -177,6 +179,33 @@ public class DbService
    * Finds a {@link SignaturePad} by its UUID and hidden status.
    *
    * @param uuid The UUID of the signature pad.
+   *
+   * @return The {@link SignaturePad} object, or null if not found.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   */
+  public SignaturePad findSignaturePadbyUUID(String uuid)
+    throws JsonProcessingException
+  {
+    SignaturePad signaturePad = null;
+
+    SdbSecretData secretData = findSdbSecretData(
+      uuid, SdbSecretType.SIGNATURE_PAD_JSON);
+
+    if(secretData != null)
+    {
+      signaturePad = objectMapper.readValue(
+        secretData.getSecret(), SignaturePad.class);
+      log.debug("signaturePad={}", signaturePad);
+    }
+
+    return signaturePad;
+  }
+
+  /**
+   * Finds a {@link SignaturePad} by its UUID and hidden status.
+   *
+   * @param uuid The UUID of the signature pad.
    * @param hidden The hidden status of the signature pad.
    *
    * @return The {@link SignaturePad} object, or null if not found.
@@ -199,21 +228,6 @@ public class DbService
     }
 
     return signaturePad;
-  }
-
-  /**
-   * Finds a {@link SignaturePad} by its UUID.
-   *
-   * @param uuid The UUID of the signature pad.
-   *
-   * @return The {@link SignaturePad} object, or null if not found.
-   *
-   * @throws JsonProcessingException If there is an error processing JSON.
-   */
-  public SignaturePad findSignaturePadbyUUID(String uuid)
-    throws JsonProcessingException
-  {
-    return findSignaturePadbyUUID(uuid, false);
   }
 
   /**
@@ -343,6 +357,38 @@ public class DbService
   }
 
   /**
+   * Deletes a secret data entry by its ID.
+   * Only non-validated signature pads can be deleted.
+   *
+   * @param id The database ID of the secret data to delete.
+   * @throws ResponseStatusException if the data is a validated signature pad or not found.
+   */
+  public void deleteSecretDataById(String id)
+  {
+    SdbSecretData secretData = sdbSecretDataRepository.findById(id).orElse(null);
+    if(secretData != null)
+    {
+      if(secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
+      {
+        try
+        {
+          SignaturePad pad = objectMapper.readValue(secretData.getSecret(), SignaturePad.class);
+          if(pad.isValidated())
+          {
+            log.error("Attempted to delete validated signature pad: {}", id);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete validated signature pad.");
+          }
+        }
+        catch(JsonProcessingException e)
+        {
+          log.error("Error parsing signature pad data for deletion: {}", id);
+        }
+      }
+      sdbSecretDataRepository.delete(secretData);
+    }
+  }
+
+  /**
    * Saves or updates an {@link SdbSecretData} entry in the database.
    *
    * @param secretData The {@link SdbSecretData} object to save.
@@ -366,7 +412,7 @@ public class DbService
   }
 
   /**
-   * Finds a list of {@link SdbSecretData} entries by their type and hidden status, ordered by name in ascending order.
+   * Finds a list of {@link SdbSecretData} entries by their type and hidden status, ordered by name in ascending order and modification timestamp in descending order.
    *
    * @param type The type of the secret data to find.
    * @param hidden The hidden status of the secret data.
@@ -375,12 +421,19 @@ public class DbService
    */
   public List<SdbSecretData> findSdbSecretDataByType(SdbSecretType type, boolean hidden)
   {
-    return sdbSecretDataRepository.findByTypeAndHiddenOrderByNameAsc(type, hidden).orElse(null);
+    return sdbSecretDataRepository.findByTypeAndHiddenOrderByNameAscModifyTimestampDesc(type, hidden).orElse(null);
   }
 
+  /**
+   * Finds a list of {@link SdbSecretData} entries by their type, ordered by name in ascending order and modification timestamp in descending order.
+   *
+   * @param type The type of the secret data to find.
+   *
+   * @return A list of {@link SdbSecretData} objects, or null if none found.
+   */
   public List<SdbSecretData> findSdbSecretDataByType(SdbSecretType type)
   {
-    return sdbSecretDataRepository.findByTypeOrderByNameAsc(type).orElse(null);
+    return sdbSecretDataRepository.findByTypeOrderByNameAscModifyTimestampDesc(type).orElse(null);
   }
 
 }
