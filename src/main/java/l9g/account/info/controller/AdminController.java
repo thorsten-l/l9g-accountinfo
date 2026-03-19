@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import l9g.account.info.vault.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -91,6 +92,9 @@ public class AdminController
    * Service for publishing events or messages, likely related to signature pad activities
    */
   private final PublisherService publisherService;
+
+  @Value("${app.javascript.log-level}")
+  private String jsLogLevel;
 
   /**
    * Displays the main home page with an overview of active signature pad sessions.
@@ -283,6 +287,7 @@ public class AdminController
    * @param model Spring MVC model for passing data to the view
    *
    * @return the name of the show-pad-info template to render
+   *
    * @throws IOException if data access fails
    */
   @Operation(summary = "Display signature pad details",
@@ -295,7 +300,8 @@ public class AdminController
              })
   @GetMapping("/show-pad-info")
   public String showPadInfo(@AuthenticationPrincipal DefaultOidcUser principal,
-    @RequestParam("padid") String padUuid, Model model) throws IOException
+    @RequestParam("padid") String padUuid, Model model)
+    throws IOException
   {
     log.debug("show-pad-info principal={} padid={}", principal, padUuid);
     SignaturePad signaturePad = signaturePadService.findSignaturePadByUUID(padUuid, false);
@@ -337,9 +343,11 @@ public class AdminController
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
   @GetMapping("/show-pad")
-  public String showPad(@RequestParam("id") String dbId)
+  public String showPad(@RequestParam("id") String dbId,
+    @AuthenticationPrincipal DefaultOidcUser principal)
   {
     log.debug("show-pad id={}", dbId);
+    log.debug("principal={}", principal);
     SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, true);
 
     if(secretData != null && secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
@@ -347,7 +355,7 @@ public class AdminController
       if( ! secretData.isImmutable())
       {
         secretData.setHidden(false);
-        dbService.saveSecretData(secretData);
+        dbService.saveSecretData(principal, secretData);
       }
       else
       {
@@ -374,9 +382,11 @@ public class AdminController
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
   @GetMapping("/hide-pad")
-  public String hidePad(@RequestParam("id") String dbId)
+  public String hidePad(@RequestParam("id") String dbId,
+    @AuthenticationPrincipal DefaultOidcUser principal)
   {
     log.debug("hide-pad id={}", dbId);
+    log.debug("principal={}", principal);
     SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, false);
 
     if(secretData != null && secretData.getType() == SdbSecretType.SIGNATURE_PAD_JSON)
@@ -384,7 +394,7 @@ public class AdminController
       if( ! secretData.isImmutable())
       {
         secretData.setHidden(true);
-        dbService.saveSecretData(secretData);
+        dbService.saveSecretData(principal, secretData);
       }
       else
       {
@@ -414,8 +424,9 @@ public class AdminController
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
   @GetMapping("/delete-pad")
-  public String deletePad(@RequestParam("id") String dbId, 
-    @RequestParam(name = "showHidden", defaultValue = "false") boolean showHidden)
+  public String deletePad(@RequestParam("id") String dbId,
+    @RequestParam(name = "showHidden", defaultValue = "false") boolean showHidden,
+    @AuthenticationPrincipal DefaultOidcUser principal)
   {
     log.debug("delete-pad id={}", dbId);
     SdbSecretData secretData = dbService.findSdbSecretDataById(dbId, true);
@@ -465,7 +476,7 @@ public class AdminController
                @ApiResponse(responseCode = "500", description = "Internal server error if signature pad creation fails")
              })
   @PostMapping("/connect-new-pad")
-  public String connectNewPad(@RequestParam("name") String padName, 
+  public String connectNewPad(@RequestParam("name") String padName,
     @AuthenticationPrincipal DefaultOidcUser principal, Model model)
     throws IOException
   {
@@ -605,6 +616,43 @@ public class AdminController
     model.addAttribute("pad", signaturePad);
     model.addAttribute("card", cardNumber);
     return "admin/wait-for-response";
+  }
+
+  /**
+   * Displays the user audit page.
+   *
+   * @param principal The authenticated OIDC user
+   * @param model Spring MVC model for passing data to the view
+   *
+   * @return the name of the useraudit template to render
+   */
+  @Operation(summary = "Display the user audit page",
+             description = "Provides an interface to search and audit user information.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "User audit page successfully displayed"),
+               @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
+             })
+  @GetMapping("/useraudit")
+  public String userAudit(@AuthenticationPrincipal DefaultOidcUser principal, Model model)
+  {
+    log.debug("useraudit principal={}", principal);
+
+    if(vaultService.getUnlockedKey() == null)
+    {
+      return "redirect:/admin/vault/unseal";
+    }
+
+    Locale locale = LocaleContextHolder.getLocale();
+    model.addAttribute("locale", locale.toString());
+    model.addAttribute("principal", principal);
+
+    model.addAttribute("unlockTimeLeft", vaultService.getUnlockTimeLeft() + 1);
+    model.addAttribute("adminKeysIsEmpty", vaultService.adminKeysIsEmpty());
+    model.addAttribute("jsLogLevel", jsLogLevel);
+    model.addAttribute("isUnsealed", true);
+
+    return "admin/useraudit";
   }
 
 }

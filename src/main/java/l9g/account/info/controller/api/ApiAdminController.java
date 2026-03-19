@@ -43,7 +43,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import l9g.account.info.dto.DtoUserInfo;
+import l9g.account.info.service.FileStorageService;
+import l9g.account.info.service.LdapService;
 import l9g.account.info.vault.VaultService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * REST controller for administrative API endpoints related to
@@ -57,11 +63,15 @@ import l9g.account.info.vault.VaultService;
 public class ApiAdminController
 {
   private final VaultService vaultService;
-  
+
   /**
    * Database service for accessing and managing stored data.
    */
   private final DbService dbService;
+
+  private final FileStorageService fileStorageService;
+
+  private final LdapService ldapService;
 
   /**
    * Service for authentication and authorization checks.
@@ -101,7 +111,7 @@ public class ApiAdminController
   {
     log.debug("dbId={}", dbId);
     log.debug("principal={}", principal);
-    return ResponseEntity.ok(dbService.findFileDataById(dbId));
+    return ResponseEntity.ok(fileStorageService.findFileDataById(dbId));
   }
 
   /**
@@ -436,6 +446,76 @@ public class ApiAdminController
       });
 
       return ResponseEntity.ok(result);
+    }
+
+    return ResponseEntity.notFound().build();
+  }
+
+  /**
+   * Retrieves a list of persons based on a search query.
+   * Requires the vault to be unsealed.
+   *
+   * @param query The search query.
+   * @param principal The authenticated OIDC user.
+   * @return A list of matching users.
+   * @throws Exception if data retrieval fails.
+   */
+  @Operation(summary = "Search for persons",
+             description = "Returns a list of persons matching the query. Requires ADMIN role and unsealed vault.")
+  @GetMapping(path = "/search/person")
+  public ResponseEntity<List<DtoUserInfo>> personList(
+    @RequestParam("query") String query,
+    @AuthenticationPrincipal DefaultOidcUser principal
+  )
+    throws Exception
+  {
+    log.debug("personList called for query '{}'", query);
+
+    if(vaultService.getUnlockedKey() == null)
+    {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Query persons is not allowed");
+    }
+
+    List<DtoUserInfo> persons = ldapService.listPersons(query);
+
+    if(persons != null && !persons.isEmpty())
+    {
+      return ResponseEntity.ok(persons);
+    }
+
+    return ResponseEntity.notFound().build();
+  }
+
+  /**
+   * Retrieves audit data (stored secrets) for a specific person UID.
+   * Requires the vault to be unsealed.
+   *
+   * @param uid The user ID of the person.
+   * @param principal The authenticated OIDC user.
+   * @return A list of secret data entries for the user.
+   * @throws Exception if data retrieval fails.
+   */
+  @Operation(summary = "Audit person secrets",
+             description = "Returns a list of stored secrets for a specific person UID. Requires ADMIN role and unsealed vault.")
+  @GetMapping(path = "/audit/person/{uid}")
+  public ResponseEntity<List<SdbSecretData>> auditPerson(
+    @PathVariable("uid") String uid,
+    @AuthenticationPrincipal DefaultOidcUser principal
+  )
+    throws Exception
+  {
+    log.debug("auditPerson called for uid '{}'", uid);
+
+    if(vaultService.getUnlockedKey() == null)
+    {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Audit person is not allowed");
+    }
+
+    List<SdbSecretData> list = dbService.findSdbSecretDataByName(uid);
+
+    if(list != null && !list.isEmpty())
+    {
+      return ResponseEntity.ok(list);
     }
 
     return ResponseEntity.notFound().build();

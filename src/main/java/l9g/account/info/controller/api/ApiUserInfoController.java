@@ -15,14 +15,17 @@
  */
 package l9g.account.info.controller.api;
 
+import java.util.Map;
 import l9g.account.info.dto.DtoUserInfo;
 import l9g.account.info.service.LdapService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +34,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import l9g.account.info.db.DbService;
 
 /**
  * REST API controller for user information retrieval.
@@ -52,6 +56,8 @@ public class ApiUserInfoController
    * Service for interacting with LDAP (Lightweight Directory Access Protocol) directory.
    */
   private final LdapService ldapService;
+
+  private final DbService dbService;
 
   /**
    * Retrieves user information for the specified user ID.
@@ -85,7 +91,7 @@ public class ApiUserInfoController
   )
     throws Exception
   {
-    log.info("USER_SEARCH: {}, {}, {}, {}", request.getSession(true).getId(), 
+    log.info("USER_SEARCH: {}, {}, {}, {}", request.getSession(true).getId(),
       principal.getName(), padUuid, cardNumber);
     log.debug("userinfo called for card number '{}'", cardNumber);
     log.debug("principal={}", principal);
@@ -96,13 +102,41 @@ public class ApiUserInfoController
     DtoUserInfo userInfo = ldapService.findUserInfoByCustomerNumber(cardNumber);
     if(userInfo != null)
     {
-      log.info("USER_FOUND: {}, {}, {}, {}, {}, {}", request.getSession(true).getId(), 
-              principal.getName(), padUuid, userInfo.customer(), 
-              userInfo.barcode(), userInfo.uid());
+      log.info("USER_FOUND: {}, {}, {}, {}, {}, {}", request.getSession(true).getId(),
+        principal.getName(), padUuid, userInfo.customer(),
+        userInfo.barcode(), userInfo.uid());
       return userInfo;
     }
 
     return new DtoUserInfo("ERROR: card number not found : " + cardNumber);
+  }
+
+  @Operation(summary = "Retrieve user counts",
+             description = "Fetches basic user counts summary based on user ID.",
+             responses =
+             {
+               @ApiResponse(responseCode = "200", description = "User summary successfully retrieved"),
+               @ApiResponse(responseCode = "401", description = "Unauthorized"),
+               @ApiResponse(responseCode = "500", description = "Internal server error")
+             })
+  @GetMapping(path = "/counts/{userid}",
+              produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Map<String, Object>> summary(
+    @PathVariable("userid") String userId,
+    @AuthenticationPrincipal DefaultOidcUser principal
+  )
+  {
+    log.debug("summary called for userid '{}'", userId);
+    log.debug("principal={}", principal);
+
+    Map<String, Object> result = dbService.getSecretDataCountsByName(userId);
+    
+    if ( result == null || result.isEmpty() )
+    {
+      return ResponseEntity.notFound().build();
+    }
+    
+    return ResponseEntity.ok(result);
   }
 
 }

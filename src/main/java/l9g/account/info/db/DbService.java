@@ -21,13 +21,14 @@ import com.nimbusds.jwt.SignedJWT;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import l9g.account.info.db.model.SdbProperty;
 import java.util.Optional;
-import l9g.account.info.service.FileStorageService;
 import l9g.account.info.db.model.SdbSecretData;
 import l9g.account.info.db.model.SdbSecretType;
+import l9g.account.info.db.model.SdbVaultAdminKey;
 import l9g.account.info.service.SignaturePad;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,9 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -78,9 +81,9 @@ public class DbService
   private final SdbSecretDataRepository sdbSecretDataRepository;
 
   /**
-   * Service for handling file storage operations.
+   * Repository for managing vault admin key entries.
    */
-  private final FileStorageService fileStorageService;
+  private final SdbVaultAdminKeyRepository sdbVaultAdminKeyRepository;
 
   /**
    * Object mapper for JSON serialization/deserialization.
@@ -203,6 +206,21 @@ public class DbService
   }
 
   /**
+   * Finds a {@link SignaturePad} by its UUID, regardless of its hidden status.
+   *
+   * @param uuid The UUID of the signature pad.
+   *
+   * @return The {@link SignaturePad} object, or null if not found.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   */
+  public SignaturePad findSignaturePadByUUIDAny(String uuid)
+    throws JsonProcessingException
+  {
+    return findSignaturePadbyUUID(uuid);
+  }
+
+  /**
    * Finds a {@link SignaturePad} by its UUID and hidden status.
    *
    * @param uuid The UUID of the signature pad.
@@ -264,40 +282,6 @@ public class DbService
     sdbSecretDataRepository.save(secretData);
   }
 
-  /**
-   * Saves secret file data (e.g., photos) associated with a signature pad event.
-   *
-   * @param publisher The publisher of the file data.
-   * @param fullname The full name associated with the file.
-   * @param username The username associated with the file.
-   * @param mail The email associated with the file.
-   * @param padUuid The UUID of the signature pad.
-   * @param side The side of the card (e.g., "front", "back").
-   * @param file The {@link MultipartFile} containing the file data.
-   *
-   * @throws JsonProcessingException If there is an error processing JSON.
-   * @throws IOException If an I/O error occurs during file processing.
-   */
-  public SdbSecretData saveSecretFileData(String publisher, String fullname,
-    String username, String mail, String padUuid, String side, MultipartFile file)
-    throws JsonProcessingException, IOException
-  {
-    log.debug("saveSecretFileData");
-
-    Map<String, String> descriptionMap = new HashMap<>();
-    descriptionMap.put("name", fullname);
-    descriptionMap.put("mail", mail);
-
-    SdbSecretData data = new SdbSecretData(
-      publisher, padUuid, SdbSecretType.fromString(side), true);
-    data.setName(username);
-    data.setDescription(objectMapper.writeValueAsString(descriptionMap));
-    data.setValue(file.getBytes());
-
-    sdbSecretDataRepository.save(data);
-    fileStorageService.save(data);
-    return data;
-  }
 
   /**
    * Saves a signed JWT to the database.
@@ -329,32 +313,6 @@ public class DbService
     sdbSecretDataRepository.save(data);
   }
 
-  /**
-   * Finds file data (e.g., images) by its database ID.
-   *
-   * @param id The database ID of the file data.
-   *
-   * @return A byte array containing the file data, or null if not found or not a file type.
-   *
-   * @throws IOException If an I/O error occurs during file loading.
-   */
-  public byte[] findFileDataById(String id)
-    throws IOException
-  {
-    Optional<SdbSecretData> optional = sdbSecretDataRepository.findById(id);
-    byte[] fileData = null;
-    if(optional.isPresent())
-    {
-      SdbSecretData secretData = optional.get();
-      if(secretData.getType() == SdbSecretType.ID_FRONT_IMAGE
-        || secretData.getType() == SdbSecretType.ID_BACK_IMAGE)
-      {
-        fileData = fileStorageService.load(secretData);
-      }
-    }
-
-    return fileData;
-  }
 
   /**
    * Deletes a secret data entry by its ID.
@@ -393,8 +351,21 @@ public class DbService
    *
    * @param secretData The {@link SdbSecretData} object to save.
    */
-  public void saveSecretData(SdbSecretData secretData)
+  public void saveSecretData(DefaultOidcUser principal, SdbSecretData secretData)
   {
+    Map<String,String> publisher = new LinkedHashMap<>();
+    publisher.put("mail", principal.getEmail());
+    publisher.put("name", principal.getFullName());
+    publisher.put("username", principal.getPreferredUsername());
+    log.debug("saveSecretData publisher={}", publisher);
+    try
+    {
+      secretData.setModifiedBy(objectMapper.writeValueAsString(publisher));
+    }
+    catch(JsonProcessingException ex)
+    {
+      log.error("publischer unknown : {}", ex );
+    }
     sdbSecretDataRepository.save(secretData);
   }
 
@@ -436,4 +407,112 @@ public class DbService
     return sdbSecretDataRepository.findByTypeOrderByNameAscModifyTimestampDesc(type).orElse(null);
   }
 
+  /**
+   * Finds a list of {@link SdbSecretData} entries by their name, ordered by modification timestamp in descending order.
+   *
+   * @param name The name associated with the secret data.
+   *
+   * @return A list of {@link SdbSecretData} objects, or null if none found.
+   */
+  public List<SdbSecretData> findSdbSecretDataByName(String name)
+  {
+    return sdbSecretDataRepository.findByNameOrderByModifyTimestampDesc(name).orElse(null);
+  }
+
+  /**
+   * Retrieves the total count of {@link SdbSecretData} entries for each {@link SdbSecretType}.
+   *
+   * @return A map where the keys are the string representations of the secret types and the values are the total counts.
+   */
+  public Map<String, Object> getTotalSecretDataCounts()
+  {
+    Map<String, Object> counts = new LinkedHashMap<>();
+    for(SdbSecretType type : SdbSecretType.values())
+    {
+      counts.put(type.name(), sdbSecretDataRepository.countByType(type));
+    }
+    return counts;
+  }
+
+  /**
+   * Retrieves the count of {@link SdbSecretData} entries for each {@link SdbSecretType} for a specific name.
+   *
+   * @param name The name associated with the secret data.
+   *
+   * @return A map where the keys are the string representations of the secret types and the values are the counts for the specified name.
+   */
+  public Map<String, Object> getSecretDataCountsByName(String name)
+  {
+    Map<String, Object> counts = new LinkedHashMap<>();
+    for(SdbSecretType type : SdbSecretType.values())
+    {
+      counts.put(type.name(), sdbSecretDataRepository.countByTypeAndName(type, name));
+    }
+    return counts;
+  }
+
+  /**
+   * Performs periodic database cleanup tasks.
+   * This method is intended to be called by a scheduled job.
+   */
+  public void cleanupJob()
+  {
+    log.info("Executing database cleanup...");
+    // TODO: implement cleanup logic
+  }
+
+  /**
+   * Checks if there are any vault admin keys in the database.
+   *
+   * @return {@code true} if no vault admin keys exist, {@code false} otherwise.
+   */
+  public boolean vaultAdminKeysIsEmpty()
+  {
+    return sdbVaultAdminKeyRepository.count() == 0;
+  }
+
+  /**
+   * Adds a new vault admin key to the database.
+   *
+   * @param publisher The identifier of the publisher.
+   * @param key The {@link SdbVaultAdminKey} to save.
+   */
+  public void saveVaultAdminKey(String publisher, SdbVaultAdminKey key)
+  {
+    log.debug("saveVaultAdminKey publisher={}", publisher);
+    sdbVaultAdminKeyRepository.save(key);
+  }
+
+  /**
+   * Finds all vault admin keys for a specific admin ID.
+   *
+   * @param adminId The identifier of the admin.
+   * @return A list of {@link SdbVaultAdminKey} objects.
+   */
+  public List<SdbVaultAdminKey> findVaultAdminKeysByAdminId(String adminId)
+  {
+    return sdbVaultAdminKeyRepository.findByAdminIdIgnoreCase(adminId);
+  }
+
+  /**
+   * Finds all vault admin keys in the database.
+   *
+   * @return A list of all {@link SdbVaultAdminKey} objects.
+   */
+  public List<SdbVaultAdminKey> findAllVaultAdminKeys()
+  {
+    return sdbVaultAdminKeyRepository.findAll();
+  }
+
+  /**
+   * Deletes a vault admin key by its credential ID.
+   *
+   * @param credentialId The unique credential identifier.
+   */
+  @Transactional
+  public void deleteVaultAdminKeyByCredentialId(String credentialId)
+  {
+    log.info("deleteVaultAdminKeyByCredentialId {}", credentialId);
+    sdbVaultAdminKeyRepository.deleteByCredentialId(credentialId);
+  }
 }

@@ -40,36 +40,43 @@ limitations under the License.
               </div>
               <div class="card-body p-4">
                 <div class="d-grid gap-3">
-                  <a th:href="@{/admin/register-new-pad}" class="btn btn-outline-primary btn-lg text-start p-3 text-dark">
+                  <div th:if="${isUnsealed}" th:remove="tag">
+                    <a th:href="@{/admin/useraudit}" class="btn btn-outline-danger btn-lg text-start p-3">
+                      <i class="fa-solid fa-users-viewfinder me-3 fa-fw"></i>
+                      <span class="fw-bold">Personen Audit</span>
+                      <div class="small text-muted ms-5">Überprüfung und Einsicht in personenbezogene Daten</div>
+                    </a>
+                  </div>
+                  <a th:href="@{/admin/register-new-pad}" class="btn btn-outline-primary btn-lg text-start p-3">
                     <i class="fa-solid fa-tablet-screen-button me-3 fa-fw"></i>
                     <span class="fw-bold">Tablet-Registrierung</span>
                     <div class="small text-muted ms-5">Neues Android Tablet registrieren</div>
                   </a>
-                  <a th:href="@{/admin/manage-pads}" class="btn btn-outline-primary btn-lg text-start p-3 text-dark">
+                  <a th:href="@{/admin/manage-pads}" class="btn btn-outline-primary btn-lg text-start p-3">
                     <i class="fa-solid fa-tablets me-3 fa-fw"></i>
                     <span class="fw-bold">Tablet-Bearbeitung</span>
                     <div class="small text-muted ms-5">Registrierte Tablets verwalten (Bearbeiten/Löschen)</div>
                   </a>
                   <div th:if="${isUnsealed || adminKeysIsEmpty}" th:remove="tag">
-                    <a th:href="@{/admin/vault/enrollment}" class="btn btn-outline-primary btn-lg text-start p-3">
+                    <a th:href="@{/admin/vault/enrollment}" class="btn btn-outline-warning btn-lg text-start p-3 text-dark">
                       <i class="fa-solid fa-user-plus me-3 fa-fw"></i>
-                      <span class="fw-bold">YubiKey Enrollment</span>
+                      <span class="fw-bold">Hardware-Key Enrollment</span>
                       <div class="small text-muted ms-5">Registriere neue Hardware-Keys für Administratoren.</div>
+                    </a>
+                  </div>
+                  <div th:if="${isUnsealed}" th:remove="tag">
+                    <a th:href="@{/admin/vault/managekeys}" class="btn btn-outline-warning btn-lg text-start p-3 text-dark">
+                      <i class="fa-solid fa-key me-3 fa-fw"></i>
+                      <span class="fw-bold">Hardware-Keys Bearbeiten</span>
+                      <div class="small text-muted ms-5">Registrierte Hardware-Keys bearbeiten</div>
                     </a>
                   </div>
                   <a th:href="@{/admin/vault/unseal}" class="btn btn-outline-warning btn-lg text-start p-3 text-dark">
                     <i class="fa-solid fa-unlock-keyhole me-3 fa-fw"></i>
-                    <span class="fw-bold">Unseal Server</span>
-                    <div class="small text-muted ms-5">Entsperre den Server-Vault mit einem YubiKey.</div>
+                    <span class="fw-bold">Server-Tresor Entsperren</span>
+                    <div class="small text-muted ms-5">Entsperre den Server-Vault mit einem Hardware-Key.</div>
                   </a>
-                  <div th:if="${isUnsealed}" th:remove="tag">
-                    <a th:href="@{/admin/vault/managekeys}" class="btn btn-outline-warning btn-lg text-start p-3 text-dark">
-                      <i class="fa-solid fa-key me-3 fa-fw"></i>
-                      <span class="fw-bold">Manage Admin Keys</span>
-                      <div class="small text-muted ms-5">Registrierte Hardware-Keys bearbeiten</div>
-                    </a>
-                  </div>
-                  <a th:href="@{/swagger-ui/index.html}" class="btn btn-outline-secondary btn-lg text-start p-3 text-dark">
+                  <a th:href="@{/swagger-ui/index.html}" class="btn btn-outline-secondary btn-lg text-start p-3">
                     <i class="fa-solid fa-book me-3 fa-fw"></i>
                     <span class="fw-bold">API Dokumentation</span>
                     <div class="small text-muted ms-5">Online Dokumentation des AccountInfo APIs</div>

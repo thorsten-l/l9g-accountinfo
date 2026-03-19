@@ -15,6 +15,8 @@
  */
 package l9g.account.info.vault;
 
+import l9g.account.info.db.model.SdbVaultAdminKey;
+
 /**
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
@@ -36,6 +38,13 @@ public record VaultAdminKey(
     String credentialId)
   {
     this(adminId, fullName, description, credentialId, null, null);
+  }
+
+  public VaultAdminKey(SdbVaultAdminKey sdbVaultAdminKey)
+  {
+    this(sdbVaultAdminKey.getAdminId(), sdbVaultAdminKey.getFullName(),
+      sdbVaultAdminKey.getDescription(), sdbVaultAdminKey.getCredentialId(),
+      sdbVaultAdminKey.getPrfSalt(), sdbVaultAdminKey.getEncryptedMasterKey());
   }
 
 }

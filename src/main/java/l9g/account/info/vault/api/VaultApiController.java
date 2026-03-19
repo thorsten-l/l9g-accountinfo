@@ -24,6 +24,9 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import l9g.account.info.db.DbService;
+import l9g.account.info.db.model.SdbSecretData;
+import l9g.account.info.dto.DtoUserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -40,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
@@ -54,6 +58,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class VaultApiController
 {
   private final VaultService vaultService;
+
+  private final DbService dbService;
 
   @PostMapping(path = "/adminkey", produces = MediaType.TEXT_PLAIN_VALUE)
   ResponseEntity<String> addAdminkey(

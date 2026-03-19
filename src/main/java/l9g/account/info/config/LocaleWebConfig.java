@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
@@ -84,6 +85,21 @@ public class LocaleWebConfig implements WebMvcConfigurer
   {
     log.debug("addInterceptors");
     registry.addInterceptor(localeChangeInterceptor());
+  }
+
+  /**
+   * Configures resource handlers for serving static resources, specifically for WebJars.
+   * Enables the resource chain to allow version-less WebJar URLs.
+   *
+   * @param registry The ResourceHandlerRegistry to add the handler to.
+   */
+  @Override
+  public void addResourceHandlers(ResourceHandlerRegistry registry)
+  {
+    log.debug("addResourceHandlers");
+    registry.addResourceHandler("/webjars/**")
+      .addResourceLocations("classpath:/META-INF/resources/webjars/")
+      .resourceChain(true);
   }
 
 }

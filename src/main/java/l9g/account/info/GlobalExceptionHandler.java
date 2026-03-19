@@ -17,6 +17,7 @@ package l9g.account.info;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -77,10 +78,19 @@ public class GlobalExceptionHandler
    */
   @ExceptionHandler(
     org.springframework.web.servlet.resource.NoResourceFoundException.class)
-  @ResponseStatus(HttpStatus.NOT_FOUND)
   public ModelAndView handleNotFoundException(HttpServletRequest request,
+    jakarta.servlet.http.HttpServletResponse response,
     Exception ex)
   {
+    String uri = request.getRequestURI();
+    if (uri.contains("/webjars/") || uri.endsWith(".css") || uri.endsWith(".js") 
+        || uri.endsWith(".png") || uri.endsWith(".jpg") || uri.endsWith(".ico")
+        || uri.endsWith(".svg")) {
+      response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+      return null;
+    }
+
+    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     ModelAndView modelAndView = new ModelAndView("error/404");
     modelAndView.addObject("pageErrorRequestUri", request.getRequestURI());
     return modelAndView;

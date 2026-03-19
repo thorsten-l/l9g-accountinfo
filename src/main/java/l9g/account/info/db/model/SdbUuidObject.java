@@ -70,6 +70,7 @@ public class SdbUuidObject implements Serializable
     this.id = UUID.randomUUID().toString();
     this.immutable = immutable;
     this.hidden = hidden;
+    this.pendingDeletionCount = 0;
   }
 
   /**
@@ -230,6 +231,10 @@ public class SdbUuidObject implements Serializable
    */
   private boolean hidden;
 
+  @Setter
+  @Column(columnDefinition = "int default 0")
+  private int pendingDeletionCount;
+  
   @Id
   @Column(length = 40, updatable = false)
   /**

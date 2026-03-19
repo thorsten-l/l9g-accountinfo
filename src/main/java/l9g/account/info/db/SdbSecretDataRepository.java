@@ -91,4 +91,31 @@ public interface SdbSecretDataRepository extends
    */
   Optional<List<SdbSecretData>> findByTypeAndHiddenOrderByNameAscModifyTimestampDesc(SdbSecretType type, boolean hidden);
 
+  /**
+   * Finds a list of {@link SdbSecretData} entities by their name, ordered by modification timestamp in descending order.
+   *
+   * @param name The name associated with the secret data.
+   * @return An {@link Optional} containing a list of found {@link SdbSecretData} entities, or empty if none found.
+   */
+  Optional<List<SdbSecretData>> findByNameOrderByModifyTimestampDesc(String name);
+
+  /**
+   * Counts the total number of {@link SdbSecretData} entities for a given type.
+   *
+   * @param type The type of the secret data to count.
+   *
+   * @return The total count of entities for the specified type.
+   */
+  long countByType(SdbSecretType type);
+
+  /**
+   * Counts the total number of {@link SdbSecretData} entities for a given type and name.
+   *
+   * @param type The type of the secret data to count.
+   * @param name The name associated with the secret data.
+   *
+   * @return The total count of entities for the specified type and name.
+   */
+  long countByTypeAndName(SdbSecretType type, String name);
+
 }

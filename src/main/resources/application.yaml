@@ -25,6 +25,11 @@ spring:
             issuer-uri: https://id.dev.sonia.de/realms/dev
             user-name-attribute: preferred_username
 
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
   servlet:
     multipart:
       max-file-size: 50MB
@@ -82,3 +87,11 @@ app:
   storage-location: "./data/secrets"
   vault:
     masterkey-ttl: 120000
+
+scheduler:
+  heartbeat:
+    enabled: true
+    rate: 15000
+  db-deletion:
+    enabled: true
+    cron: "0 15 2 * * *"

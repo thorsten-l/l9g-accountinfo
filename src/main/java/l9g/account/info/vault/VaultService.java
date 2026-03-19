@@ -15,18 +15,15 @@
  */
 package l9g.account.info.vault;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.l9g.crypto.core.AES256;
 import de.l9g.crypto.core.CryptoHandler;
 import static de.l9g.crypto.core.CryptoHandler.AES256_PREFIX;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.crypto.SecretKey;
+import l9g.account.info.db.DbService;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -37,11 +34,9 @@ import org.springframework.beans.factory.annotation.Value;
 @Service
 public class VaultService
 {
-  private static final String ADMINKEYS_FILENAME = "data/vault-adminkeys.json";
-
-  private final List<VaultAdminKey> adminKeys = new ArrayList<>();
-
   private final long masterkeyTTL;
+
+  private final DbService dbService;
 
   private SecretKey masterKey;
 
@@ -49,67 +44,43 @@ public class VaultService
 
   private AES256 aes256;
 
-  public VaultService(@Value("${app.vault.masterkey-ttl}") long masterkeyTTL)
+  public VaultService(@Value("${app.vault.masterkey-ttl}") long masterkeyTTL,
+    DbService dbService)
   {
     this.masterkeyTTL = masterkeyTTL;
-    log.debug("masterKeyTTL={}", masterkeyTTL);
-    ObjectMapper mapper = new ObjectMapper();
+    this.dbService = dbService;
 
-    try
-    {
-      File adminKeysFile = new File(ADMINKEYS_FILENAME);
-      if(adminKeysFile.exists())
-      {
-        List<VaultAdminKey> loadedKeys = mapper.readValue(adminKeysFile,
-          mapper.getTypeFactory().constructCollectionType(List.class, VaultAdminKey.class));
-        this.adminKeys.addAll(loadedKeys);
-        log.info("{} admin keys loaded from {}", adminKeys.size(), ADMINKEYS_FILENAME);
-      }
-    }
-    catch(IOException e)
-    {
-      log.error("Failed to initialize VaultService", e);
-      throw new RuntimeException("Could not read or create masterkey file or admin keys file", e);
-    }
+    log.debug("masterKeyTTL={}", masterkeyTTL);
   }
 
   public synchronized void addVaultAdminKey(VaultAdminKey key)
   {
-    adminKeys.add(key);
-    saveAdminKeys();
+    log.debug("addVaultAdminKey");
+    dbService.saveVaultAdminKey(key.adminId(), new l9g.account.info.db.model.SdbVaultAdminKey(
+      key.adminId(), key.adminId(), key.fullName(), key.description(),
+      key.credentialId(), key.prfSalt(), key.encryptedMasterKey()));
   }
 
   public synchronized List<VaultAdminKey> findVaultAdminKeysByAdminId(String adminId)
   {
-    final List<VaultAdminKey> resultList = new ArrayList<>();
-    adminKeys.forEach(key ->
-    {
-      if(key.adminId().equalsIgnoreCase(adminId))
-      {
-        resultList.add(key);
-      }
-    });
-    return resultList;
+    log.debug("findVaultAdminKeysByAdminId");
+    return dbService.findVaultAdminKeysByAdminId(adminId).stream()
+      .map(VaultAdminKey::new)
+      .toList();
   }
 
   public synchronized List<VaultAdminKey> findAllVaultAdminKeys()
   {
-    final List<VaultAdminKey> resultList = new ArrayList<>();
-    adminKeys.forEach(key ->
-    {
-      resultList.add(new VaultAdminKey(
-        key.adminId(),
-        key.fullName(),
-        key.description(),
-        key.credentialId()
-      ));
-    });
-    return resultList;
+    log.debug("findAllVaultAdminKeys");
+    return dbService.findAllVaultAdminKeys().stream()
+      .map(VaultAdminKey::new)
+      .toList();
   }
 
   public synchronized boolean adminKeysIsEmpty()
   {
-    return adminKeys.isEmpty();
+    log.debug("adminKeysIsEmpty");
+    return dbService.vaultAdminKeysIsEmpty();
   }
 
   public long getUnlockTimeLeft()
@@ -143,15 +114,8 @@ public class VaultService
 
   public synchronized void removeVaultAdminKeyByCredentialId(String credentialId)
   {
-    if(adminKeys.removeIf(key -> key.credentialId().equals(credentialId)))
-    {
-      log.info("VaultAdminKey with credentialId {} removed.", credentialId);
-      saveAdminKeys();
-    }
-    else
-    {
-      log.warn("VaultAdminKey with credentialId {} not found for removal.", credentialId);
-    }
+    log.debug("removeVaultAdminKeyByCredentialId");
+    dbService.deleteVaultAdminKeyByCredentialId(credentialId);
   }
 
   private void checkVaultIsUnsealed()
@@ -194,22 +158,8 @@ public class VaultService
 
   public synchronized byte[] decrypt(byte[] cryptData)
   {
+    log.debug("decrypt");
     checkVaultIsUnsealed();
     return aes256.decrypt(cryptData);
   }
-
-  private synchronized void saveAdminKeys()
-  {
-    ObjectMapper mapper = new ObjectMapper();
-    try
-    {
-      mapper.writerWithDefaultPrettyPrinter().writeValue(new File(ADMINKEYS_FILENAME), adminKeys);
-      log.info("VaultAdminKey added and saved to {}", ADMINKEYS_FILENAME);
-    }
-    catch(IOException e)
-    {
-      log.error("Failed to save admin keys", e);
-    }
-  }
-
 }

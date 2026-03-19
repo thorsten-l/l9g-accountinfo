@@ -34,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import l9g.account.info.db.model.SdbSecretData;
+import l9g.account.info.service.FileStorageService;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -53,6 +54,7 @@ public class ApiScanController
    * Database service for accessing and managing stored data.
    */
   private final DbService dbService;
+  private final FileStorageService fileStorageService;
 
   /**
    * Service for publishing events or messages.
@@ -191,13 +193,13 @@ public class ApiScanController
     log.debug("principal={}", principal);
     log.debug("fullname={}, userid={}, mail={}", fullname, userid, mail);
     // TODO: hier Foto und cardNumber + side verarbeiten (z.B. abspeichern)
-    String filename = file.getOriginalFilename();
-    long size = file.getSize();
+    // String filename = file.getOriginalFilename();
+    // long size = file.getSize();
     //System.out.printf("padUuid=%s, Seite=%s, Datei=%s (%d Bytes)%n",
     //  padUuid, side, filename, size);
 
     
-    SdbSecretData data = dbService.saveSecretFileData(
+    SdbSecretData data = fileStorageService.saveSecretFileData(
       publisherService.principalToPublisherJSON(principal),
       fullname, userid, mail, padUuid, side, file);
 

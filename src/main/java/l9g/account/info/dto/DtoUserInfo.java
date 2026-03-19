@@ -61,10 +61,10 @@ public record DtoUserInfo(
   {
     this(status, null, null, null, null, null, null, null, null, null, null, null);
   }
-  
-  public DtoUserInfo(String fristname, String lastname, String birthday, String barcode, String customer)
+
+  public DtoUserInfo(String fristname, String lastname, String uid, String birthday, String barcode, String customer)
   {
-    this("OK", null, fristname, lastname, null, null, birthday, barcode, customer, null, null, null);
+    this("OK", null, fristname, lastname, uid, null, birthday, barcode, customer, null, null, null);
   }
 
 }

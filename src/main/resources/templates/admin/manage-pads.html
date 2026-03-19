@@ -52,20 +52,23 @@ limitations under the License.
                           <th class="ps-4">Name</th>
                           <th>UUID / Pad ID</th>
                           <th>Beschreibung</th>
-                          <th>Erstellt von</th>
                           <th>Erstellt am</th>
+                          <th>Geändert von</th>
+                          <th>am</th>
                           <th class="text-center pe-4">Aktion</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr th:each="pad : ${pads}">
+                          </tr>
+                          </thead>
+                          <tbody>
+                          <tr th:each="pad : ${pads}">
                           <td class="ps-4 fw-bold" th:text="${pad.name}">Pad Name</td>
                           <td>
                             <code th:text="${pad.padid}">pad-uuid</code>
                           </td>
                           <td th:text="${pad.description}">Description</td>
-                          <td th:text='${pad.createdBy.name + ", " + pad.createdBy.mail }'>Created By</td>
                           <td th:text="${#dates.format(pad.createTimestamp, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</td>
+                          <td th:text='${pad.modifiedBy.name + ", " + pad.modifiedBy.mail }'>Modified By</td>
+                          <td th:text="${#dates.format(pad.modifyTimestamp, 'dd.MM.yyyy HH:mm')}">01.01.2025 12:00</td>
+
                           <td class="pe-4">
                             <div class="d-flex justify-content-center gap-1">
                               <!-- edit and hide actions can be added here -->

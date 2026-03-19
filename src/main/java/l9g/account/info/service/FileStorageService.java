@@ -15,15 +15,24 @@
  */
 package l9g.account.info.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.l9g.crypto.core.CryptoHandler;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import l9g.account.info.db.SdbSecretDataRepository;
 import l9g.account.info.db.model.SdbSecretData;
+import l9g.account.info.db.model.SdbSecretType;
+import l9g.account.info.vault.VaultService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service for storing and retrieving files in a hierarchical directory structure.
@@ -41,6 +50,12 @@ public class FileStorageService
    */
   private final Path storageLocationPath;
 
+  private final VaultService vaultService;
+
+  private final SdbSecretDataRepository sdbSecretDataRepository;
+  
+  private final ObjectMapper objectMapper = new ObjectMapper();
+
   /**
    * Constructs a {@code FileStorageService} and initializes the storage directory.
    * If the specified storage directory does not exist, it will be created.
@@ -50,10 +65,13 @@ public class FileStorageService
    * @throws IOException If an I/O error occurs during directory creation.
    */
   public FileStorageService(
-    @Value("${app.storage-location}") String storageLocation)
+    @Value("${app.storage-location}") String storageLocation,
+    VaultService vaultService, SdbSecretDataRepository sdbSecretDataRepository)
     throws IOException
   {
     this.storageLocationPath = Paths.get(storageLocation);
+    this.vaultService = vaultService;
+    this.sdbSecretDataRepository = sdbSecretDataRepository;
     Files.createDirectories(this.storageLocationPath);
   }
 
@@ -114,12 +132,13 @@ public class FileStorageService
   public byte[] load(SdbSecretData secretData)
     throws IOException
   {
+    log.debug("load {}/{}", secretData.getId(), secretData.getType());
     try
     {
       Path file = getHierarchicalPath(secretData.getId());
-      return CryptoHandler.getInstance().decrypt(Files.readAllBytes(file));
+      return vaultService.decrypt(Files.readAllBytes(file));
     }
-    catch(IOException e)
+    catch(Throwable e)
     {
       throw new IOException(
         "Could not read encrypted file " + secretData.getId(), e);
@@ -175,4 +194,67 @@ public class FileStorageService
     }
   }
 
+  /**
+   * Saves secret file data (e.g., photos) associated with a signature pad event.
+   *
+   * @param publisher The publisher of the file data.
+   * @param fullname The full name associated with the file.
+   * @param username The username associated with the file.
+   * @param mail The email associated with the file.
+   * @param padUuid The UUID of the signature pad.
+   * @param side The side of the card (e.g., "front", "back").
+   * @param file The {@link MultipartFile} containing the file data.
+   *
+   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws IOException If an I/O error occurs during file processing.
+   */
+  public SdbSecretData saveSecretFileData(String publisher, String fullname,
+    String username, String mail, String padUuid, String side, MultipartFile file)
+    throws JsonProcessingException, IOException
+  {
+    log.debug("saveSecretFileData");
+    
+    Map<String, String> descriptionMap = new HashMap<>();
+    descriptionMap.put("name", fullname);
+    descriptionMap.put("mail", mail);
+    
+    SdbSecretData data = new SdbSecretData(
+      publisher, padUuid, SdbSecretType.fromString(side), true);
+    data.setName(username);
+    data.setDescription(objectMapper.writeValueAsString(descriptionMap));
+    data.setValue(file.getBytes());
+    
+    sdbSecretDataRepository.save(data);
+    save(data);
+    return data;
+  }
+
+  /**
+   * Finds file data (e.g., images) by its database ID.
+   *
+   * @param id The database ID of the file data.
+   *
+   * @return A byte array containing the file data, or null if not found or not a file type.
+   *
+   * @throws IOException If an I/O error occurs during file loading.
+   */
+  public byte[] findFileDataById(String id)
+    throws IOException
+  {
+    log.debug("findFileDataById id={}", id);
+    Optional<SdbSecretData> optional = sdbSecretDataRepository.findById(id);
+    byte[] fileData = null;
+    if(optional.isPresent())
+    {
+      SdbSecretData secretData = optional.get();
+      if(secretData.getType() == SdbSecretType.ID_FRONT_IMAGE
+        || secretData.getType() == SdbSecretType.ID_BACK_IMAGE)
+      {
+        fileData = load(secretData);
+      }
+    }
+    
+    return fileData;
+  }
+  
 }

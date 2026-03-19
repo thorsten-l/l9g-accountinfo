@@ -86,7 +86,7 @@ public class SignaturePadService
   public SignaturePad findSignaturePadByUUID(String uuid)
     throws IOException
   {
-    return findSignaturePadByUUID(uuid, false);
+    return dbService.findSignaturePadbyUUID(uuid);
   }
 
   /**

@@ -394,10 +394,11 @@ public class LdapService
         personList = new ArrayList<>();
         List<SearchResultEntry> entries = searchResult.getSearchEntries();
         for(SearchResultEntry entry : entries)
-        {
+        {          
           personList.add(new DtoUserInfo(
             mapAttributeValue(entry, userConfig.getAttributes(), "firstname"),
             mapAttributeValue(entry, userConfig.getAttributes(), "lastname"),
+            mapAttributeValue(entry, userConfig.getAttributes(), "username"),
             mapAttributeValue(entry, userConfig.getAttributes(), "birthday"),
             mapAttributeValue(entry, userConfig.getAttributes(), "barcode"),
             mapAttributeValue(entry, userConfig.getAttributes(), "customer")
