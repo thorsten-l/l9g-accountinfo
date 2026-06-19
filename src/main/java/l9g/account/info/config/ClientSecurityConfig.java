@@ -134,6 +134,7 @@ public class ClientSecurityConfig
         .requestMatchers("/", "/manifest.json",
           "/manifest.webmanifest",
           "/system/test/**", "/error/**", "/api/v1/buildinfo",
+          "/api/v1/storage/**",
           "/webjars/**", "/icons/**", "/css/**", "/js/**", "/images/**",
           "/actuator/**", "/flags/**", "/logout", "/logout**", 
           "/oidc-backchannel-logout",
@@ -147,21 +148,40 @@ public class ClientSecurityConfig
         .requestMatchers("/admin/vault/managekeys")
         .access((authentication, context) ->
         {
-          boolean hasAdminRole = authentication.get().getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+          boolean hasRole = authentication.get().getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                       || a.getAuthority().equals("ROLE_VAULTADMIN"));
           boolean isUnsealed = vaultService.getUnlockedKey() != null;
-          return new AuthorizationDecision(hasAdminRole && isUnsealed);
+          return new AuthorizationDecision(hasRole && isUnsealed);
         })
         .requestMatchers(
           "/admin/vault/enrollment", "/api/v1/admin/vault/adminkey")
         .access((authentication, context) ->
         {
-          boolean hasAdminRole = authentication.get().getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+          boolean hasRole = authentication.get().getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                       || a.getAuthority().equals("ROLE_VAULTADMIN"));
           boolean isUnsealed = vaultService.getUnlockedKey() != null;
           boolean noKeysExist = vaultService.adminKeysIsEmpty();
           return new AuthorizationDecision(
-            hasAdminRole && (isUnsealed || noKeysExist));
+            hasRole && (isUnsealed || noKeysExist));
+        })
+        // audit endpoints: ADMIN or AUDITADMIN — must come before /secret/** catch-all
+        // only requires unsealed vault (no keysExist check — vault being unsealed is sufficient)
+        .requestMatchers(
+          "/api/v1/admin/secret/audit/**",
+          "/api/v1/admin/secret/search/person",
+          "/api/v1/admin/secret/userinfo.json",
+          "/api/v1/admin/secret/signature.png",
+          "/api/v1/admin/secret/signature.svg",
+          "/api/v1/admin/secret/id.jpeg")
+        .access((authentication, context) ->
+        {
+          boolean hasRole = authentication.get().getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                       || a.getAuthority().equals("ROLE_AUDITADMIN"));
+          boolean isUnsealed = vaultService.getUnlockedKey() != null;
+          return new AuthorizationDecision(hasRole && isUnsealed);
         })
         .requestMatchers("/api/v1/admin/secret", "/api/v1/admin/secret/**")
         .access((authentication, context) ->
@@ -173,8 +193,25 @@ public class ClientSecurityConfig
           return new AuthorizationDecision(
             hasAdminRole && isUnsealed && keysExist);
         })
-        .requestMatchers("/admin", "/admin/**", "/v3/api-docs", 
-          "/api/v1/admin", "/api/v1/admin/**")
+        // vault pages: VAULTADMIN and AUDITADMIN may access — must come before /admin/** catch-all
+        .requestMatchers("/admin/vault/**", "/api/v1/admin/vault/**")
+        .hasAnyRole("ADMIN", "VAULTADMIN", "AUDITADMIN")
+        // useraudit: ADMIN or AUDITADMIN
+        .requestMatchers("/admin/useraudit")
+        .hasAnyRole("ADMIN", "AUDITADMIN")
+        // tablet management: ADMIN or TABADMIN
+        .requestMatchers(
+          "/admin/register-new-pad", "/admin/manage-pads",
+          "/admin/show-pad-info", "/admin/show-pad",
+          "/admin/hide-pad", "/admin/delete-pad",
+          "/admin/connect-new-pad", "/admin/wait-for-response")
+        .hasAnyRole("ADMIN", "TABADMIN")
+        // all admin-role users may access /admin pages;
+        // fine-grained control is handled by @PreAuthorize on each method
+        .requestMatchers("/admin", "/admin/**")
+        .hasAnyRole("ADMIN", "TABADMIN", "VAULTADMIN", "AUDITADMIN")
+        // API admin endpoints: ADMIN only (specific exceptions handled above)
+        .requestMatchers("/v3/api-docs", "/api/v1/admin", "/api/v1/admin/**")
         .hasRole("ADMIN")
         .requestMatchers("/app", "/app/**")
         .hasRole("PUBLISHER")
@@ -204,7 +241,8 @@ public class ClientSecurityConfig
       )
       // permit even POST, PUT and DELETE requests
       .csrf(csrf -> csrf.ignoringRequestMatchers(
-      "/oidc-backchannel-logout", "/api/v1/signature-pad/**", "/logout", "/logout**"));
+      "/oidc-backchannel-logout", "/api/v1/signature-pad/**",
+      "/api/v1/storage/**", "/logout", "/logout**"));
 
     return http.build();
   }
@@ -259,6 +297,11 @@ public class ClientSecurityConfig
       {
         String targetUrl = super.determineTargetUrl(request, response, authentication);
         String logoutReason = request.getParameter("logoutReason");
+
+        if(logoutReason != null &&  ! logoutReason.isBlank())
+        {
+          logoutReason = logoutReason.replaceAll("[:/]", "");
+        }
 
         if(logoutReason != null &&  ! logoutReason.isBlank())
         {

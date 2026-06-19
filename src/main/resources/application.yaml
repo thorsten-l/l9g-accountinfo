@@ -54,7 +54,7 @@ server:
   
 management:
   server:
-    port: 9000
+    port: 9005
   endpoints:
     web:
       exposure:

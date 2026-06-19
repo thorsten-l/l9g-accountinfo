@@ -71,13 +71,16 @@ limitations under the License.
                   <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 overflow-hidden shadow" style="min-width: 300px;"> 
                     <!--begin::User Image-->
 
-                    <div sec:authorize="hasRole('ADMIN')" th:remove="tag">
-                      <li class="user-header text-bg-danger text-center p-3"> 
+                    <div sec:authorize="hasRole('ADMIN') or hasRole('TABADMIN') or hasRole('VAULTADMIN') or hasRole('AUDITADMIN')" th:remove="tag">
+                      <li class="user-header text-bg-danger text-center p-3">
                         <i class="fa-solid fa-user" style="font-size: 4em"></i>
                         <p class="mt-2 mb-0 fs-5 text-white">
                           <span th:text="${principal.fullName}" th:remove="tags"></span>
                         </p>
-                        <small class="text-white">- Administrator -</small>
+                        <small class="text-white" sec:authorize="hasRole('ADMIN')">- Administrator -</small>
+                        <small class="text-white" sec:authorize="!hasRole('ADMIN') and hasRole('TABADMIN')">- Tablet-Administrator -</small>
+                        <small class="text-white" sec:authorize="!hasRole('ADMIN') and hasRole('VAULTADMIN')">- Vault-Administrator -</small>
+                        <small class="text-white" sec:authorize="!hasRole('ADMIN') and hasRole('AUDITADMIN')">- Audit-Administrator -</small>
                       </li>
 
                       <li class="p-2 bg-light">
@@ -85,13 +88,13 @@ limitations under the License.
                       </li>
                     </div>
 
-                    <div sec:authorize="!hasRole('ADMIN')" th:remove="tag">
-                      <li class="user-header text-bg-primary text-center p-3"> 
+                    <div sec:authorize="!hasRole('ADMIN') and !hasRole('TABADMIN') and !hasRole('VAULTADMIN') and !hasRole('AUDITADMIN')" th:remove="tag">
+                      <li class="user-header text-bg-primary text-center p-3">
                         <i class="fa-solid fa-user" style="font-size: 4em"></i>
                         <p class="mt-2 mb-0 fs-5 text-white">
                           <span th:text="${principal.fullName}" th:remove="tags"></span>
                         </p>
-                      </li> 
+                      </li>
                     </div>
 
                     <!--end::User Image-->

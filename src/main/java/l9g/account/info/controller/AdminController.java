@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import l9g.account.info.vault.VaultService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -111,6 +112,7 @@ public class AdminController
                @ApiResponse(responseCode = "200", description = "Admin home page successfully displayed"),
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN') or hasRole('VAULTADMIN') or hasRole('AUDITADMIN')")
   @GetMapping(
     {
       "", "/"
@@ -185,6 +187,7 @@ public class AdminController
                @ApiResponse(responseCode = "200", description = "Registration form successfully displayed"),
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @GetMapping("/register-new-pad")
   public String registerNewPad(@AuthenticationPrincipal DefaultOidcUser principal, Model model)
   {
@@ -215,6 +218,7 @@ public class AdminController
                @ApiResponse(responseCode = "200", description = "Management page successfully displayed"),
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @GetMapping("/manage-pads")
   public String managePads(@AuthenticationPrincipal DefaultOidcUser principal,
     @RequestParam(name = "showHidden", defaultValue = "false") boolean showHidden,
@@ -298,6 +302,7 @@ public class AdminController
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN"),
                @ApiResponse(responseCode = "404", description = "Signature pad not found")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @GetMapping("/show-pad-info")
   public String showPadInfo(@AuthenticationPrincipal DefaultOidcUser principal,
     @RequestParam("padid") String padUuid, Model model)
@@ -342,6 +347,7 @@ public class AdminController
                @ApiResponse(responseCode = "302", description = "Redirected to management page after showing"),
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @GetMapping("/show-pad")
   public String showPad(@RequestParam("id") String dbId,
     @AuthenticationPrincipal DefaultOidcUser principal)
@@ -381,6 +387,7 @@ public class AdminController
                @ApiResponse(responseCode = "302", description = "Redirected to management page after hiding"),
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @GetMapping("/hide-pad")
   public String hidePad(@RequestParam("id") String dbId,
     @AuthenticationPrincipal DefaultOidcUser principal)
@@ -423,6 +430,7 @@ public class AdminController
                @ApiResponse(responseCode = "400", description = "Bad request if signature pad is validated"),
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @GetMapping("/delete-pad")
   public String deletePad(@RequestParam("id") String dbId,
     @RequestParam(name = "showHidden", defaultValue = "false") boolean showHidden,
@@ -475,6 +483,7 @@ public class AdminController
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN"),
                @ApiResponse(responseCode = "500", description = "Internal server error if signature pad creation fails")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @PostMapping("/connect-new-pad")
   public String connectNewPad(@RequestParam("name") String padName,
     @AuthenticationPrincipal DefaultOidcUser principal, Model model)
@@ -589,6 +598,7 @@ public class AdminController
                @ApiResponse(responseCode = "404", description = "Signature pad not found"),
                @ApiResponse(responseCode = "500", description = "Internal server error if data access fails")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('TABADMIN')")
   @GetMapping("/wait-for-response")
   public String waitForResponse(
     @RequestParam("uuid") String padUUID,
@@ -633,6 +643,7 @@ public class AdminController
                @ApiResponse(responseCode = "200", description = "User audit page successfully displayed"),
                @ApiResponse(responseCode = "403", description = "Access denied if user is not an ADMIN")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('AUDITADMIN')")
   @GetMapping("/useraudit")
   public String userAudit(@AuthenticationPrincipal DefaultOidcUser principal, Model model)
   {

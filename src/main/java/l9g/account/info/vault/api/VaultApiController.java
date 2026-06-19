@@ -54,13 +54,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RestController
 @RequestMapping(path = "/api/v1/admin/vault", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('VAULTADMIN') or hasRole('AUDITADMIN')")
 public class VaultApiController
 {
   private final VaultService vaultService;
 
   private final DbService dbService;
 
+  @PreAuthorize("hasRole('ADMIN') or hasRole('VAULTADMIN')")
   @PostMapping(path = "/adminkey", produces = MediaType.TEXT_PLAIN_VALUE)
   ResponseEntity<String> addAdminkey(
     @AuthenticationPrincipal DefaultOidcUser principal,
@@ -82,6 +83,7 @@ public class VaultApiController
     return ResponseEntity.ok("OK");
   }
 
+  @PreAuthorize("hasRole('ADMIN') or hasRole('VAULTADMIN')")
   @DeleteMapping(path = "/adminkey", produces = MediaType.TEXT_PLAIN_VALUE)
   ResponseEntity<String> deleteAdminkey(
     @RequestParam(name = "id", required = true) String credentialId,

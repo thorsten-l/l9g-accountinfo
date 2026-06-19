@@ -28,6 +28,8 @@ import java.util.Optional;
 import l9g.account.info.db.SdbSecretDataRepository;
 import l9g.account.info.db.model.SdbSecretData;
 import l9g.account.info.db.model.SdbSecretType;
+import l9g.account.info.dto.StorageObject;
+import l9g.account.info.dto.StorageObject.EndUserData;
 import l9g.account.info.vault.VaultService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,25 +55,31 @@ public class FileStorageService
   private final VaultService vaultService;
 
   private final SdbSecretDataRepository sdbSecretDataRepository;
-  
-  private final ObjectMapper objectMapper = new ObjectMapper();
+
+  private final ObjectMapper objectMapper;
 
   /**
    * Constructs a {@code FileStorageService} and initializes the storage directory.
    * If the specified storage directory does not exist, it will be created.
    *
    * @param storageLocation The base directory path for file storage.
+   * @param vaultService The vault service used for decryption.
+   * @param sdbSecretDataRepository The repository for persisting secret data.
+   * @param objectMapper The Spring-configured mapper (with JSR-310 support)
+   * used to serialize descriptions and status payloads.
    *
    * @throws IOException If an I/O error occurs during directory creation.
    */
   public FileStorageService(
-    @Value("${app.storage-location}") String storageLocation,
-    VaultService vaultService, SdbSecretDataRepository sdbSecretDataRepository)
+    @Value("${app.storage.location}") String storageLocation,
+    VaultService vaultService, SdbSecretDataRepository sdbSecretDataRepository,
+    ObjectMapper objectMapper)
     throws IOException
   {
     this.storageLocationPath = Paths.get(storageLocation);
     this.vaultService = vaultService;
     this.sdbSecretDataRepository = sdbSecretDataRepository;
+    this.objectMapper = objectMapper;
     Files.createDirectories(this.storageLocationPath);
   }
 
@@ -213,19 +221,55 @@ public class FileStorageService
     throws JsonProcessingException, IOException
   {
     log.debug("saveSecretFileData");
-    
+
     Map<String, String> descriptionMap = new HashMap<>();
     descriptionMap.put("name", fullname);
     descriptionMap.put("mail", mail);
-    
+
     SdbSecretData data = new SdbSecretData(
       publisher, padUuid, SdbSecretType.fromString(side), true);
     data.setName(username);
     data.setDescription(objectMapper.writeValueAsString(descriptionMap));
     data.setValue(file.getBytes());
-    
+
     sdbSecretDataRepository.save(data);
     save(data);
+    return data;
+  }
+
+  private SdbSecretData buildSecretData(String createdBy,
+     String apiId, StorageObject object)
+    throws JsonProcessingException, IOException
+  {
+    log.debug("buildSecretData");
+
+    SdbSecretData data = new SdbSecretData(createdBy, apiId, object.type(), true);
+    data.setName(object.user().username());
+    data.setDescription(objectMapper.writeValueAsString(object.user().description()));
+
+    return data;
+  }
+
+  public SdbSecretData saveSecretRawData(String createdBy,
+     String apiId, StorageObject object)
+    throws JsonProcessingException, IOException
+  {
+    log.debug("saveSecretRawData");
+    SdbSecretData data = buildSecretData(createdBy, apiId, object);
+    data.setValue(object.data());
+    data = sdbSecretDataRepository.save(data);
+    save(data);
+    return data;
+  }
+
+  public SdbSecretData saveSecretData(
+    String createdBy, String apiId, StorageObject object )
+    throws JsonProcessingException, IOException
+  {
+    log.debug("saveSecretData");
+    SdbSecretData data = buildSecretData(createdBy, apiId, object);
+    data.setSecret(objectMapper.writeValueAsString(object.status()));
+    data = sdbSecretDataRepository.save(data);
     return data;
   }
 
@@ -253,8 +297,8 @@ public class FileStorageService
         fileData = load(secretData);
       }
     }
-    
+
     return fileData;
   }
-  
+
 }

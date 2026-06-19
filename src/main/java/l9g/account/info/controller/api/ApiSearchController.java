@@ -61,13 +61,14 @@ public class ApiSearchController
   )
     throws Exception
   {
-    log.debug("personList called for query '{}'", query);
+    String sanitizedQuery = query.replaceAll("[()&|=*\\\\+]", "");
+    log.debug("personList called for query '{}' (sanitized: '{}')", query, sanitizedQuery);
     log.debug("principal={}", principal);
 
     // Authenticate signature pad
     authService.authCheck(padUuid, true);
 
-    List<DtoUserInfo> persons = ldapService.listPersons(query);
+    List<DtoUserInfo> persons = ldapService.listPersons(sanitizedQuery);
 
     if(persons != null && persons.size() > 0)
     {

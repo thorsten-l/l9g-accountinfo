@@ -35,11 +35,11 @@ import org.springframework.http.HttpStatus;
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class VaultAdminController
 {
   private final VaultService vaultService;
 
+  @PreAuthorize("hasRole('ADMIN') or hasRole('VAULTADMIN')")
   @GetMapping("/admin/vault/enrollment")
   public String enrollment(
     Model model,
@@ -63,6 +63,7 @@ public class VaultAdminController
     return "admin/enrollment";
   }
 
+  @PreAuthorize("hasRole('ADMIN') or hasRole('VAULTADMIN')")
   @GetMapping("/admin/vault/managekeys")
   public String managekeys(
     Model model,
@@ -86,6 +87,7 @@ public class VaultAdminController
     return "admin/managekeys";
   }
 
+  @PreAuthorize("hasRole('ADMIN') or hasRole('VAULTADMIN') or hasRole('AUDITADMIN')")
   @GetMapping("/admin/vault/unseal")
   public String unseal(
     Model model,

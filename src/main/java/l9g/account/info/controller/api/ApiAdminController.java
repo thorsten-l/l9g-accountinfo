@@ -31,6 +31,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -103,6 +104,7 @@ public class ApiAdminController
                @ApiResponse(responseCode = "404", description = "Photo not found"),
                @ApiResponse(responseCode = "500", description = "Internal server error")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('AUDITADMIN')")
   @GetMapping(path = "/id.jpeg", produces = MediaType.IMAGE_JPEG_VALUE)
   public ResponseEntity<byte[]> photoByDbId(
     @RequestParam("id") String dbId,
@@ -136,6 +138,7 @@ public class ApiAdminController
                @ApiResponse(responseCode = "404", description = "Signature not found"),
                @ApiResponse(responseCode = "500", description = "Internal server error")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('AUDITADMIN')")
   @GetMapping(path = "/signature.png", produces = MediaType.IMAGE_PNG_VALUE)
   public ResponseEntity<byte[]> signaturePngByDbId(
     @RequestParam("id") String dbId,
@@ -180,6 +183,7 @@ public class ApiAdminController
                @ApiResponse(responseCode = "404", description = "Signature not found"),
                @ApiResponse(responseCode = "500", description = "Internal server error")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('AUDITADMIN')")
   @GetMapping(path = "/signature.svg", produces = "image/svg+xml")
   public ResponseEntity<byte[]> signatureSvgByDbId(
     @RequestParam("id") String dbId,
@@ -232,6 +236,7 @@ public class ApiAdminController
                @ApiResponse(responseCode = "404", description = "User information not found"),
                @ApiResponse(responseCode = "500", description = "Internal server error")
              })
+  @PreAuthorize("hasRole('ADMIN') or hasRole('AUDITADMIN')")
   @GetMapping(path = "/userinfo.json", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Map<String, Object>> userinfoJsonByDbId(
     @RequestParam("id") String dbId,
@@ -460,8 +465,9 @@ public class ApiAdminController
    * @return A list of matching users.
    * @throws Exception if data retrieval fails.
    */
+  @PreAuthorize("hasRole('ADMIN') or hasRole('AUDITADMIN')")
   @Operation(summary = "Search for persons",
-             description = "Returns a list of persons matching the query. Requires ADMIN role and unsealed vault.")
+             description = "Returns a list of persons matching the query. Requires ADMIN or AUDITADMIN role and unsealed vault.")
   @GetMapping(path = "/search/person")
   public ResponseEntity<List<DtoUserInfo>> personList(
     @RequestParam("query") String query,
@@ -495,8 +501,9 @@ public class ApiAdminController
    * @return A list of secret data entries for the user.
    * @throws Exception if data retrieval fails.
    */
+  @PreAuthorize("hasRole('ADMIN') or hasRole('AUDITADMIN')")
   @Operation(summary = "Audit person secrets",
-             description = "Returns a list of stored secrets for a specific person UID. Requires ADMIN role and unsealed vault.")
+             description = "Returns a list of stored secrets for a specific person UID. Requires ADMIN or AUDITADMIN role and unsealed vault.")
   @GetMapping(path = "/audit/person/{uid}")
   public ResponseEntity<List<SdbSecretData>> auditPerson(
     @PathVariable("uid") String uid,

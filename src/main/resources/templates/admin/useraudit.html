@@ -179,6 +179,7 @@ limitations under the License.
       let debounceTimer = null;
       let currentAbortController = null;
       let selectedPersonUid = null;
+      let currentAuditEntries = [];
 
       function fetchPersons(query, signal)
       {
@@ -228,6 +229,7 @@ limitations under the License.
 
       function updateAuditTable(entries)
       {
+        currentAuditEntries = entries || [];
         auditResultsBody.innerHTML = '';
         if (!entries || entries.length === 0)
         {
@@ -263,6 +265,109 @@ limitations under the License.
            } catch(e) { return obj; }
         }
         return `<strong>${obj.name || ''}</strong> (${obj.username || ''}) &lt;${obj.mail || ''}&gt;`;
+      }
+
+      function escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function formatStatusDate(value) {
+        if (!value) return null;
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return value;
+        return formatDate(date);
+      }
+
+      function yesNo(value) {
+        if (value === true) return 'Ja';
+        if (value === false) return 'Nein';
+        return null;
+      }
+
+      // Builds a "label: value" row, skipping empty values.
+      function statusRow(label, value) {
+        if (value === null || value === undefined || value === '') return '';
+        return `<div class="col-5 col-md-4 text-muted">${escapeHtml(label)}:</div>` +
+               `<div class="col-7 col-md-8">${escapeHtml(value)}</div>`;
+      }
+
+      function statusSection(title, rowsHtml) {
+        if (!rowsHtml) return '';
+        return `<h6 class="text-danger mt-3 mb-2">${escapeHtml(title)}</h6>` +
+               `<div class="row small g-1">${rowsHtml}</div>`;
+      }
+
+      // Renders the WebID IdentificationStatus JSON analog to the signature audit.
+      function renderIdentificationStatus(status) {
+        let html = '';
+
+        const success = status.success === true;
+        html += `<div class="mb-3">` +
+          `<span class="badge ${success ? 'bg-success' : 'bg-danger'} fs-6">` +
+          `<i class="fa-solid ${success ? 'fa-circle-check' : 'fa-circle-xmark'} me-1"></i>` +
+          `${success ? 'Erfolgreich identifiziert' : 'Nicht identifiziert'}</span>`;
+        if (status.rejectionReason) {
+          html += `<div class="mt-2 text-danger small">` +
+            `<i class="fa-solid fa-triangle-exclamation me-1"></i>` +
+            `${escapeHtml(status.rejectionReason)}</div>`;
+        }
+        html += `</div>`;
+
+        html += statusSection('Identifikation',
+          statusRow('Transaktion', status.transactionId) +
+          statusRow('Action-ID', status.actionId) +
+          statusRow('Action-Typ', status.actionType) +
+          statusRow('Antworttyp', status.responseType) +
+          statusRow('Produkt', status.product ? status.product.name : null) +
+          statusRow('Identifiziert am', formatStatusDate(status.identifiedOn)) +
+          statusRow('Abgeschlossen am', formatStatusDate(status.finishedOn)) +
+          statusRow('TrueID', yesNo(status.isTrueid)) +
+          statusRow('Abweichung', yesNo(status.mismatch)));
+
+        const u = status.user;
+        if (u) {
+          const addr = u.address || {};
+          const contact = u.contact || {};
+          const street = [addr.street, addr.streetNo].filter(Boolean).join(' ');
+          const cityLine = [addr.zip, addr.city].filter(Boolean).join(' ');
+          html += statusSection('Person',
+            statusRow('Anrede', u.title) +
+            statusRow('Geschlecht', u.sex) +
+            statusRow('Vorname', u.firstname) +
+            statusRow('Nachname', u.lastname) +
+            statusRow('Geburtsdatum', u.dateOfBirth) +
+            statusRow('Straße', street) +
+            statusRow('Adresszusatz', addr.addressLine1) +
+            statusRow('Adresszusatz 2', addr.addressLine2) +
+            statusRow('PLZ / Ort', cityLine) +
+            statusRow('Region', addr.region) +
+            statusRow('Land', addr.country) +
+            statusRow('E-Mail', contact.email) +
+            statusRow('Mobil', contact.cell) +
+            statusRow('Telefon', contact.phone));
+        }
+
+        const d = status.idDocument;
+        if (d) {
+          html += statusSection('Ausweisdokument',
+            statusRow('Dokumenttyp', d.documentType) +
+            statusRow('Behörde', d.authority) +
+            statusRow('Ausgestellt am', d.dateOfIssue) +
+            statusRow('Gültig bis', d.dateOfExpiry) +
+            statusRow('Staatsangehörigkeit', d.nationality) +
+            statusRow('Ausstellungsland', d.issuingCountry) +
+            statusRow('Dokumentnummer', d.idNumber) +
+            statusRow('Geburtsname', d.nameAtBirth) +
+            statusRow('Geburtsort', d.placeOfBirth) +
+            statusRow('MRZ', d.mrz));
+        }
+
+        return html;
       }
 
       function showDetails(id, type) {
@@ -327,6 +432,27 @@ limitations under the License.
               document.getElementById('photo-overlay').style.display = 'flex';
             })
             .catch(err => alert('Fehler beim Laden der Details: ' + err.message));
+        }
+        else if (type === 'EXT_IDENTIFICATION_STATUS') {
+          title.textContent = 'Status Audit';
+
+          const entry = currentAuditEntries.find(e => e.id === id);
+          if (!entry || !entry.secret) {
+            alert('Kein Status für diesen Eintrag verfügbar.');
+            return;
+          }
+
+          let status;
+          try {
+            status = JSON.parse(entry.secret);
+          } catch (e) {
+            alert('Status-JSON konnte nicht gelesen werden: ' + e.message);
+            return;
+          }
+
+          infoContent.innerHTML = renderIdentificationStatus(status);
+          infoContainer.style.display = 'block';
+          document.getElementById('photo-overlay').style.display = 'flex';
         }
         else {
           alert('Details für Typ ' + type + ' (ID: ' + id + ') folgen...');

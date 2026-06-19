@@ -17,6 +17,7 @@ package l9g.account.info.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.Signature;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -26,6 +27,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import l9g.account.info.dto.JwksCerts;
 import l9g.account.info.dto.JwtHeader;
 import lombok.Getter;
@@ -68,6 +71,14 @@ public class JwtService
    */
   @Setter
   private JwksCerts oauth2JwksCerts;
+
+  /**
+   * Shared secret for HS512 signature validation.
+   * Must be set externally (e.g. from the OAuth2 client-secret) before
+   * calling {@link #validateJwtSignature(String)} on HS512 tokens.
+   */
+  @Setter
+  private String clientSecret;
 
   /**
    * Splits a JWT token string into its three constituent parts: header, payload, and signature.
@@ -165,7 +176,6 @@ public class JwtService
     catch(Throwable t)
     {
       log.error("ERROR: {}", t.getMessage());
-      t.printStackTrace();
       return false;
     }
   }
@@ -236,25 +246,44 @@ public class JwtService
     catch(Throwable t)
     {
       log.error("ERROR in RS256 validation: {}", t.getMessage());
-      t.printStackTrace();
       return false;
     }
   }
 
   /**
-   * Validates the HS512 signature of a JWT token.
-   * <p>
-   * NOTE: This method is currently a placeholder and always returns {@code true}.
-   * Proper implementation for HS512 signature validation would require a shared secret key.
+   * Validates the HS512 signature of a JWT token using HMAC-SHA512.
+   * Requires {@link #clientSecret} to be set before calling this method.
    *
    * @param jwt The JWT string to validate.
    *
-   * @return Always {@code true} as this is a placeholder implementation.
+   * @return {@code true} if the HMAC-SHA512 signature is valid, {@code false} otherwise.
    */
   private boolean validateHs512Signature(String jwt)
   {
-    // TODO: implement
-    return true;
+    if(clientSecret == null || clientSecret.isBlank())
+    {
+      log.error("HS512 validation failed: clientSecret not configured");
+      return false;
+    }
+    try
+    {
+      String[] parts = splitJwt(jwt);
+      String data = parts[0] + "." + parts[1];
+      byte[] expectedSignature = Base64.getUrlDecoder().decode(parts[2]);
+
+      Mac mac = Mac.getInstance("HmacSHA512");
+      mac.init(new SecretKeySpec(
+        clientSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA512"));
+      byte[] computedSignature = mac.doFinal(
+        data.getBytes(StandardCharsets.UTF_8));
+
+      return MessageDigest.isEqual(computedSignature, expectedSignature);
+    }
+    catch(Throwable t)
+    {
+      log.error("ERROR in HS512 validation: {}", t.getMessage());
+      return false;
+    }
   }
 
 }

@@ -11,6 +11,8 @@ nb-configuration.xml
 l9g-oidc-info.jar
 l9g-accountinfo.jar
 GEMINI.md
+CLAUDE.md
 secrets
 secret.bin
 data/vault*
+effective-pom.xml
