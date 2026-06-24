@@ -29,7 +29,6 @@ import l9g.account.info.db.SdbSecretDataRepository;
 import l9g.account.info.db.model.SdbSecretData;
 import l9g.account.info.db.model.SdbSecretType;
 import l9g.account.info.dto.StorageObject;
-import l9g.account.info.dto.StorageObject.EndUserData;
 import l9g.account.info.vault.VaultService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -119,6 +118,7 @@ public class FileStorageService
     try
     {
       Path destinationFile = getHierarchicalPath(secretData.getId());
+      log.trace("save at: {}", destinationFile.toString());
       Files.createDirectories(destinationFile.getParent());
       Files.write(destinationFile, CryptoHandler.getInstance().encrypt(secretData.getValue()));
     }
@@ -257,7 +257,11 @@ public class FileStorageService
     log.debug("saveSecretRawData");
     SdbSecretData data = buildSecretData(createdBy, apiId, object);
     data.setValue(object.data());
-    data = sdbSecretDataRepository.save(data);
+    // Persist metadata, then write the encrypted file from the original
+    // instance: repository.save() may return a merged copy that does not carry
+    // the transient 'value' field (see SdbSecretData#value), which would make
+    // save(data) below fail with "Value to save cannot be null".
+    sdbSecretDataRepository.save(data);
     save(data);
     return data;
   }

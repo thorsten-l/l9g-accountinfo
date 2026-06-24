@@ -151,6 +151,7 @@ public class StorageController
     @RequestHeader(name = "X-Signature", required = false) String signature,
     @RequestBody byte[] body)
   {
+    log.debug("receiveObject body.length = {}", body.length);
     authorize(authorization);
     boolean valid = verifySignature(timestamp, signature, body);
 
@@ -161,6 +162,7 @@ public class StorageController
     }
     catch(IOException e)
     {
+      log.error("Malformed storage object");
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
         "Malformed storage object", e);
     }
@@ -217,6 +219,7 @@ public class StorageController
    */
   private void authorize(String authorization)
   {
+    log.debug("authorize");
     String token = null;
     if(authorization != null && authorization.startsWith("Bearer "))
     {
@@ -227,6 +230,7 @@ public class StorageController
       token.getBytes(StandardCharsets.UTF_8),
       apiToken.getBytes(StandardCharsets.UTF_8)))
     {
+      log.error("Invalid or missing bearer token");
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
         "Invalid or missing bearer token");
     }
@@ -247,10 +251,12 @@ public class StorageController
    */
   private boolean verifySignature(String timestamp, String signature, byte[] body)
   {
+    log.debug("verifySignature");
     boolean valid = false;
     if(timestamp == null || timestamp.isBlank()
       || signature == null || signature.isBlank())
     {
+      log.error("Missing signature headers");
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
         "Missing signature headers");
     }
@@ -264,6 +270,7 @@ public class StorageController
       provided.toLowerCase().getBytes(StandardCharsets.UTF_8),
       expected.getBytes(StandardCharsets.UTF_8)))
     {
+      log.error("Invalid signature");
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
         "Invalid signature");
     }

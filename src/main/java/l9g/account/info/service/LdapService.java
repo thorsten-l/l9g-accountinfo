@@ -25,6 +25,8 @@ import com.unboundid.ldap.sdk.SearchRequest;
 import com.unboundid.ldap.sdk.SearchResult;
 import com.unboundid.ldap.sdk.SearchResultEntry;
 import com.unboundid.ldap.sdk.SearchScope;
+import com.unboundid.ldap.sdk.controls.SimplePagedResultsControl;
+import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.util.ssl.SSLUtil;
 import com.unboundid.util.ssl.TrustAllTrustManager;
 import java.security.GeneralSecurityException;
@@ -35,6 +37,7 @@ import java.util.Objects;
 import javax.net.ssl.SSLSocketFactory;
 import l9g.account.info.config.LdapData;
 import l9g.account.info.dto.DtoAddress;
+import l9g.account.info.dto.DtoLastSeenUser;
 import l9g.account.info.dto.DtoUserInfo;
 import l9g.account.info.dto.IssueType;
 import lombok.RequiredArgsConstructor;
@@ -415,6 +418,82 @@ public class LdapService
 
     log.debug("cardNumber={}", personList);
     return personList;
+  }
+
+  /**
+   * Reads all (active) users from LDAP using the configured
+   * {@code ldap.configuration.user.filter-last-seen} filter and returns a
+   * lightweight projection ({@link DtoLastSeenUser}) for each. The search uses
+   * simple paged results so the full directory is retrieved even when the
+   * server enforces a result size limit.
+   *
+   * @return A list of users; never {@code null} (empty if none found).
+   *
+   * @throws Exception If an error occurs during LDAP connection or search.
+   */
+  public List<DtoLastSeenUser> listLastSeenUsers()
+    throws Exception
+  {
+    log.debug("listLastSeenUsers");
+
+    LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
+    String filter = userConfig.getFilterLastSeen();
+
+    if(filter == null || filter.isBlank())
+    {
+      throw new IllegalStateException(
+        "Missing configuration: ldap.configuration.user.filter-last-seen");
+    }
+
+    Map<String, String> map = userConfig.getAttributes();
+    String[] attributes = map.values().toArray(String[] :: new);
+    int pageSize = 500;
+
+    List<DtoLastSeenUser> users = new ArrayList<>();
+
+    try(LDAPConnection connection = getConnection())
+    {
+      ASN1OctetString resumeCookie = null;
+
+      do
+      {
+        SearchRequest searchRequest = new SearchRequest(
+          userConfig.getBaseDn(), scopeFromString(userConfig.getScope()),
+          filter, attributes);
+        searchRequest.setControls(
+          new SimplePagedResultsControl(pageSize, resumeCookie));
+
+        SearchResult searchResult = connection.search(searchRequest);
+
+        for(SearchResultEntry entry : searchResult.getSearchEntries())
+        {
+          String username = mapAttributeValue(entry, map, "username");
+          if(username != null &&  ! username.isBlank())
+          {
+            users.add(new DtoLastSeenUser(
+              username,
+              mapAttributeValue(entry, map, "firstname"),
+              mapAttributeValue(entry, map, "lastname"),
+              mapAttributeValue(entry, map, "mail")));
+          }
+        }
+
+        SimplePagedResultsControl responseControl =
+          SimplePagedResultsControl.get(searchResult);
+        resumeCookie = (responseControl != null
+          && responseControl.moreResultsToReturn())
+          ? responseControl.getCookie() : null;
+      }
+      while(resumeCookie != null && resumeCookie.getValueLength() > 0);
+    }
+    catch(Exception e)
+    {
+      log.error("Error during LDAP last-seen search: {}", e.getMessage(), e);
+      throw e;
+    }
+
+    log.debug("listLastSeenUsers count={}", users.size());
+    return users;
   }
 
   /**

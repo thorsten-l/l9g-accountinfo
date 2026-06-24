@@ -15,6 +15,13 @@
  */
 package l9g.account.info.db;
 
+import java.time.Duration;
+import java.util.List;
+import l9g.account.info.config.LdapData;
+import l9g.account.info.db.model.SdbLastSeen;
+import l9g.account.info.dto.DtoLastSeenUser;
+import l9g.account.info.service.FileStorageService;
+import l9g.account.info.service.LdapService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -50,6 +57,21 @@ public class DbDeletionScheduler
   private final DbService dbService;
 
   /**
+   * The LDAP service used to read the current set of directory users.
+   */
+  private final LdapService ldapService;
+
+  /**
+   * LDAP configuration, providing the deletion grace period.
+   */
+  private final LdapData ldapDataConfig;
+
+  /**
+   * Service used to delete the encrypted files of expired users.
+   */
+  private final FileStorageService fileStorageService;
+
+  /**
    * Executes the database deletion/cleanup job.
    * This method is scheduled using a cron expression defined by `scheduler.db-deletion.cron`.
    */
@@ -60,13 +82,86 @@ public class DbDeletionScheduler
     log.info("Starting database deletion job...");
     try
     {
-      dbService.cleanupJob();
+      updateLastSeenFromLdap();
+      deleteExpiredUsers();
       log.info("Database deletion job finished successfully.");
     }
     catch(Throwable e)
     {
       log.error("Error during database deletion job", e);
     }
+  }
+
+  /**
+   * First step of the deletion concept: reads all (active) users from LDAP via
+   * the configured {@code ldap.configuration.user.filter-last-seen} filter and
+   * inserts/overwrites their entries in the "last seen" table, refreshing each
+   * timestamp to "now".
+   *
+   * @throws Exception If reading from LDAP fails.
+   */
+  private void updateLastSeenFromLdap()
+    throws Exception
+  {
+    log.info("Updating last-seen table from LDAP...");
+    List<DtoLastSeenUser> users = ldapService.listLastSeenUsers();
+    int count = dbService.updateLastSeen(users);
+    log.info("Last-seen table updated: {} user(s).", count);
+  }
+
+  /**
+   * Second step of the deletion concept: permanently erases every user whose
+   * last-seen timestamp is older than the configured grace period
+   * ({@code ldap.configuration.user.delete-grace-period}). For each expired user
+   * all {@link SdbSecretData} rows, their encrypted files and the
+   * {@link SdbLastSeen} entry are deleted (see {@link DbService#deleteUserData}).
+   * A failure for one user is logged and does not stop the batch; incompletely
+   * erased users are retried on the next run.
+   */
+  private void deleteExpiredUsers()
+  {
+    Duration gracePeriod = ldapDataConfig.getUser().getDeleteGracePeriod();
+
+    if(gracePeriod == null)
+    {
+      log.warn("No delete-grace-period configured; skipping user deletion.");
+      return;
+    }
+
+    List<SdbLastSeen> expired = dbService.findExpiredLastSeen(gracePeriod);
+    log.info("User deletion (grace period {}): {} expired user(s).",
+      gracePeriod, expired.size());
+
+    int fullyDeleted = 0;
+    for(SdbLastSeen user : expired)
+    {
+      try
+      {
+        DbService.UserDeletionResult result =
+          dbService.deleteUserData(user.getUsername(), fileStorageService);
+        if(result.complete())
+        {
+          fullyDeleted++;
+          log.warn("USER_DELETED: tenant={}, username={}, records={}, "
+            + "lastSeen={} (grace period {})",
+            user.getTenantId(), user.getUsername(), result.deletedRecords(),
+            user.getTimestamp(), gracePeriod);
+        }
+        else
+        {
+          log.error("USER_DELETE_INCOMPLETE: username={}, deleted={}, failed={}"
+            + " — will retry next run",
+            user.getUsername(), result.deletedRecords(), result.failedRecords());
+        }
+      }
+      catch(Throwable e)
+      {
+        log.error("USER_DELETE_FAILED: username={}", user.getUsername(), e);
+      }
+    }
+
+    log.info("User deletion finished: {}/{} user(s) fully erased.",
+      fullyDeleted, expired.size());
   }
 
 }

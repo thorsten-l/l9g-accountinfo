@@ -174,7 +174,10 @@ public class ClientSecurityConfig
           "/api/v1/admin/secret/userinfo.json",
           "/api/v1/admin/secret/signature.png",
           "/api/v1/admin/secret/signature.svg",
-          "/api/v1/admin/secret/id.jpeg")
+          "/api/v1/admin/secret/id.jpeg",
+          "/api/v1/admin/secret/archive.json",
+          "/api/v1/admin/secret/archive/**",
+          "/api/v1/admin/secret/export/**")
         .access((authentication, context) ->
         {
           boolean hasRole = authentication.get().getAuthorities().stream()

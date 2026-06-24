@@ -113,17 +113,7 @@ public class SdbUuidObject implements Serializable
    */
   public void preRemove()
   {
-    log.debug("preRemove {} {}",
-      this.getClass().getCanonicalName(), id);
-
-    if(immutable)
-    {
-      log.error("Attempted to remove an immutable object: {} {}",
-        this.getClass().getCanonicalName(), id);
-      throw new IllegalStateException("Cannot remove an immutable object.");
-    }
-
-    log.debug("done");
+    log.debug("preRemove {} {}", this.getClass().getCanonicalName(), id);
   }
 
   @PreUpdate

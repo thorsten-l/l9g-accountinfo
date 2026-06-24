@@ -133,6 +133,16 @@ limitations under the License.
                     <i class="fa-solid fa-list-check me-2"></i>
                     Audit Ergebnisse
                   </h3>
+                  <div id="user-actions" class="d-none">
+                    <button type="button" class="btn btn-outline-light btn-sm me-1"
+                            id="btn-export-user" title="Metadaten exportieren (ZIP)">
+                      <i class="fa-solid fa-file-export"></i>
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm"
+                            id="btn-delete-user" title="Alle Nutzerdaten unwiderruflich löschen">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
                 </div>
                 <div class="card-body p-0">
                   <div class="table-responsive">
@@ -175,10 +185,17 @@ limitations under the License.
       const btnClearCommonName = document.getElementById('btn-clear-common-name');
       const btnSendCommonName = document.getElementById('btn-send-common-name');
       const auditResultsBody = document.getElementById('audit-results-body');
+      const userActions = document.getElementById('user-actions');
+      const btnExportUser = document.getElementById('btn-export-user');
+      const btnDeleteUser = document.getElementById('btn-delete-user');
+
+      const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+      const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
 
       let debounceTimer = null;
       let currentAbortController = null;
       let selectedPersonUid = null;
+      let currentUserUid = null;
       let currentAuditEntries = [];
 
       function fetchPersons(query, signal)
@@ -230,6 +247,8 @@ limitations under the License.
       function updateAuditTable(entries)
       {
         currentAuditEntries = entries || [];
+        // Export/Delete only make sense when the selected user actually has data.
+        userActions.classList.toggle('d-none', !(entries && entries.length > 0));
         auditResultsBody.innerHTML = '';
         if (!entries || entries.length === 0)
         {
@@ -300,6 +319,77 @@ limitations under the License.
         if (!rowsHtml) return '';
         return `<h6 class="text-danger mt-3 mb-2">${escapeHtml(title)}</h6>` +
                `<div class="row small g-1">${rowsHtml}</div>`;
+      }
+
+      // Human-readable byte size (B / KB / MB / GB).
+      function formatBytes(bytes) {
+        if (bytes === null || bytes === undefined || bytes === '') return null;
+        let value = Number(bytes);
+        if (isNaN(value)) return null;
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let i = 0;
+        while (value >= 1024 && i < units.length - 1) { value /= 1024; i++; }
+        return `${i === 0 ? value : value.toFixed(1)} ${units[i]}`;
+      }
+
+      // Holds the currently opened archive ({id, data}) so the file list and
+      // an inline PDF view can be toggled without refetching.
+      let currentArchive = null;
+
+      // Renders the EXT_IDENTIFICATION_ARCHIVE general data and ZIP file list.
+      // PDF entries get an eye icon to display them inline (Chrome PDF viewer).
+      function renderArchive(data) {
+        const d = data.description || {};
+        let html = statusSection('Allgemein',
+          statusRow('Benutzername', d.username || data.name) +
+          statusRow('Name', d.name) +
+          statusRow('E-Mail', d.mail) +
+          statusRow('PID', d.pid) +
+          statusRow('Archivgröße', formatBytes(data.size)) +
+          statusRow('Anzahl Dateien', (data.files || []).length));
+
+        const files = data.files || [];
+        if (files.length > 0) {
+          let rows = '';
+          files.forEach((f, idx) => {
+            const isPdf = /\.pdf$/i.test(f.name || '');
+            const action = isPdf
+              ? `<button type="button" class="btn btn-outline-danger btn-sm border-0 py-0" title="Anzeigen" onclick="showArchivePdf(${idx})"><i class="fa-solid fa-eye"></i></button>`
+              : '';
+            rows += `<tr><td><code>${escapeHtml(f.name)}</code></td>` +
+                    `<td class="text-end text-nowrap">${escapeHtml(formatBytes(f.size))}</td>` +
+                    `<td class="text-center" style="width:1%">${action}</td></tr>`;
+          });
+          html += `<h6 class="text-danger mt-3 mb-2">Dateien</h6>` +
+            `<div class="table-responsive"><table class="table table-sm table-striped small mb-0 align-middle">` +
+            `<thead><tr><th>Dateiname</th><th class="text-end">Größe</th><th></th></tr></thead>` +
+            `<tbody>${rows}</tbody></table></div>`;
+        }
+        return html;
+      }
+
+      // Re-renders the archive file list (used to leave the inline PDF view).
+      function showArchiveList() {
+        if (!currentArchive) return;
+        document.getElementById('info-content').innerHTML = renderArchive(currentArchive.data);
+      }
+
+      // Displays a PDF archive entry inline using Chrome's embedded PDF viewer.
+      // '#toolbar=0' hides the viewer toolbar (download/print) — best-effort,
+      // the response is additionally served as inline/no-store on the server.
+      function showArchivePdf(index) {
+        if (!currentArchive) return;
+        const file = currentArchive.data.files[index];
+        const url = `/api/v1/admin/secret/archive/file?id=${encodeURIComponent(currentArchive.id)}`
+          + `&name=${encodeURIComponent(file.name)}#toolbar=0&navpanes=0&scrollbar=0`;
+        document.getElementById('info-content').innerHTML =
+          `<div class="d-flex justify-content-between align-items-center mb-2">` +
+            `<button type="button" class="btn btn-outline-secondary btn-sm" onclick="showArchiveList()">` +
+              `<i class="fa-solid fa-arrow-left me-1"></i> Zurück zur Liste</button>` +
+            `<span class="small text-muted text-truncate ms-2">${escapeHtml(file.name)}</span>` +
+          `</div>` +
+          `<iframe src="${url}" title="PDF" ` +
+            `style="width:100%; height:70vh; border:1px solid #dee2e6; border-radius:4px;"></iframe>`;
       }
 
       // Renders the WebID IdentificationStatus JSON analog to the signature audit.
@@ -454,6 +544,22 @@ limitations under the License.
           infoContainer.style.display = 'block';
           document.getElementById('photo-overlay').style.display = 'flex';
         }
+        else if (type === 'EXT_IDENTIFICATION_ARCHIVE') {
+          title.textContent = 'Identifikations-Archiv';
+
+          fetch(`/api/v1/admin/secret/archive.json?id=${encodeURIComponent(id)}`)
+            .then(r => {
+              if (!r.ok) throw new Error(`Server-Fehler: ${r.status}`);
+              return r.json();
+            })
+            .then(data => {
+              currentArchive = { id: id, data: data };
+              infoContent.innerHTML = renderArchive(data);
+              infoContainer.style.display = 'block';
+              document.getElementById('photo-overlay').style.display = 'flex';
+            })
+            .catch(err => alert('Fehler beim Laden des Archivs: ' + err.message));
+        }
         else {
           alert('Details für Typ ' + type + ' (ID: ' + id + ') folgen...');
         }
@@ -521,6 +627,8 @@ limitations under the License.
         commonNameResults.innerHTML = '';
         commonNameResults.classList.add('d-none');
         selectedPersonUid = null;
+        currentUserUid = null;
+        userActions.classList.add('d-none');
         auditResultsBody.innerHTML = `
           <tr>
             <td colspan="3" class="text-center py-4 text-muted">
@@ -529,8 +637,69 @@ limitations under the License.
           </tr>`;
       });
 
+      // Export: downloads a ZIP of the decrypted SdbSecretData metadata
+      // (without publisher / binary data). Fetched as a blob so errors (e.g.
+      // sealed vault → 403) are shown without navigating away from the page.
+      btnExportUser.addEventListener('click', () => {
+        if (!currentUserUid) return;
+        btnExportUser.disabled = true;
+        fetch(`/api/v1/admin/secret/export/person/${encodeURIComponent(currentUserUid)}`, {
+          headers: {'Accept': 'application/zip'}
+        })
+          .then(r => {
+            if (!r.ok) throw new Error(`Server-Fehler: ${r.status}`);
+            return r.blob();
+          })
+          .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentUserUid}-metadata.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          })
+          .catch(err => alert('Fehler beim Export: ' + err.message))
+          .finally(() => { btnExportUser.disabled = false; });
+      });
+
+      // Delete: irreversible erasure of ALL data of the selected user.
+      btnDeleteUser.addEventListener('click', () => {
+        if (!currentUserUid) return;
+        if (!confirm(`ACHTUNG – unwiderrufliche Löschung\n\n`
+          + `Sämtliche gespeicherten Daten des Nutzers "${currentUserUid}" `
+          + `(alle Datensätze und zugehörigen Dateien) werden dauerhaft gelöscht.\n\n`
+          + `Fortfahren?`)) {
+          return;
+        }
+
+        btnDeleteUser.disabled = true;
+        const headers = {'Accept': 'application/json'};
+        if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+        fetch(`/api/v1/admin/secret/person/${encodeURIComponent(currentUserUid)}/delete`, {
+          method: 'POST',
+          headers: headers
+        })
+          .then(r => {
+            if (!r.ok) throw new Error(`Server-Fehler: ${r.status}`);
+            return r.json();
+          })
+          .then(res => {
+            let msg = `Löschung abgeschlossen: ${res.deletedRecords} Datensatz/Datensätze gelöscht.`;
+            if (!res.complete) msg += `\n${res.failedRecords} Datensatz/Datensätze konnten NICHT gelöscht werden.`;
+            alert(msg);
+            performAuditSearch(currentUserUid); // refresh (should now be empty)
+          })
+          .catch(err => alert('Fehler beim Löschen: ' + err.message))
+          .finally(() => { btnDeleteUser.disabled = false; });
+      });
+
       function performAuditSearch(uid)
       {
+        currentUserUid = uid;
+        userActions.classList.add('d-none');
         auditResultsBody.innerHTML = `
           <tr>
             <td colspan="3" class="text-center py-4">

@@ -15,6 +15,7 @@
  */
 package l9g.account.info.config;
 
+import java.time.Duration;
 import java.util.Map;
 import lombok.Data;
 import lombok.ToString;
@@ -71,7 +72,20 @@ public class LdapData
      * The LDAP filter expression to apply to the person search.
      */
     private String filterCommonName;
-    
+
+    /**
+     * The LDAP filter expression used to read all (active) users for the
+     * "last seen" import.
+     */
+    private String filterLastSeen;
+
+    /**
+     * Grace period (ISO-8601 duration, e.g. {@code P90D}) after which a user
+     * no longer seen in the directory becomes a deletion candidate. Compared
+     * against {@code now - SdbLastSeen.timestamp}.
+     */
+    private Duration deleteGracePeriod;
+
     /**
      * User attribute enabled = value
      */

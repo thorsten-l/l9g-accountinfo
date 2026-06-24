@@ -18,12 +18,19 @@ package l9g.account.info.db;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
+import l9g.account.info.dto.DtoLastSeenUser;
+import l9g.account.info.service.FileStorageService;
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import l9g.account.info.db.model.SdbLastSeen;
+import l9g.account.info.db.model.SdbLastSeenId;
 import l9g.account.info.db.model.SdbProperty;
 import java.util.Optional;
 import l9g.account.info.db.model.SdbSecretData;
@@ -71,6 +78,12 @@ public class DbService
   public static final String KEY_DB_INITIALIZED = "database.initialized";
 
   /**
+   * The (currently constant) tenant identifier used for {@link SdbLastSeen}
+   * rows.
+   */
+  public static final String DEFAULT_TENANT_ID = "sonia";
+
+  /**
    * Repository for accessing and managing {@link SdbProperty} entities.
    */
   private final SdbPropertiesRepository sdbPropertiesRepository;
@@ -84,6 +97,11 @@ public class DbService
    * Repository for managing vault admin key entries.
    */
   private final SdbVaultAdminKeyRepository sdbVaultAdminKeyRepository;
+
+  /**
+   * Repository for managing {@link SdbLastSeen} entries.
+   */
+  private final SdbLastSeenRepository sdbLastSeenRepository;
 
   /**
    * Object mapper for JSON serialization/deserialization.
@@ -452,13 +470,143 @@ public class DbService
   }
 
   /**
-   * Performs periodic database cleanup tasks.
-   * This method is intended to be called by a scheduled job.
+   * Inserts or overwrites "last seen" entries for the given directory users
+   * under the {@link #DEFAULT_TENANT_ID} tenant. Each entry's timestamp is set
+   * to the current time, so re-importing an existing user refreshes its
+   * timestamp to "now".
+   *
+   * @param users The users read from the directory.
+   *
+   * @return The number of entries written.
    */
-  public void cleanupJob()
+  @Transactional
+  public int updateLastSeen(List<DtoLastSeenUser> users)
   {
-    log.info("Executing database cleanup...");
-    // TODO: implement cleanup logic
+    if(users == null || users.isEmpty())
+    {
+      log.info("updateLastSeen: no users to update");
+      return 0;
+    }
+
+    List<SdbLastSeen> entities = new ArrayList<>(users.size());
+    for(DtoLastSeenUser user : users)
+    {
+      if(user.username() == null || user.username().isBlank())
+      {
+        continue;
+      }
+      entities.add(new SdbLastSeen(DEFAULT_TENANT_ID, user.username(),
+        user.firstname(), user.lastname(), user.mail()));
+    }
+
+    sdbLastSeenRepository.saveAll(entities);
+    log.info("updateLastSeen: {} entries written", entities.size());
+    return entities.size();
+  }
+
+  /**
+   * Finds all "last seen" entries whose grace period has elapsed, i.e. where
+   * {@code now - timestamp > gracePeriod}. These are deletion candidates.
+   *
+   * @param gracePeriod The grace period; if {@code null} an empty list is
+   * returned.
+   *
+   * @return The expired entries (never {@code null}).
+   */
+  public List<SdbLastSeen> findExpiredLastSeen(Duration gracePeriod)
+  {
+    if(gracePeriod == null)
+    {
+      return List.of();
+    }
+    Date cutoff = new Date(System.currentTimeMillis() - gracePeriod.toMillis());
+    return sdbLastSeenRepository.findByTimestampBefore(cutoff);
+  }
+
+  /**
+   * Result of deleting all data of a single user.
+   *
+   * @param deletedRecords Number of {@link SdbSecretData} rows (and their files)
+   * successfully deleted.
+   * @param failedRecords Number of records that could not be deleted (file or DB
+   * error); if &gt; 0 the user is not fully erased and the {@link SdbLastSeen}
+   * entry is kept for a retry on the next run.
+   */
+  public record UserDeletionResult(int deletedRecords, int failedRecords)
+    {
+    /**
+     * @return {@code true} if the user was completely erased.
+     */
+    public boolean complete()
+    {
+      return failedRecords == 0;
+    }
+
+  }
+
+  /**
+   * Erases all data of a single user: every {@link SdbSecretData} row whose
+   * {@code name} matches the username, the associated encrypted file (if any),
+   * and finally the {@link SdbLastSeen} entry (tenant {@link #DEFAULT_TENANT_ID}).
+   * <p>
+   * For each secret record the encrypted file is removed <em>before</em> the DB
+   * row, so a failure leaves the record in place to be retried. The
+   * {@link SdbLastSeen} entry is only removed when <em>all</em> records were
+   * deleted successfully — otherwise it is kept so the next scheduled run picks
+   * the user up again. The operation is idempotent (re-running on an already
+   * deleted user is a no-op). Used both by the scheduled grace-period job and by
+   * the manual admin erasure endpoint.
+   *
+   * @param username The user's unique login name (= {@code SdbSecretData.name}).
+   * @param fileStorageService The service used to delete the encrypted files.
+   * Passed in (rather than injected) to avoid a circular bean dependency
+   * {@code DbService → FileStorageService → VaultService → DbService}.
+   *
+   * @return A {@link UserDeletionResult} with the per-record outcome.
+   */
+  public UserDeletionResult deleteUserData(String username,
+    FileStorageService fileStorageService)
+  {
+    log.debug("deleteUserData username={}", username);
+
+    List<SdbSecretData> records = findSdbSecretDataByName(username);
+    int deleted = 0;
+    int failed = 0;
+
+    if(records != null)
+    {
+      for(SdbSecretData data : records)
+      {
+        try
+        {
+          // Removes the encrypted file if one exists (no-op for DB-only types).
+          fileStorageService.delete(data);
+          // immutable records are no longer protected against removal.
+          sdbSecretDataRepository.delete(data);
+          deleted++;
+        }
+        catch(Exception e)
+        {
+          failed++;
+          log.error("Failed to delete secret data id={}, type={}, user={}",
+            data.getId(), data.getType(), username, e);
+        }
+      }
+    }
+
+    if(failed == 0)
+    {
+      sdbLastSeenRepository.findById(
+        new SdbLastSeenId(DEFAULT_TENANT_ID, username))
+        .ifPresent(sdbLastSeenRepository::delete);
+    }
+    else
+    {
+      log.warn("User {} not fully erased ({} record(s) failed); "
+        + "keeping last-seen entry for retry", username, failed);
+    }
+
+    return new UserDeletionResult(deleted, failed);
   }
 
   /**
