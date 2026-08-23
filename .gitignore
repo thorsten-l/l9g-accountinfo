@@ -16,3 +16,4 @@ secrets
 secret.bin
 data/vault*
 effective-pom.xml
+.claude/

@@ -17,69 +17,37 @@ package l9g.account.info.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.Signature;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import l9g.account.info.dto.JwksCerts;
-import l9g.account.info.dto.JwtHeader;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * Service class for handling JWT (JSON Web Token) operations such as decoding and validating signatures.
- * This class provides methods to split, decode, and validate JWT tokens using various algorithms.
- *
+ * Decodes JWT tokens for display purposes.
  * <p>
- * It supports RS256 and HS512 algorithms for signature validation.</p>
- *
+ * <strong>This service does not verify anything.</strong> It splits a token and
+ * base64url-decodes its payload so the claims can be rendered; the signature is
+ * never checked. It is therefore only safe to use on tokens whose authenticity
+ * has already been established elsewhere — currently
+ * {@code AppController} passes the id, access and refresh token of the
+ * authenticated Spring Security session to it.
  * <p>
- * Methods:</p>
- * <ul>
- * <li>{@link #splitJwt(String)} - Splits a JWT token into its constituent parts.</li>
- * <li>{@link #decodeJwtPayload(String)} - Decodes the payload of a JWT token and returns it as a Map.</li>
- * <li>{@link #validateJwtSignature(String)} - Validates the signature of a JWT token.</li>
- * <li>{@link #getPublicKeyFromJwks(JwksCerts, String)} - Retrieves the public key from JWKS (JSON Web Key Set) using the key ID.</li>
- * <li>{@link #validateRs256Signature(String, String)} - Validates the RS256 signature of a JWT token.</li>
- * <li>{@link #validateHs512Signature(String)} - Validates the HS512 signature of a JWT token (currently returns true).</li>
- * </ul>
- *
- * <p>
- * Note: The HS512 signature validation method is currently a stub and always returns true.</p>
+ * To <em>verify</em> a token, use a
+ * {@link org.springframework.security.oauth2.jwt.JwtDecoder} built from the
+ * identity provider's JWKS endpoint; see
+ * {@code l9g.account.info.config.LogoutTokenConfig} for a working example. It
+ * handles key rotation, {@code kid} selection and the standard claim checks,
+ * none of which this class does.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Service
 @Slf4j
-@Getter
 public class JwtService
 {
-  /**
-   * JSON Web Key Set (JWKS) certificates for OAuth2.
-   * This is typically populated from the OIDC discovery endpoint and contains
-   * the public keys used by the authorization server to sign JWTs.
-   */
-  @Setter
-  private JwksCerts oauth2JwksCerts;
-
-  /**
-   * Shared secret for HS512 signature validation.
-   * Must be set externally (e.g. from the OAuth2 client-secret) before
-   * calling {@link #validateJwtSignature(String)} on HS512 tokens.
-   */
-  @Setter
-  private String clientSecret;
-
   /**
    * Splits a JWT token string into its three constituent parts: header, payload, and signature.
    *
@@ -106,11 +74,13 @@ public class JwtService
    *
    * @param jwt The full JWT string from which to decode the payload.
    *
-   * @return A {@link Map} containing the decoded payload claims, sorted by natural order of keys.
+   * @return A {@link Map} containing the decoded payload claims, sorted by
+   * natural order of keys. Values keep their JSON type, so numeric claims such
+   * as {@code exp} and {@code iat} come back as numbers rather than strings.
    *
    * @throws RuntimeException If an error occurs during decoding or JSON parsing.
    */
-  public Map<String, String> decodeJwtPayload(String jwt)
+  public Map<String, Object> decodeJwtPayload(String jwt)
   {
     try
     {
@@ -119,10 +89,13 @@ public class JwtService
       String payload = parts[1];
 
       byte[] decodedBytes = Base64.getUrlDecoder().decode(payload);
-      String decodedPayload = new String(decodedBytes);
+      // an explicit charset: JWT payloads are UTF-8, the platform default is
+      // not necessarily, which made non-ASCII claim values environment
+      // dependent
+      String decodedPayload = new String(decodedBytes, StandardCharsets.UTF_8);
 
       ObjectMapper objectMapper = new ObjectMapper();
-      Map<String, String> sorted = new TreeMap<>(Comparator.naturalOrder());
+      Map<String, Object> sorted = new TreeMap<>(Comparator.naturalOrder());
       sorted.putAll(objectMapper.readValue(decodedPayload, HashMap.class));
 
       return sorted;
@@ -130,159 +103,6 @@ public class JwtService
     catch(Exception e)
     {
       throw new RuntimeException("Fehler beim Decodieren des JWT-Tokens", e);
-    }
-  }
-
-  // validate Jwt ///////////////////////////////////////////////////////////
-  /**
-   * Validates the signature of a JWT token based on its algorithm.
-   * Supports RS256 and HS512 algorithms. For RS256, it retrieves the public key from JWKS.
-   * For HS512, it currently performs a placeholder validation (always returns true).
-   *
-   * @param jwt The JWT string to validate.
-   *
-   * @return {@code true} if the JWT signature is valid, {@code false} otherwise.
-   */
-  public boolean validateJwtSignature(String jwt)
-  {
-    String[] parts = splitJwt(jwt);
-    try
-    {
-      ObjectMapper mapper = new ObjectMapper();
-      JwtHeader jwtHeader = mapper.readValue(
-        new String(Base64.getUrlDecoder().decode(parts[0])), JwtHeader.class);
-
-      log.debug("jwt header = {}", jwtHeader);
-
-      if(null == jwtHeader.algorithm())
-      {
-        log.error("Unsupported algorithm: {}", jwtHeader.algorithm());
-        return false;
-      }
-      else
-      {
-        switch(jwtHeader.algorithm())
-        {
-          case "RS256":
-            return validateRs256Signature(jwt, jwtHeader.kid());
-          case "HS512":
-            return validateHs512Signature(jwt);
-          default:
-            log.error("Unsupported algorithm: {}", jwtHeader.algorithm());
-            return false;
-        }
-      }
-    }
-    catch(Throwable t)
-    {
-      log.error("ERROR: {}", t.getMessage());
-      return false;
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-   * Retrieves an RSA public key from a JSON Web Key Set (JWKS) based on the key ID (kid).
-   * It specifically looks for RS256 algorithm keys and extracts the public key from the X.509 certificate chain.
-   *
-   * @param jwksCerts The {@link JwksCerts} object containing the JWKS.
-   * @param kid The key ID of the public key to retrieve.
-   * @return The {@link RSAPublicKey} corresponding to the provided kid.
-   * @throws Exception If the public key cannot be found or an error occurs during certificate processing.
-   * @throws IllegalArgumentException If no public key with the specified kid and RS256 algorithm is found.
-   */
-  private RSAPublicKey getPublicKeyFromJwks(JwksCerts jwksCerts, String kid)
-    throws Exception
-  {
-    for(JwksCerts.JwksKey key : jwksCerts.keys())
-    {
-      log.debug("key={}", key);
-      if(key.algorithm().equals("RS256"))
-      {
-        String x509Cert = key.x509CertificateChain().get(0);
-        byte[] decodedCert = Base64.getDecoder().decode(x509Cert);
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        X509Certificate certificate =
-          (X509Certificate)factory.generateCertificate(
-            new java.io.ByteArrayInputStream(decodedCert));
-        return (RSAPublicKey)certificate.getPublicKey();
-      }
-    }
-    throw new IllegalArgumentException(
-      "Public key with kid=" + kid + " not found");
-  }
-
-  /**
-   * Validates the RS256 signature of a JWT token.
-   * This method uses the public key retrieved from JWKS to verify the token's signature.
-   *
-   * @param jwt The JWT string to validate.
-   * @param keyId The key ID (kid) of the public key to use for validation.
-   *
-   * @return {@code true} if the signature is valid, {@code false} otherwise.
-   */
-  private boolean validateRs256Signature(String jwt, String keyId)
-  {
-    try
-    {
-      String[] parts = splitJwt(jwt);
-      String data = parts[0] + "." + parts[1];
-      byte[] signatureBytes = Base64.getUrlDecoder().decode(parts[2]);
-
-      // Öffentlichen Schlüssel abrufen
-      RSAPublicKey publicKey = getPublicKeyFromJwks(oauth2JwksCerts, keyId);
-      if(publicKey == null)
-      {
-        log.error("Public key with kid={} not found", keyId);
-        return false;
-      }
-
-      // Signatur validieren
-      Signature signature = Signature.getInstance("SHA256withRSA");
-      signature.initVerify(publicKey);
-      signature.update(data.getBytes(StandardCharsets.UTF_8));
-      return signature.verify(signatureBytes);
-    }
-    catch(Throwable t)
-    {
-      log.error("ERROR in RS256 validation: {}", t.getMessage());
-      return false;
-    }
-  }
-
-  /**
-   * Validates the HS512 signature of a JWT token using HMAC-SHA512.
-   * Requires {@link #clientSecret} to be set before calling this method.
-   *
-   * @param jwt The JWT string to validate.
-   *
-   * @return {@code true} if the HMAC-SHA512 signature is valid, {@code false} otherwise.
-   */
-  private boolean validateHs512Signature(String jwt)
-  {
-    if(clientSecret == null || clientSecret.isBlank())
-    {
-      log.error("HS512 validation failed: clientSecret not configured");
-      return false;
-    }
-    try
-    {
-      String[] parts = splitJwt(jwt);
-      String data = parts[0] + "." + parts[1];
-      byte[] expectedSignature = Base64.getUrlDecoder().decode(parts[2]);
-
-      Mac mac = Mac.getInstance("HmacSHA512");
-      mac.init(new SecretKeySpec(
-        clientSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA512"));
-      byte[] computedSignature = mac.doFinal(
-        data.getBytes(StandardCharsets.UTF_8));
-
-      return MessageDigest.isEqual(computedSignature, expectedSignature);
-    }
-    catch(Throwable t)
-    {
-      log.error("ERROR in HS512 validation: {}", t.getMessage());
-      return false;
     }
   }
 

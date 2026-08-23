@@ -53,11 +53,23 @@ public class VaultService
     log.debug("masterKeyTTL={}", masterkeyTTL);
   }
 
-  public synchronized void addVaultAdminKey(VaultAdminKey key)
+  /**
+   * Stores a new vault admin key.
+   * <p>
+   * {@code createdBy} is recorded separately from the key's own
+   * {@code adminId}: previously {@code adminId} was passed for both, so the
+   * audit trail named every key its own creator and it was impossible to
+   * reconstruct which administrator had enrolled it.
+   *
+   * @param createdBy The acting administrator, recorded as the creator of the
+   * entry.
+   * @param key The admin key to store.
+   */
+  public synchronized void addVaultAdminKey(String createdBy, VaultAdminKey key)
   {
-    log.debug("addVaultAdminKey");
-    dbService.saveVaultAdminKey(key.adminId(), new l9g.account.info.db.model.SdbVaultAdminKey(
-      key.adminId(), key.adminId(), key.fullName(), key.description(),
+    log.debug("addVaultAdminKey createdBy={}", createdBy);
+    dbService.saveVaultAdminKey(createdBy, new l9g.account.info.db.model.SdbVaultAdminKey(
+      createdBy, key.adminId(), key.fullName(), key.description(),
       key.credentialId(), key.prfSalt(), key.encryptedMasterKey()));
   }
 
@@ -101,14 +113,34 @@ public class VaultService
     return masterKey;
   }
 
+  /**
+   * Unseals the vault with the given master key.
+   * <p>
+   * The cipher is constructed <em>before</em> any field is assigned. {@code AES256}
+   * rejects a key that is not exactly 32 bytes long, and assigning
+   * {@code masterKey} first left the service half-unlocked on that error:
+   * {@link #getUnlockedKey()} reported a key — which callers read as "the vault
+   * is open" — while every crypto operation still failed with
+   * {@link VaultSealedException}. Either the vault is fully unsealed now, or
+   * nothing changed at all.
+   *
+   * @param masterKey The AES-256 master key, exactly 32 bytes.
+   *
+   * @throws VaultSealedException If {@code masterKey} is {@code null}.
+   * @throws IllegalArgumentException If the key does not have the required
+   * length; the vault then stays in its previous state.
+   */
   public synchronized void setUnlockedKey(SecretKey masterKey)
   {
     if(masterKey == null)
     {
       throw new VaultSealedException("MasterKey must not be null.");
     }
+
+    AES256 cipher = new AES256(masterKey.getEncoded());
+
     this.masterKey = masterKey;
-    this.aes256 = new AES256(masterKey.getEncoded());
+    this.aes256 = cipher;
     this.masterKeyTimestamp = System.currentTimeMillis();
   }
 

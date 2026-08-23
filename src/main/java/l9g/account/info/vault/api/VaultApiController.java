@@ -79,7 +79,10 @@ public class VaultApiController
     }
 
     log.trace("vaultAdminKey = {}", vaultAdminKey);
-    vaultService.addVaultAdminKey(vaultAdminKey);
+    String createdBy = principal != null ? principal.getName() : "unknown";
+    vaultService.addVaultAdminKey(createdBy, vaultAdminKey);
+    log.warn("VAULT_ADMINKEY_ENROLLED: createdBy={}, adminId={}",
+      createdBy, vaultAdminKey.adminId());
     return ResponseEntity.ok("OK");
   }
 

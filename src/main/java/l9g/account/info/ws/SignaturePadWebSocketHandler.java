@@ -23,9 +23,9 @@ import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -47,10 +47,18 @@ import org.springframework.web.socket.WebSocketMessage;
 public class SignaturePadWebSocketHandler implements WebSocketHandler
 {
   /**
-   * Map storing active WebSocket sessions indexed by session ID
+   * Map storing active WebSocket sessions indexed by session ID.
+   * <p>
+   * Concurrent by necessity: entries are added and removed from WebSocket
+   * threads while the heartbeat scheduler iterates the map every few seconds,
+   * and {@code AdminController.getSignaturePadSessions} reads it from request
+   * threads. A plain {@code HashMap} made both the broadcast and that read fail
+   * with a {@link java.util.ConcurrentModificationException} as soon as a pad
+   * disconnected.
    */
   @Getter
-  private final Map<String, WebSocketSession> sessionsBySessionId = new HashMap<>();
+  private final Map<String, WebSocketSession> sessionsBySessionId =
+    new ConcurrentHashMap<>();
 
   /**
    * Object mapper for JSON serialization of outgoing messages
@@ -177,21 +185,21 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
   {
     log.trace("fireEvent to {} sessions", sessionsBySessionId.size());
 
-    // Clean up closed sessions
-    sessionsBySessionId.forEach((id, session) ->
-    {
-      if(session == null ||  ! session.isOpen())
-      {
-        sessionsBySessionId.remove(id);
-      }
-    });
+    // Clean up closed sessions. removeIf on the view of a ConcurrentHashMap is
+    // safe; the previous forEach + remove threw a ConcurrentModificationException
+    // the first time a pad had disconnected, which permanently killed the
+    // heartbeat job.
+    sessionsBySessionId.values()
+      .removeIf(session -> session == null ||  ! session.isOpen());
+
+    // The payload is identical for every recipient, so serialize it once.
+    String json = objectMapper.writeValueAsString(event);
 
     // Send event to all active sessions
     for(WebSocketSession session : sessionsBySessionId.values())
     {
       if(session != null && session.isOpen())
       {
-        String json = objectMapper.writeValueAsString(event);
         session.sendMessage(new TextMessage(json));
         log.trace("Sent text message: {}", json);
       }
@@ -212,13 +220,23 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
     throws IOException
   {
     log.trace("fireEvent to pad {}", padUuid);
+
+    if(padUuid == null)
+    {
+      log.warn("fireEventToPad called without a pad UUID, nothing to send");
+      return;
+    }
+
     sessionsBySessionId.values().forEach(session ->
     {
       // Check if session is open and belongs to the target signature pad
-      if(session.isOpen() && padUuid.equals(
+      if(session != null && session.isOpen() && padUuid.equals(
         (String)session.getAttributes().get(
           SignaturePadWebSocketConfig.SIGNATURE_PAD_UUID)))
       {
+        // The serialization stays inside the try on purpose: a failure here was
+        // swallowed before and must keep being swallowed, so that one pad can
+        // never break the delivery to the others.
         try
         {
           String json = objectMapper.writeValueAsString(event);

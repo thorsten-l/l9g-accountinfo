@@ -16,10 +16,13 @@
 package l9g.account.info.controller.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.HexFormat;
 import java.util.Set;
@@ -44,9 +47,21 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * REST API controller for receiving externally uploaded storage objects.
- * This endpoint is protected exclusively by a static bearer token
- * ({@code app.storage.api.token}) and accepts the raw file content in the
- * request body.
+ * <p>
+ * The endpoint is declared {@code permitAll} and is exempt from CSRF protection,
+ * because it is called server-to-server. Its own three checks are therefore the
+ * only protection it has:
+ * <ol>
+ * <li>a static bearer token ({@code app.storage.api.token}), compared in
+ * constant time,</li>
+ * <li>an HMAC-SHA256 signature over {@code "<timestamp>." + body}
+ * ({@code app.storage.api.hmac-secret}), whose timestamp must be fresh within
+ * {@code app.storage.api.timestamp-tolerance},</li>
+ * <li>single use of that signature while its timestamp could still pass the
+ * freshness check ({@code app.storage.api.replay-protection}).</li>
+ * </ol>
+ * Only {@code EXT_IDENTIFICATION_STATUS} and {@code EXT_IDENTIFICATION_ARCHIVE}
+ * are accepted as object types.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -85,6 +100,21 @@ public class StorageController
   private final String hmacSecret;
 
   /**
+   * How far the {@code X-Timestamp} header may deviate from the current time in
+   * either direction ({@code app.storage.api.timestamp-tolerance}). Requests
+   * outside this window are rejected, which bounds how long an intercepted
+   * request stays usable.
+   */
+  private final Duration timestampTolerance;
+
+  /**
+   * Signatures already accepted, held for as long as their timestamp could
+   * still pass the freshness check, so that every signature is single-use.
+   * {@code null} when {@code app.storage.api.replay-protection} is disabled.
+   */
+  private final Cache<String, Boolean> seenSignatures;
+
+  /**
    * The publisher (JSON) recorded as the creator of stored objects
    * ({@code app.storage.api.created-by}).
    */
@@ -111,6 +141,12 @@ public class StorageController
    * ({@code app.storage.api.hmac-secret}).
    * @param createdBy The publisher JSON recorded as creator
    * ({@code app.storage.api.created-by}).
+   * @param timestampTolerance How far {@code X-Timestamp} may deviate from the
+   * current time in either direction
+   * ({@code app.storage.api.timestamp-tolerance}, default 5 minutes).
+   * @param replayProtection Whether an accepted signature is remembered and
+   * refused on a second use ({@code app.storage.api.replay-protection},
+   * default {@code true}).
    * @param fileStorageService The service used to persist the received data.
    * @param objectMapper The mapper used to deserialize the request body.
    */
@@ -119,6 +155,8 @@ public class StorageController
     @Value("${app.storage.api.id}") String apiId,
     @Value("${app.storage.api.hmac-secret}") String hmacSecret,
     @Value("${app.storage.api.created-by}") String createdBy,
+    @Value("${app.storage.api.timestamp-tolerance:5m}") Duration timestampTolerance,
+    @Value("${app.storage.api.replay-protection:true}") boolean replayProtection,
     FileStorageService fileStorageService,
     ObjectMapper objectMapper)
   {
@@ -126,8 +164,22 @@ public class StorageController
     this.apiId = apiId;
     this.hmacSecret = hmacSecret;
     this.createdBy = createdBy;
+    this.timestampTolerance = timestampTolerance;
     this.fileStorageService = fileStorageService;
     this.objectMapper = objectMapper;
+
+    // A signature stays acceptable for up to twice the tolerance (from the
+    // earliest to the latest moment its timestamp passes the freshness check),
+    // so entries have to outlive that span to actually prevent a replay.
+    this.seenSignatures = replayProtection
+      ? Caffeine.newBuilder()
+        .expireAfterWrite(timestampTolerance.multipliedBy(2).plusMinutes(1))
+        .maximumSize(100_000)
+        .build()
+      : null;
+
+    log.debug("storage api: timestampTolerance={}s, replayProtection={}",
+      timestampTolerance.toSeconds(), replayProtection);
   }
 
   /**
@@ -175,6 +227,16 @@ public class StorageController
     }
 
     EndUserData user = object.user();
+    if(user == null)
+    {
+      // Rejected here rather than further down: FileStorageService.buildSecretData
+      // dereferences object.user() unconditionally, so such a body could never
+      // be stored — it only produced a misleading 500 instead of naming the
+      // client error.
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+        "Missing user data");
+    }
+
     byte[] file = object.data();      // ZIP bei ARCHIVE; null bei STATUS
     int length = file != null ? file.length : 0;
 
@@ -241,13 +303,32 @@ public class StorageController
    * {@code HMAC-SHA256(hmacSecret, "<timestamp>." + body)} and transmits it as
    * {@code X-Signature: sha256=<hex>} together with the {@code X-Timestamp}
    * header. The timestamp is co-signed, binding the signature to the body.
+   * <p>
+   * Because this endpoint is reachable without a session and is exempt from CSRF
+   * protection, the signature is the only thing standing between an intercepted
+   * request and an unlimited number of replays. Three checks are therefore
+   * applied, in this order:
+   * <ol>
+   * <li>the timestamp must be numeric and within
+   * {@code app.storage.api.timestamp-tolerance} of the current time,</li>
+   * <li>the HMAC must match, compared in constant time,</li>
+   * <li>the signature must not have been accepted before (see
+   * {@link #seenSignatures}).</li>
+   * </ol>
+   * The freshness check runs before the HMAC so that a stale request is rejected
+   * without spending a MAC computation; the replay check runs last so that only
+   * signatures which actually verified can ever enter the cache.
    *
-   * @param timestamp The {@code X-Timestamp} header value (Unix epoch seconds).
+   * @param timestamp The {@code X-Timestamp} header value, Unix epoch seconds or
+   * milliseconds.
    * @param signature The {@code X-Signature} header value ({@code sha256=<hex>}).
    * @param body The raw request body that was signed.
    *
-   * @throws ResponseStatusException with {@code 401 UNAUTHORIZED} if either
-   * header is missing or the signature does not match.
+   * @return {@code true} once the signature has been accepted.
+   *
+   * @throws ResponseStatusException with {@code 401 UNAUTHORIZED} if a header is
+   * missing, the timestamp is unusable or stale, the signature does not match,
+   * or the signature has already been used.
    */
   private boolean verifySignature(String timestamp, String signature, byte[] body)
   {
@@ -260,6 +341,8 @@ public class StorageController
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
         "Missing signature headers");
     }
+
+    checkTimestampFreshness(timestamp);
 
     String provided = signature.startsWith("sha256=")
       ? signature.substring("sha256=".length()) : signature;
@@ -276,10 +359,93 @@ public class StorageController
     }
     else
     {
+      checkNotReplayed(expected);
       valid = true;
     }
 
     return valid;
+  }
+
+  /**
+   * Rejects a timestamp that cannot be parsed or that deviates from the current
+   * time by more than the configured tolerance. Without this check any captured
+   * request could be replayed forever.
+   *
+   * @param timestamp The {@code X-Timestamp} header value.
+   *
+   * @throws ResponseStatusException with {@code 401 UNAUTHORIZED} if the
+   * timestamp is not numeric or lies outside the accepted window.
+   */
+  private void checkTimestampFreshness(String timestamp)
+  {
+    long epochMillis;
+
+    try
+    {
+      epochMillis = toEpochMillis(Long.parseLong(timestamp.trim()));
+    }
+    catch(NumberFormatException e)
+    {
+      log.error("Invalid signature timestamp, not a number");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+        "Invalid signature timestamp");
+    }
+
+    long skewMillis = Math.abs(System.currentTimeMillis() - epochMillis);
+
+    if(skewMillis > timestampTolerance.toMillis())
+    {
+      log.error("Signature timestamp outside tolerance, skew={}s, "
+        + "tolerance={}s", skewMillis / 1000, timestampTolerance.toSeconds());
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+        "Signature timestamp outside the accepted window");
+    }
+  }
+
+  /**
+   * Normalises a timestamp to epoch milliseconds, accepting both seconds and
+   * milliseconds. Epoch seconds stay below 100,000,000,000 until the year 5138,
+   * so any larger value can only be milliseconds. Both units are accepted
+   * because the senders of this API were never held to one of them.
+   *
+   * @param timestamp The raw numeric timestamp.
+   *
+   * @return The timestamp in epoch milliseconds.
+   */
+  private static long toEpochMillis(long timestamp)
+  {
+    return Math.abs(timestamp) < 100_000_000_000L
+      ? timestamp * 1000L : timestamp;
+  }
+
+  /**
+   * Records a verified signature and rejects it if it was seen before, making
+   * every signature single-use for as long as its timestamp could still be
+   * considered fresh.
+   * <p>
+   * The cache is per instance. Behind a load balancer with more than one
+   * replica, a replay could still succeed on a different instance within the
+   * tolerance window; the window itself remains the hard bound in that setup.
+   *
+   * @param expectedSignature The verified signature, in lowercase hex.
+   *
+   * @throws ResponseStatusException with {@code 401 UNAUTHORIZED} if this
+   * signature has already been accepted.
+   */
+  private void checkNotReplayed(String expectedSignature)
+  {
+    if(seenSignatures == null)
+    {
+      return;
+    }
+
+    if(seenSignatures.asMap()
+      .putIfAbsent(expectedSignature, Boolean.TRUE) != null)
+    {
+      log.error("Signature replayed, request rejected");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+        "Signature has already been used");
+    }
   }
 
   /**

@@ -5,7 +5,10 @@
 > mit besonderem Fokus auf Befunde, die **im Produktionsbetrieb** (nicht nur in
 > der Entwicklung) datenschutz- bzw. sicherheitsrelevant sind.
 >
-> **Stand:** 2026-06-23 · **Branch:** `one-key-to-bind-them`
+> **Stand:** 2026-08-23 · **Version:** 2.5.0 · **Branch:** `one-key-to-bind-them`
+> **Änderung 2026-06-28:** Zugriffskreis präzisiert (4 benannte RZ-Leitungspersonen,
+> phishing-resistente FIDO2-MFA, gleicher Kreis für Log/Graylog); Backup/BCM (ZFS,
+> Air-Gap-Schatten-RZ, Restore getestet, 30 Tage Retention) als umgesetzt ergänzt.
 > **Methodik:** automatisierte statische Quellcode-Analyse (Dateninventar,
 > Logging, Sicherheits­konfiguration, Aufbewahrung/Löschung).
 > **Haftungsausschluss:** Dies ist eine **technische** Analyse, **keine
@@ -47,7 +50,8 @@ da Infrastruktur/Config überwiegend gehärtet sind):
 > DB intern mit Passwort-Auth. **Infrastruktur:** TLS-Edge (ACME) + HTTP→HTTPS-
 > Redirect + Methoden-Whitelist + Extension-Blocklist an Traefik; Host nur 80/443;
 > `net108` outgoing-only; zentrales Logging via GELF/Graylog; **Log-Rotation**
-> (`max-history: 400`).
+> (`max-history: 400`); **Backup/BCM umgesetzt** (ZFS-Snapshots + `send/receive` auf
+> Air-Gap-Schatten-RZ, Offsite-Kopie, **Restore getestet**).
 
 Einstufung: **Infrastruktur/Transport/Secret-Management überwiegend NIS2-/Art.-32-
 konform; Speicherbegrenzung/Löschung (Art. 5/17) umgesetzt.** Verbleibend v. a.
@@ -101,6 +105,23 @@ Compose. Maßgeblich:
   Graylog-Cluster** ausgeleitet (zentral, dauerhaft).
 - **Docker-Socket:** Traefik mountet `/var/run/docker.sock` (read-only); mehrere
   Traefik-Instanzen teilen sich den Socket (Label-Constraint `traefik.profile`).
+- **Host-Zugang (Betrieb):** Der administrative Zugriff auf den Docker-Host erfolgt
+  **ausschließlich per SSH** und ist auf **vier namentlich benannte RZ-Leitungspersonen**
+  beschränkt: **Leiter des Rechenzentrums**, **stellv. Leiter des Rechenzentrums**,
+  **Leiter der RZ-IT-Gruppe Infrastruktur** und **Leiter der RZ-IT-Gruppe
+  Softwareentwicklung**. Die SSH-Authentisierung nutzt einen **FIDO2-gebundenen
+  Schlüssel** (`id_ed25519_sk`), der durch einen **YubiKey 5C BIO** (Fingerabdruck)
+  freigegeben wird → phishing-resistente MFA, schützt das gemountete `./data`-Volume
+  (inkl. `secret.bin`/`config.yaml`) auch auf Betriebsebene. **Derselbe
+  4-Personen-Kreis** verfügt über den **lokalen Logzugriff** und den Zugriff auf das
+  **Graylog**.
+- **Backup / Datenresilienz (Betrieb):** Die Datenhaltung liegt auf **ZFS**
+  (End-to-End-Prüfsummen gegen Bit-Rot, Snapshots). Per **`zfs send/receive`** wird
+  eine **Snapshot-Historie inkl. valider Offsite-Kopie** auf einen **Air-Gap-Server
+  im Schatten-RZ** repliziert (>1 km Entfernung, eigenes Netz über **96 Dark-Fiber-
+  Glasfasern**) → Disaster- und Ransomware-Resilienz. **Snapshot-Retention 30 Tage**
+  (kürzer als die Löschkarenz P90D → Löschungen greifen fristgerecht auch im Backup).
+  Das **Restore-Verfahren (RTO/RPO) ist dokumentiert und getestet**.
 
 **Bewertung:** Gute Netzsegmentierung (Host nur 80/443; `net108` outgoing-only),
 durchdachte **Edge-Härtung** an Traefik (Redirect, Methoden-Whitelist,
@@ -173,6 +194,11 @@ Im Folgenden wird je Befund gekennzeichnet:
   (zentralisiert; positiv für Monitoring/Integrität) **und** zusätzlich in das
   lokale Volume-Logfile `./data/accountinfo.log`. Personenbezug (teils sensibel)
   wird damit **in den zentralen Logbestand übernommen**.
+- **Vertraulichkeitsfläche (mildernd):** Der Zugriff auf **Graylog** wie auf das
+  lokale Logfile ist auf **denselben auditierten 4-Personen-RZ-Kreis** beschränkt
+  (kein breiter Betriebs-/Monitoring-Personenkreis). Das senkt die Vertraulichkeits-
+  fläche; der **Datenminimierungs-Verstoß** (PII gehört nicht in INFO/WARN) bleibt
+  davon **unberührt** und ist der maßgebliche Treiber des Befunds.
 - **DSGVO:** Datenminimierung (Art. 5 Abs. 1 lit. c); die personenbezogenen Logs
   unterliegen in **Graylog** denselben Pflichten (Zweckbindung, **Aufbewahrungs-/
   Löschfristen**, Zugriffsbeschränkung, ggf. eigener Eintrag im
@@ -256,7 +282,9 @@ Im Folgenden wird je Befund gekennzeichnet:
 - **Verbleibend (P2):** Die Entschlüsselung beruht auf **`data/secret.bin`**
   (lokal, Rechte `0400`); es gibt **keine Rotation** und **kein externes
   Secret-Management/HSM**. `secret.bin` und `config.yaml` liegen im selben
-  `./data`-Volume → Schutz des Volumes ist kritisch.
+  `./data`-Volume → Schutz des Volumes ist kritisch (organisatorisch durch eng
+  begrenzten Host-Zugang adressiert: **SSH-only, vier RZ-Personen, FIDO2/YubiKey
+  5C BIO** — siehe Kap. 1).
 - **NIS2/Art. 32:** Vertraulichkeit von Anmeldeinformationen, Schlüsselverwaltung.
 - **Maßnahme:** mittelfristig externes Key-Management/Rotation (P2);
   `./data`-Volume-Zugriff strikt beschränken.
@@ -330,16 +358,48 @@ Im Folgenden wird je Befund gekennzeichnet:
 
 - **Verschlüsselung at-rest:** AES-256-GCM für Dateien (`CryptoHandler`),
   Feldverschlüsselung für `secret` (crypto-jpa); `secret.bin` mit Rechten `0400`.
-- **Vault-Konzept:** In-Memory-Masterkey mit TTL, Entsiegelung über
-  WebAuthn-Admin-Keys; Zugriff auf entschlüsselte Daten nur bei entsiegeltem Vault.
+- **Vault-Konzept:** In-Memory-Masterkey mit TTL (prod 180 s), Entsiegelung über
+  **WebAuthn/PRF**-Admin-Keys, freigegeben per **YubiKey 5C BIO** (biometrisch);
+  Zugriff auf entschlüsselte Daten nur bei entsiegeltem Vault, der **nach 180 s
+  automatisch versiegelt**. **Standard-Administratoren (ADMIN) haben keinen Zugriff
+  auf die Personen-Audit-Daten** — diese sind der Rolle AUDITADMIN bei entsiegeltem
+  Vault vorbehalten.
 - **Authentifizierung:** OAuth2/OIDC mit **PKCE**; rollenbasierte Autorisierung mit
   zusätzlicher Vault-Entsiegelungs-Bedingung für Audit-Funktionen.
-- **Upload-API:** Bearer-Token (konstante-Zeit-Vergleich) **plus** HMAC-SHA256 mit
-  mitsigniertem Zeitstempel; SHA-256-Integritätsprüfsummen.
+- **Upload-API:** Bearer-Token (konstante-Zeit-Vergleich) **plus** HMAC-SHA256
+  über Zeitstempel und Body, **plus Frischefenster** auf den Zeitstempel
+  (`app.storage.api.timestamp-tolerance`, Default 5 min) **plus Einmal-Nutzung
+  jeder Signatur** (`app.storage.api.replay-protection`) — ein abgefangener
+  Request ist damit nicht wiederverwendbar. SHA-256-Integritätsprüfsummen je
+  Objekt.
+- **Sitzungsbeendigung:** OIDC-Backchannel-Logout; das Logout-Token wird gegen
+  das JWKS des Identity Providers **verifiziert** (Signatur, `iss`, `exp`,
+  `nbf`, `aud`, `events`-Claim, Abwesenheit von `nonce`), bevor eine Sitzung
+  beendet wird.
+- **LDAP-Anfragen:** Alle aus Anfragen stammenden Filterwerte werden zentral per
+  **Whitelist** bereinigt (`LdapService.sanitizeFilterValue`), bevor sie in einen
+  Suchfilter eingesetzt werden — Buchstaben und Ziffern jeder Schrift, Space,
+  Bindestrich, Apostroph, Punkt.
+- **Automatisierte Qualitätssicherung:** 292 Unit-Tests auf den sicherheits- und
+  löschrelevanten Pfaden (Storage-API, Backchannel-Logout, LDAP-Bereinigung,
+  Vault-Ent-/Versiegelung, Art.-17-Löschlogik, Integritäts-Metadaten), ergänzt um
+  Kompatibilitätswächter für die Signatur-Pads. Nachweis und Befundliste:
+  `ACCOUNT_SOURCECODE_STATISTIK.md` und `DEFEKTE.md`.
 - **Datensparsame DTOs** an einzelnen Stellen (z. B. `DtoLastSeenUser`,
   `description()`-Reduktion in `StorageObject`).
 - **CSP** gesetzt; Management-Port getrennt/nicht publiziert; Swagger in Prod
   deaktiviert.
+- **Betrieblicher Host-Zugang gehärtet:** Zugriff auf den Docker-Host **nur per SSH**,
+  beschränkt auf **vier namentlich benannte RZ-Leitungspersonen** (Leiter RZ, stellv.
+  Leiter RZ, Leiter RZ-IT Infrastruktur, Leiter RZ-IT Softwareentwicklung),
+  Authentisierung über **phishing-resistente FIDO2-Hardware-Schlüssel** (`id_ed25519_sk`
+  + YubiKey 5C BIO/Fingerprint) → starke Absicherung der Host-Ebene und des
+  `./data`-Volumes. Derselbe Kreis hält den **Log-/Graylog-Zugriff**.
+- **Backup / Datenresilienz:** Datenhaltung auf **ZFS** (Prüfsummen, Snapshots);
+  **`zfs send/receive`-Replikation** auf einen **Air-Gap-Server im Schatten-RZ**
+  (>1 km, eigenes 96-faser-Dark-Fiber-Netz) mit Snapshot-Historie + valider
+  Offsite-Kopie (**Retention 30 Tage**); **Restore dokumentiert und getestet**
+  (RTO/RPO) → Disaster-/Ransomware-Resilienz.
 - **Netz-/Edge-Architektur:** Traefik + App + PostgreSQL in **einem
   `docker-compose` auf einem Host**; Web-Verkehr Container-zu-Container.
   Docker-Host im **ungerouteten 10/8-Netz**, per **IP-Filter nur 80/443**
@@ -411,10 +471,11 @@ Im Folgenden wird je Befund gekennzeichnet:
 |---|---|
 | Verschlüsselung at-rest | gut (AES-256 Datei/Feld, Vault) |
 | Verschlüsselung in transit | Web: Edge-TLS (ACME) + interne Container-Strecke; **LDAP: LDAPS aktiv, aber keine Zertifikatsprüfung** (TrustAll) |
-| Zugriffskontrolle | gut (RBAC+Vault, Methoden-Whitelist); Test-Endpunkte offen |
+| Zugriffskontrolle | gut (RBAC+Vault, ADMIN ohne Einsicht in Personen-Audit, Host-SSH/FIDO2 auf 4 RZ-Personen, Methoden-Whitelist); Test-Endpunkte offen |
 | Protokollierung/Monitoring | zentral via GELF/Graylog + Rotation + **Lese-Audit-Trail** (gut); offen: PII-Redaktion |
 | Schlüssel-/Secret-Management | gut (alle Secrets `{AES256}`); P2: Rotation/HSM, `secret.bin`-Schutz |
-| Incident-Response / BCM / Lieferkette | **organisatorisch zu belegen** |
+| Backup / BCM (Datensicherung) | **umgesetzt** (ZFS-Snapshots + `send/receive` auf Air-Gap-Schatten-RZ, Offsite-Kopie, Retention 30 Tage; **Restore getestet & dokumentiert**, RTO/RPO definiert) |
+| Incident-Response / Lieferkette | **organisatorisch zu belegen** |
 
 ---
 

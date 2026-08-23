@@ -71,7 +71,7 @@ public enum SdbSecretType
         ID_SIGNATURE_JWT;
       case "pad" ->
         SIGNATURE_PAD_JSON;
-      case "est-id-status" ->
+      case "ext-id-status" ->
         EXT_IDENTIFICATION_STATUS;
       case "ext-id-archive" ->
         EXT_IDENTIFICATION_ARCHIVE;

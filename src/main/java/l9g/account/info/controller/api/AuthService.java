@@ -22,6 +22,7 @@ import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.SignedJWT;
 import java.text.ParseException;
+import java.util.Map;
 import l9g.account.info.service.SignaturePad;
 import l9g.account.info.service.SignaturePadService;
 import lombok.RequiredArgsConstructor;
@@ -32,10 +33,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Service for handling authentication and authorization checks for signature pads.
- * This class provides methods to verify the authenticity and validity of signature pads
- * and to validate incoming JSON Web Tokens (JWTs) from these devices.
+ * <p>
+ * {@link #authCheck(String, boolean)} resolves a pad by its UUID and optionally
+ * requires it to be validated. {@link #verifyJwt(SignaturePad, String)} verifies
+ * the RSA signature of a token produced by such a pad — and nothing else: no
+ * claim is evaluated, because the same method re-verifies archived signatures
+ * read back from the database, which must stay verifiable indefinitely. See
+ * {@code DEFEKTE.md} entry 4b.
  *
- * @author Thorsten Ludewig (t.ludewig@gmail.l9g.account.info.controller.api.AuthServicecom)
+ * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
 @Service
 @Slf4j
@@ -70,11 +76,18 @@ public class AuthService
       signaturePad =
         signaturePadService.findSignaturePadByUUID(padUuid);
     }
-    catch(Throwable t)
+    catch(Exception e)
     {
-      log.info("PADERROR: {} Unable to read signature pad storage.", padUuid);
+      // Reported as 500, not 404: a failure here means the storage backend is
+      // broken (database unreachable, corrupt or undecryptable record), which
+      // is not the same as an unknown pad. Mapping it to 404 made real outages
+      // indistinguishable from a wrong UUID, both for clients and for
+      // log-based monitoring. Catching Exception rather than Throwable also
+      // lets an Error such as OutOfMemoryError propagate instead of hiding it.
+      log.error("PADERROR: {} Unable to read signature pad storage.",
+        padUuid, e);
       throw new ResponseStatusException(
-        HttpStatus.NOT_FOUND,
+        HttpStatus.INTERNAL_SERVER_ERROR,
         "ERROR: Unable to read signature pad storage."
       );
     }
@@ -114,9 +127,31 @@ public class AuthService
     throws ResponseStatusException
   {
     SignedJWT signedJwt = null;
+
+    Map<String, Object> publicJwkMap = signaturePad.getPublicJwk();
+    if(publicJwkMap == null || publicJwkMap.isEmpty())
+    {
+      log.error("PADERROR: {} has no public key stored",
+        signaturePad.getUuid());
+      throw new ResponseStatusException(
+        HttpStatus.BAD_REQUEST,
+        "Signature pad has no public key!"
+      );
+    }
+
     try
     {
-      RSAKey publicJwk = (RSAKey)JWK.parse(signaturePad.getPublicJwk());
+      JWK parsedJwk = JWK.parse(publicJwkMap);
+
+      if( ! (parsedJwk instanceof RSAKey publicJwk))
+      {
+        log.error("PADERROR: {} public key is a {}, expected an RSA key",
+          signaturePad.getUuid(), parsedJwk.getKeyType());
+        throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Signature pad public key is not an RSA key!"
+        );
+      }
 
       log.debug("publicJwk={}", publicJwk);
 

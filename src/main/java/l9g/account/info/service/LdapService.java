@@ -53,6 +53,12 @@ import org.springframework.stereotype.Service;
  * connection and queries is injected from application properties. It is
  * designed to be used by services that need to query user information from
  * LDAP and update user attributes.
+ * <p>
+ * Search filters are assembled from the configured templates with
+ * {@link String#format}, so every value that originates from a request passes
+ * through {@link #sanitizeFilterValue(String)} first. That is the only barrier
+ * against LDAP filter injection on this path — do not interpolate request data
+ * into a filter without it.
  *
  * @author Thorsten Ludewig (t.ludewig@gmail.com)
  */
@@ -226,6 +232,56 @@ public class LdapService
    *
    * @throws LDAPException If an LDAP-specific error occurs during the search.
    */
+  /**
+   * Reduces a user-supplied value to what may safely be interpolated into an
+   * LDAP search filter.
+   * <p>
+   * Every filter in this class is assembled with {@link String#format}, so the
+   * value lands unescaped inside an assertion such as {@code (givenName=%s*)}.
+   * A single {@code )} would close that assertion and let the caller append
+   * filter components of their own. Rather than blacklisting the characters
+   * that are known to be dangerous, this keeps only what a name or a card
+   * number can legitimately contain: letters and digits in any script — so
+   * umlauts and accents pass through unchanged — plus space, hyphen, apostrophe
+   * and period for names such as {@code Müller-Lüdenscheidt} or
+   * {@code O'Brien}. Everything else is dropped, which makes breaking out of
+   * the assertion structurally impossible.
+   * <p>
+   * Note that this also removes {@code *}: the filter templates supply their own
+   * wildcards, and the search interfaces only ever receive letters and spaces.
+   *
+   * @param value The raw value from the request, may be {@code null}.
+   *
+   * @return The value reduced to safe characters, never {@code null}.
+   */
+  static String sanitizeFilterValue(String value)
+  {
+    if(value == null)
+    {
+      return "";
+    }
+
+    StringBuilder sanitized = new StringBuilder(value.length());
+
+    for(int i = 0; i < value.length(); i ++ )
+    {
+      char c = value.charAt(i);
+
+      if(Character.isLetterOrDigit(c)
+        || c == ' ' || c == '-' || c == '\'' || c == '.')
+      {
+        sanitized.append(c);
+      }
+    }
+
+    if(sanitized.length() != value.length())
+    {
+      log.debug("LDAP filter value sanitized: '{}' -> '{}'", value, sanitized);
+    }
+
+    return sanitized.toString();
+  }
+
   public SearchResultEntry findUserEntryByCustomerNumber(
     LDAPConnection connection, String cardNumber)
     throws LDAPException
@@ -233,7 +289,9 @@ public class LdapService
     SearchResultEntry entry = null;
 
     LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
-    String filter = String.format(userConfig.getFilter(), cardNumber, cardNumber, cardNumber, cardNumber);
+    String safeCardNumber = sanitizeFilterValue(cardNumber);
+    String filter = String.format(userConfig.getFilter(),
+      safeCardNumber, safeCardNumber, safeCardNumber, safeCardNumber);
     log.debug("LDAP filter: {}", filter);
 
     SearchRequest searchRequest = new SearchRequest(
@@ -369,7 +427,7 @@ public class LdapService
     {
       LdapData.LdapConfig userConfig = ldapDataConfig.getUser();
 
-      query = query.trim().toLowerCase();
+      query = sanitizeFilterValue(query).trim().toLowerCase();
       String filter = String.format(userConfig.getFilterCommonName(), "", query, "");
 
       String[] queryToken = query.split("\\s+");

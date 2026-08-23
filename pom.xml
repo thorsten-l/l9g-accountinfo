@@ -8,13 +8,13 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.14</version>
+    <version>3.5.16</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   
   <groupId>l9g.webapp</groupId>
   <artifactId>l9g-accountinfo</artifactId>
-  <version>2.4.1</version>
+  <version>2.5.0</version>
   <name>L9G Account Info</name>
   <description>Issue Account Information</description>
   
@@ -52,6 +52,7 @@
     <exec.inheritIo>true</exec.inheritIo>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <start-class>l9g.account.info.Application</start-class>
+    <changelog.check.skip>false</changelog.check.skip>
   </properties>
   
   <dependencies>
@@ -174,6 +175,13 @@
       <version>${l9g.crypto.version}</version>
     </dependency>
 
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -197,6 +205,56 @@
           <delimiters>
             <delimiter>@</delimiter>
           </delimiters>
+        </configuration>
+      </plugin>
+
+      <!--
+        Fails the build when the project version has no entry in CHANGELOG.md,
+        so a release can never go out undocumented.
+
+        Bound to prepare-package on purpose, not to validate: running the
+        application from the IDE stops at process-classes, so a hot-reload cycle
+        is never blocked by a missing changelog entry — only packaging is.
+        Skip with -Dchangelog.check.skip=true.
+      -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>changelog-check</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <skip>${changelog.check.skip}</skip>
+              <executable>${project.basedir}/bin/changelog.sh</executable>
+              <arguments>
+                <argument>check</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!--
+        rebel.xml is the local JRebel mapping. It has to stay in target/classes
+        so that hot reload keeps working when the project is run from the IDE,
+        but it must not end up in the artifact: it contains the absolute path of
+        the developer's working copy, which would otherwise travel into every
+        release and into the Docker image. Excluding it here keeps the file where
+        the IDE and JRebel expect it and out of the jar that
+        spring-boot-maven-plugin repackages.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>rebel.xml</exclude>
+          </excludes>
         </configuration>
       </plugin>
 

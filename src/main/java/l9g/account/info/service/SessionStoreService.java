@@ -68,6 +68,14 @@ public final class SessionStoreService
 
   /**
    * Stores an HTTP session, mapping it to both its OAuth2 session ID (sid) and its HTTP session ID.
+   * <p>
+   * If the sid is already mapped to a different HTTP session — which happens
+   * when a user re-authenticates while the identity provider keeps the same
+   * sid — that session's entry is dropped from the session-id cache first.
+   * Without this, the old entry became unreachable: {@link #remove(String)}
+   * resolves the session through the sid cache, which by then points at the new
+   * session, so the stale reference survived until the cache TTL elapsed and a
+   * backchannel logout left it behind.
    *
    * @param sid The OAuth2 session ID.
    * @param session The {@link HttpSession} object.
@@ -79,8 +87,47 @@ public final class SessionStoreService
     Objects.requireNonNull(sid, "sid must not be null");
     Objects.requireNonNull(session, "session must not be null");
 
+    evictPreviousSessionFor(sid, session);
+
     byOauth2SidCache.put(sid, session);
     byHttpSessionIdCache.put(session.getId(), session);
+  }
+
+  /**
+   * Drops the session-id entry of the session previously registered under this
+   * sid, unless it is the very same session being re-registered.
+   *
+   * @param sid The OAuth2 session ID being (re-)registered.
+   * @param session The session now taking that sid.
+   */
+  private void evictPreviousSessionFor(String sid, HttpSession session)
+  {
+    HttpSession previous = byOauth2SidCache.getIfPresent(sid);
+
+    if(previous == null || previous == session)
+    {
+      return;
+    }
+
+    try
+    {
+      String previousId = previous.getId();
+      if( ! previousId.equals(session.getId()))
+      {
+        log.debug("sid {} is re-registered, dropping stale session id {}",
+          sid, previousId);
+        byHttpSessionIdCache.invalidate(previousId);
+      }
+    }
+    catch(Throwable t)
+    {
+      // The previous session may already be invalidated and some containers
+      // refuse getId() then. Losing the cleanup is harmless — the entry expires
+      // with the cache TTL — while letting the exception escape would break the
+      // login of the user who is currently authenticating.
+      log.debug("could not read the id of the previous session for sid {}: {}",
+        sid, t.getMessage());
+    }
   }
 
   /**
@@ -151,8 +198,14 @@ public final class SessionStoreService
   }
 
   /**
-   * Performs shutdown operations, invalidating all cached sessions and cleaning up caches.
-   * This method is annotated with {@link PreDestroy} to be called before the bean is destroyed.
+   * Clears both caches when the bean is destroyed.
+   * <p>
+   * Note that this drops the <em>references</em> only — the cached
+   * {@link HttpSession} objects are deliberately <strong>not</strong>
+   * invalidated. Their lifecycle belongs to the servlet container, which tears
+   * them down itself on shutdown; invalidating them here would interfere with a
+   * graceful restart. (An earlier version of this Javadoc claimed the sessions
+   * were invalidated, which they never were.)
    */
   @PreDestroy
   public void shutdown()
