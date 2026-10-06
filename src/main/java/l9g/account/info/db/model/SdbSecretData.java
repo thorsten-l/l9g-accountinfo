@@ -95,8 +95,19 @@ public class SdbSecretData extends SdbUuidObject
    */
   private String name;
 
+  @Column(columnDefinition = "text")
   /**
    * A detailed description of the secret data.
+   * <p>
+   * Holds a JSON object and is stored <strong>unencrypted</strong>: on the
+   * signature path {@code {"name":…,"mail":…}}, on the storage path
+   * {@code {"pid":…,"mail":…,"name":…,"username":…}}. Without an explicit
+   * definition this mapped to {@code varchar(255)}, which a UUID-shaped
+   * {@code pid} together with a long mail address and a double-barrelled name
+   * can exceed — the same failure class as the {@code secret} column ran into.
+   * <p>
+   * Existing databases need a one-off migration, see
+   * {@code sql/2.5.1-secretdata-columns-to-text.sql}.
    */
   private String description;
 
@@ -120,9 +131,23 @@ public class SdbSecretData extends SdbUuidObject
   private String checksum; // SHA-256 of the original file
 
   @Convert(converter = EncryptedAttributeConverter.class)
-  @Column(length = 262144) // 256KB
+  @Column(columnDefinition = "text")
   /**
    * The encrypted secret data itself, stored as a String.
+   * <p>
+   * Deliberately unbounded ({@code text}). The value is encrypted before it
+   * reaches the column, and the payload is base64-encoded twice on its way
+   * here: once inside the signature JWT and once by the AES-256 encryption.
+   * The net expansion from the original PNG to the stored string is about
+   * 1.78×, so the previous {@code varchar(262144)} only held a signature of
+   * roughly 110 KB — larger ones failed the insert with
+   * "value too long for type character varying(262144)" and the signature was
+   * lost. A character limit here is therefore not a meaningful bound on the
+   * payload; the plausibility check belongs at the point of intake.
+   * <p>
+   * Existing databases need a one-off migration, see
+   * {@code sql/2.5.1-secretdata-columns-to-text.sql} — {@code ddl-auto: update} does
+   * not alter existing columns.
    */
   private String secret;
 

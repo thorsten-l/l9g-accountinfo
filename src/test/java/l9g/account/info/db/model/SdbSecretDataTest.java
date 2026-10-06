@@ -43,6 +43,14 @@ class SdbSecretDataTest
   private static final String SHA256_EMPTY =
     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
+  /**
+   * The longest plaintext that still fitted into the former
+   * {@code varchar(262144)} column after AES-256 encryption and Base64
+   * encoding, measured against {@code crypto-core} 1.0.5. Anything longer
+   * failed the insert.
+   */
+  private static final int MAX_PLAINTEXT_FOR_OLD_COLUMN = 196_574;
+
   private static SdbSecretData newData()
   {
     return new SdbSecretData("publisher", "pad-uuid",
@@ -165,6 +173,101 @@ class SdbSecretDataTest
     assertThat(reference.getSize())
       .as("so the byte-based path records a different size for the same input")
       .isNotEqualTo(data.getSize());
+  }
+
+  /**
+   * Regression guard for the incident behind 2.5.1: a signature larger than
+   * roughly 110 KB failed to insert with "value too long for type character
+   * varying(262144)" and was lost.
+   * <p>
+   * The cause is a double base64 encoding on the way into the column — once as
+   * {@code sigpng} inside the signature JWT, once by the AES-256 encryption of
+   * the {@code secret} field. This test pins the two factors so the arithmetic
+   * behind the {@code text} column stays visible: whoever reintroduces a
+   * character limit here can see from these numbers what it would actually
+   * bound.
+   * <p>
+   * Only the JWT-side factor is asserted here; the encryption factor lives in
+   * {@code crypto-core} and was measured at 1,3336 (see
+   * {@code sql/2.5.1-secretdata-columns-to-text.sql}). That factor is what turns the
+   * old {@code varchar(262144)} into an effective plaintext budget of
+   * {@link #MAX_PLAINTEXT_FOR_OLD_COLUMN} characters — the number that actually
+   * mattered, and the reason a 262.144-character column could not hold a
+   * 200.000-character JWT.
+   */
+  @Test
+  @DisplayName("a large signature payload is stored without truncation")
+  void largeSignaturePayloadIsNotTruncated()
+  {
+    SdbSecretData data = newData();
+
+    // a PNG of roughly 110 KB, as a dense signature on a high-resolution pad
+    // canvas produces, base64-encoded as it appears in the JWT claim
+    byte[] png = new byte[110 * 1024];
+    for(int i = 0; i < png.length; i ++ )
+    {
+      png[i] = (byte)(i % 251);
+    }
+    String sigpng = java.util.Base64.getEncoder().encodeToString(png);
+
+    assertThat(sigpng.length())
+      .as("base64 inflates the PNG by 4/3 before it even enters the JWT")
+      .isBetween(png.length * 4 / 3, png.length * 4 / 3 + 4);
+
+    // the JWT then base64url-encodes the whole claim set a second time
+    String claims = "{\"sub\":\"mmuster\",\"sigpng\":\"" + sigpng + "\"}";
+    String jwt = "eyJhbGciOiJSUzI1NiJ9."
+      + java.util.Base64.getUrlEncoder().withoutPadding()
+        .encodeToString(claims.getBytes(StandardCharsets.UTF_8))
+      + ".c2lnbmF0dXJl";
+
+    assertThat(jwt.length())
+      .as("the JWT exceeds the plaintext budget that varchar(262144) left "
+        + "after the 1,3336x encryption expansion — this is the insert that "
+        + "failed in production")
+      .isGreaterThan(MAX_PLAINTEXT_FOR_OLD_COLUMN);
+
+    data.setSecret(jwt);
+
+    assertThat(data.getSecret())
+      .as("nothing on the Java side may shorten the value")
+      .hasSize(jwt.length())
+      .isEqualTo(jwt);
+    assertThat(data.getSize()).isEqualTo(jwt.length());
+    assertThat(data.getChecksum()).isNotNull().hasSize(64);
+  }
+
+  /**
+   * The description column is the sibling of the same failure class: it holds an
+   * unencrypted JSON object and had no explicit length, i.e. it mapped to
+   * {@code varchar(255)}. The storage path writes pid, mail, name and username
+   * into it, which long values can push past that. It is {@code text} now.
+   */
+  @Test
+  @DisplayName("a description beyond the former varchar(255) is kept intact")
+  void longDescriptionIsNotTruncated()
+    throws Exception
+  {
+    SdbSecretData data = newData();
+
+    String description = new com.fasterxml.jackson.databind.ObjectMapper()
+      .writeValueAsString(new l9g.account.info.dto.StorageObject.EndUserData(
+        "urn:uuid:6f9619ff-8b86-d011-b42d-00cf4fc964ff",
+        "marie-charlotte.mueller-luedenscheidt@sehr-lange-domain.example.org",
+        null, "mmuellerluedenscheidt",
+        "Marie-Charlotte", "Müller-Lüdenscheidt").description());
+
+    assertThat(description.length())
+      .as("this is the shape the storage path persists")
+      .isGreaterThan(150);
+
+    // deliberately beyond the old limit, as a batch of such values would be
+    String oversized = description + " " + "x".repeat(300);
+    assertThat(oversized.length()).isGreaterThan(255);
+
+    data.setDescription(oversized);
+
+    assertThat(data.getDescription()).isEqualTo(oversized);
   }
 
   @Test

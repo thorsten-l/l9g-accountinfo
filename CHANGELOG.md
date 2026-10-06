@@ -11,6 +11,15 @@ hier einen Eintrag hat — ein Release ohne Changelog-Eintrag bricht ab.
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-09-09
+
+### Fixed
+
+- **Signaturen über ~110 KB konnten nicht gespeichert werden** und waren verloren: `SdbSecretData.secret` war `varchar(262144)`, die Nutzlast wird auf dem Weg dorthin aber zweimal base64-kodiert — einmal als `sigpng` im Signatur-JWT, einmal durch die AES-256-Verschlüsselung (Netto-Faktor ≈ 1,78). Die Spalte ist jetzt `text`.
+- **`SdbSecretData.description` vorsorglich ebenfalls auf `text`.** Die Spalte hatte keine Längenangabe und war damit `varchar(255)`; dort landet unverschlüsselt ein JSON-Objekt (`{"pid":…,"mail":…,"name":…,"username":…}`), das bei langen Werten dieselbe Fehlerklasse ausgelöst hätte. Aufgetreten war das noch nicht.
+
+**Erfordert die einmalige Migration** `sql/2.5.1-secretdata-columns-to-text.sql` — `ddl-auto: update` ändert bestehende Spaltentypen **nicht**. Bequem anwendbar mit `sql/ALTER_DB.sh` (idempotent, mit vorheriger Sicherung und Verifikation, gegen `postgres:18` getestet).
+
 ## [2.5.0] - 2026-08-23
 
 Sicherheits- und Qualitätsrelease. Grundlage war der Aufbau einer
@@ -150,7 +159,8 @@ Durch Tests festgeschrieben, siehe `DEFEKTE.md`:
 Frühere Versionen sind nicht rückwirkend dokumentiert; für Details siehe die
 git-Historie.
 
-[Unreleased]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.1...HEAD
+[2.5.1]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.2.3...v2.4.1
 [2.2.3]: https://github.com/thorsten-l/l9g-accountinfo/releases/tag/v2.2.3
