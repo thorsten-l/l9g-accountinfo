@@ -11,6 +11,12 @@ hier einen Eintrag hat — ein Release ohne Changelog-Eintrag bricht ab.
 
 ## [Unreleased]
 
+## [2.5.2] - 2026-11-05
+
+### Changed
+
+- Lombok auf 1.18.48 angehoben (überschreibt die von Spring Boot 3.5.16 verwaltete Version 1.18.46).
+
 ## [2.5.1] - 2026-09-09
 
 ### Fixed
@@ -159,7 +165,8 @@ Durch Tests festgeschrieben, siehe `DEFEKTE.md`:
 Frühere Versionen sind nicht rückwirkend dokumentiert; für Details siehe die
 git-Historie.
 
-[Unreleased]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.1...HEAD
+[Unreleased]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.2...HEAD
+[2.5.2]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.1...v2.5.2
 [2.5.1]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.2.3...v2.4.1
