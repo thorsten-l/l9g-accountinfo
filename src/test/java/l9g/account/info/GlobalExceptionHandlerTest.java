@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
@@ -154,7 +155,7 @@ class GlobalExceptionHandlerTest
     when(request.getRequestURI()).thenReturn("/app");
 
     ModelAndView mav = handler.handleResponseStatusException(request, response,
-      new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "short and stout"));
+      new ResponseStatusException(HttpStatusCode.valueOf(418), "short and stout"));
 
     assertThat(mav.getViewName()).isEqualTo("error/418");
     verify(response).setStatus(418);

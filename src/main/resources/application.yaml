@@ -12,6 +12,15 @@ spring:
     basename: messages
     encoding: UTF-8
 
+  # Jackson 3 (Spring Boot 4) with the Jackson 2 defaults of Spring Boot 3.
+  # Required: the JSON stored in secretdata (signature pads, descriptions,
+  # identification status) must stay readable and keep its format. With the
+  # Jackson 3 defaults final fields are no longer set on read (a stored
+  # signature pad would lose its uuid) and properties are sorted.
+  # Pinned by JsonFormatGoldenTest.
+  jackson:
+    use-jackson2-defaults: true
+
   security:
     oauth2:
       client:

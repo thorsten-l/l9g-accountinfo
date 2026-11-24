@@ -22,10 +22,9 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
 import java.io.Serializable;
 import java.util.Date;
+import l9g.account.info.compliance.PersonalData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -70,32 +69,36 @@ public class SdbLastSeen implements Serializable
    */
   @Id
   @Column(name = "username", nullable = false, length = 128)
+  @PersonalData(category = "Identifikation", purpose = "Verzeichnisabgleich für das Löschkonzept")
   private String username;
 
   /**
    * The user's first name.
    */
   @Column(name = "firstname")
+  @PersonalData(category = "Identifikation", purpose = "Anzeige im Personen-Audit")
   private String firstname;
 
   /**
    * The user's last name.
    */
   @Column(name = "lastname")
+  @PersonalData(category = "Identifikation", purpose = "Anzeige im Personen-Audit")
   private String lastname;
 
   /**
    * The user's email address.
    */
   @Column(name = "mail")
+  @PersonalData(category = "Kontakt", purpose = "Anzeige im Personen-Audit")
   private String mail;
 
   /**
    * The timestamp the user was last seen in the directory. Automatically set
    * to "now" on every insert and update (see {@link #touch()}).
    */
-  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "last_seen_timestamp", nullable = false)
+  @PersonalData(category = "Verzeichnisabgleich", purpose = "Beginn der Löschkarenz (letzter Kontakt im Verzeichnis)")
   private Date timestamp;
 
   /**

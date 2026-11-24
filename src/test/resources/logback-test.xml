@@ -51,6 +51,16 @@
        die von tamperedCiphertextIsRejected bewusst ausgelöst werden. -->
   <logger name="de.l9g.crypto" level="${APP_LOG_LEVEL}"/>
 
+  <!-- ClientSecurityConfigGoldenTest schickt rund 2.400 Requests durch die
+       Security-Filter-Chain, ohne Controller zu registrieren: jeder Request,
+       der die Security passiert, endet absichtlich mit 404, und der
+       DispatcherServlet meldet jeden davon als WARN. -->
+  <logger name="org.springframework.web.servlet.PageNotFound" level="${APP_LOG_LEVEL}"/>
+
+  <!-- SchemaGoldenTest erzeugt die DDL offline: Hibernate meldet erwartungsgemäß,
+       dass kein Connection-Provider vorhanden ist. -->
+  <logger name="org.hibernate.orm.connection" level="ERROR"/>
+
   <!-- Der In-Memory-Verzeichnisserver in LdapServiceInjectionTest -->
   <logger name="com.unboundid" level="WARN"/>
 

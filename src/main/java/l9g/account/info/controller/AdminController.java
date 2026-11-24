@@ -15,8 +15,8 @@
  */
 package l9g.account.info.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -268,7 +268,7 @@ public class AdminController
             map.getClass());
           map.put("modifiedBy", modifiedBy);
         }
-        catch(JsonProcessingException ex)
+        catch(JacksonException ex)
         {
           log.error("parse error {}", ex);
         }
@@ -455,7 +455,7 @@ public class AdminController
         }
         dbService.deleteSecretDataById(dbId);
       }
-      catch(JsonProcessingException e)
+      catch(JacksonException e)
       {
         log.error("Error parsing pad data for deletion: {}", dbId);
       }

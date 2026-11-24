@@ -16,7 +16,8 @@
 package l9g.account.info.ws;
 
 import l9g.account.info.dto.DtoEvent;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketHandler;
@@ -28,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketMessage;
 
@@ -63,7 +64,10 @@ public class SignaturePadWebSocketHandler implements WebSocketHandler
   /**
    * Object mapper for JSON serialization of outgoing messages
    */
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  // Jackson 2 defaults: the events are part of the pad protocol and keep
+  // their exact format (property order) across the Jackson 3 upgrade
+  private final ObjectMapper objectMapper =
+    JsonMapper.builderWithJackson2Defaults().build();
 
   /**
    * Invoked after a new WebSocket connection has been established.

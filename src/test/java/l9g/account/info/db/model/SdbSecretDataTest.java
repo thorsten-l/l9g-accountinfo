@@ -250,7 +250,7 @@ class SdbSecretDataTest
   {
     SdbSecretData data = newData();
 
-    String description = new com.fasterxml.jackson.databind.ObjectMapper()
+    String description = new tools.jackson.databind.ObjectMapper()
       .writeValueAsString(new l9g.account.info.dto.StorageObject.EndUserData(
         "urn:uuid:6f9619ff-8b86-d011-b42d-00cf4fc964ff",
         "marie-charlotte.mueller-luedenscheidt@sehr-lange-domain.example.org",

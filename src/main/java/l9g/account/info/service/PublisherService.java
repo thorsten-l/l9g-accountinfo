@@ -15,8 +15,8 @@
  */
 package l9g.account.info.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -68,7 +68,7 @@ public class PublisherService
    *
    * @return A JSON string containing the full name, preferred username, and email of the principal.
    *
-   * @throws JsonProcessingException If there is an error during JSON serialization.
+   * @throws JacksonException If there is an error during JSON serialization.
    */
   @SneakyThrows
   public String principalToPublisherJSON(DefaultOidcUser principal)

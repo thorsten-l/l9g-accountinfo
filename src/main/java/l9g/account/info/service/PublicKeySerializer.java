@@ -15,13 +15,12 @@
  */
 package l9g.account.info.service;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
-import java.io.IOException;
 import java.security.PublicKey;
 import java.util.Base64;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 /**
  * Custom Jackson serializer for {@link PublicKey} objects.
@@ -49,17 +48,17 @@ public class PublicKeySerializer extends StdSerializer<PublicKey>
    *
    * @param key The {@link PublicKey} to serialize.
    * @param gen The JSON generator to write the serialized value to.
-   * @param provider The serializer provider.
+   * @param provider The serialization context.
    *
-   * @throws IOException If an I/O error occurs during serialization.
+   * @throws JacksonException If an error occurs during serialization.
    */
   @Override
   public void serialize(
     PublicKey key,
     JsonGenerator gen,
-    SerializerProvider provider
+    SerializationContext provider
   )
-    throws IOException
+    throws JacksonException
   {
     // Kodieren als Base64 der X.509-Encoded Form
     byte[] encoded = key.getEncoded();

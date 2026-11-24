@@ -15,8 +15,8 @@
  */
 package l9g.account.info.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
@@ -77,7 +77,7 @@ public class SignaturePadController
    *
    * @return The name of the signature-pad template to render.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    */
   @Operation(summary = "Display the signature pad interface",
              description = "Renders the signature pad view, configuring it with locale, WebSocket URL, and heartbeat settings.",
@@ -93,7 +93,7 @@ public class SignaturePadController
                   defaultValue = "UNKNOWN") IssueType issueType,
     @AuthenticationPrincipal DefaultOidcUser principal,
     HttpServletRequest request, Model model)
-    throws JsonProcessingException
+    throws JacksonException
   {
     log.debug("signaturePad principal={}", principal);
     log.debug("signaturePad issueType={}", issueType);

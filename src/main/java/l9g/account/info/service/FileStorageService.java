@@ -15,8 +15,8 @@
  */
 package l9g.account.info.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import de.l9g.crypto.core.CryptoHandler;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -213,12 +213,12 @@ public class FileStorageService
    * @param side The side of the card (e.g., "front", "back").
    * @param file The {@link MultipartFile} containing the file data.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    * @throws IOException If an I/O error occurs during file processing.
    */
   public SdbSecretData saveSecretFileData(String publisher, String fullname,
     String username, String mail, String padUuid, String side, MultipartFile file)
-    throws JsonProcessingException, IOException
+    throws JacksonException, IOException
   {
     log.debug("saveSecretFileData");
 
@@ -239,7 +239,7 @@ public class FileStorageService
 
   private SdbSecretData buildSecretData(String createdBy,
      String apiId, StorageObject object)
-    throws JsonProcessingException, IOException
+    throws JacksonException, IOException
   {
     log.debug("buildSecretData");
 
@@ -252,7 +252,7 @@ public class FileStorageService
 
   public SdbSecretData saveSecretRawData(String createdBy,
      String apiId, StorageObject object)
-    throws JsonProcessingException, IOException
+    throws JacksonException, IOException
   {
     log.debug("saveSecretRawData");
     SdbSecretData data = buildSecretData(createdBy, apiId, object);
@@ -268,7 +268,7 @@ public class FileStorageService
 
   public SdbSecretData saveSecretData(
     String createdBy, String apiId, StorageObject object )
-    throws JsonProcessingException, IOException
+    throws JacksonException, IOException
   {
     log.debug("saveSecretData");
     SdbSecretData data = buildSecretData(createdBy, apiId, object);

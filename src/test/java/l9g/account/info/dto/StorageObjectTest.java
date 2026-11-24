@@ -15,7 +15,7 @@
  */
 package l9g.account.info.dto;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import l9g.account.info.dto.StorageObject.EndUserData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

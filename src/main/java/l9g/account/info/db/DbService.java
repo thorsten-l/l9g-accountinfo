@@ -15,8 +15,8 @@
  */
 package l9g.account.info.db;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.SignedJWT;
 import l9g.account.info.dto.DtoLastSeenUser;
 import l9g.account.info.service.FileStorageService;
@@ -152,10 +152,10 @@ public class DbService
    *
    * @return The latest {@link SdbSecretData} object, or null if not found.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    */
   private SdbSecretData findSdbSecretData(String uuid, SdbSecretType type, boolean hidden)
-    throws JsonProcessingException
+    throws JacksonException
   {
     Optional<List<SdbSecretData>> optional = sdbSecretDataRepository
       .findByKeyAndTypeAndHiddenOrderByModifyTimestampDesc(uuid, type, hidden);
@@ -178,10 +178,10 @@ public class DbService
    *
    * @return The latest {@link SdbSecretData} object, or null if not found.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    */
   private SdbSecretData findSdbSecretData(String uuid, SdbSecretType type)
-    throws JsonProcessingException
+    throws JacksonException
   {
     Optional<List<SdbSecretData>> optional = sdbSecretDataRepository
       .findByKeyAndTypeOrderByModifyTimestampDesc(uuid, type);
@@ -203,10 +203,10 @@ public class DbService
    *
    * @return The {@link SignaturePad} object, or null if not found.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    */
   public SignaturePad findSignaturePadbyUUID(String uuid)
-    throws JsonProcessingException
+    throws JacksonException
   {
     SignaturePad signaturePad = null;
 
@@ -230,10 +230,10 @@ public class DbService
    *
    * @return The {@link SignaturePad} object, or null if not found.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    */
   public SignaturePad findSignaturePadByUUIDAny(String uuid)
-    throws JsonProcessingException
+    throws JacksonException
   {
     return findSignaturePadbyUUID(uuid);
   }
@@ -246,10 +246,10 @@ public class DbService
    *
    * @return The {@link SignaturePad} object, or null if not found.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    */
   public SignaturePad findSignaturePadbyUUID(String uuid, boolean hidden)
-    throws JsonProcessingException
+    throws JacksonException
   {
     SignaturePad signaturePad = null;
 
@@ -272,10 +272,10 @@ public class DbService
    * @param publisher The publisher of the signature pad data.
    * @param signaturePad The {@link SignaturePad} object to save.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    */
   public void saveSignaturePad(String publisher, SignaturePad signaturePad)
-    throws JsonProcessingException
+    throws JacksonException
   {
     log.debug("saveSignaturePad {} / {}", publisher, signaturePad);
 
@@ -306,12 +306,12 @@ public class DbService
    *
    * @param signedJWT The {@link SignedJWT} to save.
    *
-   * @throws JsonProcessingException If there is an error processing JSON.
+   * @throws JacksonException If there is an error processing JSON.
    * @throws IOException If an I/O error occurs.
    * @throws ParseException If parsing the JWT claims fails.
    */
   public void saveSignedJWT(SignedJWT signedJWT)
-    throws JsonProcessingException, IOException, ParseException
+    throws JacksonException, IOException, ParseException
   {
     log.debug("saveSecretFileData");
 
@@ -355,7 +355,7 @@ public class DbService
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete validated signature pad.");
           }
         }
-        catch(JsonProcessingException e)
+        catch(JacksonException e)
         {
           log.error("Error parsing signature pad data for deletion: {}", id);
         }
@@ -380,7 +380,7 @@ public class DbService
     {
       secretData.setModifiedBy(objectMapper.writeValueAsString(publisher));
     }
-    catch(JsonProcessingException ex)
+    catch(JacksonException ex)
     {
       log.error("publischer unknown : {}", ex );
     }

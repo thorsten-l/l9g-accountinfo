@@ -28,6 +28,7 @@ import jakarta.persistence.Transient;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import l9g.account.info.compliance.PersonalData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -93,6 +94,7 @@ public class SdbSecretData extends SdbUuidObject
   /**
    * A human-readable name for the secret data.
    */
+  @PersonalData(category = "Identifikation", purpose = "Zuordnung der Nachweise zur Person (Benutzername; bei Pad-Datensätzen der Pad-Name)")
   private String name;
 
   @Column(columnDefinition = "text")
@@ -109,6 +111,7 @@ public class SdbSecretData extends SdbUuidObject
    * Existing databases need a one-off migration, see
    * {@code sql/2.5.1-secretdata-columns-to-text.sql}.
    */
+  @PersonalData(category = "Kontakt", purpose = "Anzeige im Personen-Audit (Name, Mail als JSON)")
   private String description;
 
   @Column(nullable = false)
@@ -149,6 +152,7 @@ public class SdbSecretData extends SdbUuidObject
    * {@code sql/2.5.1-secretdata-columns-to-text.sql} — {@code ddl-auto: update} does
    * not alter existing columns.
    */
+  @PersonalData(category = "Identifikationsnachweis", purpose = "Signatur-JWT mit Unterschrift bzw. Identifizierungsstatus des eID-Dienstes", specialCategory = true)
   private String secret;
 
   @Transient

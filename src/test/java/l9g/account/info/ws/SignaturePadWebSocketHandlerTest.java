@@ -346,10 +346,10 @@ class SignaturePadWebSocketHandlerTest
       ArgumentCaptor.forClass(TextMessage.class);
     verify(pad, org.mockito.Mockito.times(2)).sendMessage(messages.capture());
 
-    com.fasterxml.jackson.databind.ObjectMapper mapper =
-      new com.fasterxml.jackson.databind.ObjectMapper();
-    com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>> asMap =
-      new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>()
+    tools.jackson.databind.ObjectMapper mapper =
+      new tools.jackson.databind.ObjectMapper();
+    tools.jackson.core.type.TypeReference<Map<String, Object>> asMap =
+      new tools.jackson.core.type.TypeReference<Map<String, Object>>()
     {
     };
 

@@ -15,10 +15,10 @@
  */
 package l9g.account.info.controller.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.nimbusds.jwt.SignedJWT;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -406,7 +406,7 @@ public class ApiAdminController
         map.put("description", objectMapper.readValue(
           secretData.getDescription(), Map.class));
       }
-      catch(JsonProcessingException ex)
+      catch(JacksonException ex)
       {
         map.put("description", secretData.getDescription());
       }
@@ -621,7 +621,7 @@ public class ApiAdminController
             map.getClass());
           map.put("modifiedBy", modifiedBy);
         }
-        catch(JsonProcessingException ex)
+        catch(JacksonException ex)
         {
           log.error("parse error {}", ex);
         }
@@ -688,7 +688,7 @@ public class ApiAdminController
             map.getClass());
           map.put("modifiedBy", modifiedBy);
         }
-        catch(JsonProcessingException ex)
+        catch(JacksonException ex)
         {
           log.error("parse error {}", ex);
         }
@@ -887,9 +887,9 @@ public class ApiAdminController
     {
       return objectMapper.readTree(value);
     }
-    catch(JsonProcessingException e)
+    catch(JacksonException e)
     {
-      return objectMapper.getNodeFactory().textNode(value);
+      return objectMapper.getNodeFactory().stringNode(value);
     }
   }
 
@@ -912,7 +912,7 @@ public class ApiAdminController
         return objectMapper.readTree(
           SignedJWT.parse(secret).getJWTClaimsSet().toString());
       }
-      catch(ParseException | JsonProcessingException e)
+      catch(ParseException | JacksonException e)
       {
         log.warn("Could not decode JWT secret for export id={}", data.getId());
         return null;

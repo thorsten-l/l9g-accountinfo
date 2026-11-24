@@ -17,6 +17,7 @@ package l9g.account.info.db.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
+import l9g.account.info.compliance.PersonalData;
 import lombok.Getter;
 
 //~--- JDK imports ------------------------------------------------------------
@@ -27,8 +28,6 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.NoArgsConstructor;
@@ -190,21 +189,21 @@ public class SdbUuidObject implements Serializable
   /**
    * The identifier of the user or system that created this object.
    */
+  @PersonalData(category = "Beschäftigtendaten", purpose = "Nachweis, wer den Datensatz angelegt hat (Publisher: Name, Benutzername, Mail)")
   private String createdBy;
 
   /**
    * The identifier of the user or system that last modified this object.
    */
+  @PersonalData(category = "Beschäftigtendaten", purpose = "Nachweis, wer den Datensatz zuletzt geändert hat (Publisher: Name, Benutzername, Mail)")
   private String modifiedBy;
 
-  @Temporal(TemporalType.TIMESTAMP)
   @Column(updatable = false)
   /**
    * The timestamp when this object was created.
    */
   protected Date createTimestamp;
 
-  @Temporal(TemporalType.TIMESTAMP)
   /**
    * The timestamp when this object was last modified.
    */

@@ -1,0 +1,105 @@
+# Risikoregister (Art. 35 Abs. 7 lit. c DSGVO) – Eingabe für den ComplianceReportGenerator
+# (mvn -Prelease verify). Von Hand gepflegt; Grundlage: ACCOUNT_DSFA.md, Kap. 4.2 und 7.
+#
+# likelihood (W) und severity (S): 1 = gering, 2 = mittel, 3 = hoch, jeweils als
+# Restwert nach den bereits umgesetzten Maßnahmen. Risikowert W x S und Stufe
+# (1-2 gering, 3-4 mittel, 6-9 hoch) berechnet der Generator.
+# goals: V Vertraulichkeit, I Integrität, Vf Verfügbarkeit, B Betroffenenrechte,
+#        T Transparenz, DM Datenminimierung, R Rechtmäßigkeit
+
+risks:
+  - id: R-01
+    risk: Personenbezogene Daten in INFO/WARN-Logs (Graylog und lokales Logfile, 400 Tage)
+    goals: [DM, V, T]
+    likelihood: 3
+    severity: 2
+    measures: Zugriff auf 4 benannte RZ-Personen beschränkt und auditiert
+    planned: M-01 PII aus Logs entfernen, Retention-/Zugriffs-Policy (P0)
+  - id: R-02
+    risk: Kompromittierung des ./data-Volumes (secret.bin und config.yaml)
+    goals: [V]
+    likelihood: 1
+    severity: 3
+    measures: Host nur per SSH mit FIDO2-Schlüssel, 4 benannte Personen
+    planned: M-02 secret.bin und config.yaml getrennt absichern (P1)
+  - id: R-03
+    risk: Unbefugter Admin-Zugriff auf entschlüsselte Art.-9-Daten (Insider)
+    goals: [V, B]
+    likelihood: 1
+    severity: 3
+    measures: Nur ADMIN und AUDITADMIN, Vault-Entsiegelung per YubiKey mit TTL, Lese-Audit-Trail
+    planned: M-03 Zugriffsgovernance, ggf. Mehr-Personen-Entsiegelung (P1)
+  - id: R-04
+    risk: Datenleck von Art.-9-Daten in transit (eID-Dienst, Storage-API)
+    goals: [V, I]
+    likelihood: 1
+    severity: 3
+    measures: TLS über Traefik, HMAC-SHA256 mit Frischefenster und Replay-Schutz
+    planned: M-04 TLS-Härtung der eID-Strecke verifizieren (P2)
+  - id: R-05
+    risk: LDAP-MITM mangels Zertifikatsprüfung (TrustAllTrustManager)
+    goals: [V, I]
+    likelihood: 1
+    severity: 3
+    measures: LDAPS, Bind-Daten {AES256}-verschlüsselt
+    planned: M-05 Truststore mit Hostname-Verifikation (P1)
+  - id: R-06
+    risk: Offene Test-Endpunkte /system/test/** (unauthentisiert)
+    goals: [V, Vf]
+    likelihood: 2
+    severity: 1
+    measures: keine Daten hinter den Endpunkten
+    planned: M-06 in Produktion deaktivieren (P0)
+  - id: R-07
+    risk: Fehlende oder verzögerte Löschung
+    goals: [DM, B]
+    likelihood: 1
+    severity: 2
+    measures: Automatische Löschung nach P90D inkl. Dateien, idempotent, Audit USER_DELETED
+  - id: R-08
+    risk: Unmöglichkeit der Rechtsausübung (Auskunft, Löschung, Berichtigung)
+    goals: [B]
+    likelihood: 1
+    severity: 2
+    measures: Auskunfts-Export (ZIP), manuelle Sofort-Erasure je Person
+  - id: R-09
+    risk: Fehlender Art.-9-Erlaubnistatbestand oder fehlende Transparenz
+    goals: [T, R]
+    likelihood: 2
+    severity: 3
+    measures: keine technische Maßnahme möglich
+    planned: M-09 Erlaubnistatbestand dokumentieren, Betroffeneninformation (P1)
+  - id: R-10
+    risk: Schema-Drift oder Datenverlust durch ddl-auto=update
+    goals: [I, Vf]
+    likelihood: 1
+    severity: 2
+    measures: SchemaGoldenTest schreibt Mapping und Constraint-Namen fest (ab 3.0.0), Migrationsskripte in sql/
+    planned: M-10 ddl-auto=validate mit verwalteten Migrationen (P1)
+  - id: R-11
+    risk: Verfügbarkeits- oder Datenverlust
+    goals: [Vf, B]
+    likelihood: 1
+    severity: 2
+    measures: ZFS mit Replikation auf Air-Gap-Server im Schatten-RZ, Restore getestet
+  - id: R-12
+    risk: Auftragsverarbeitung ohne AV-Vertrag (eID-Dienst, Hosting)
+    goals: [R]
+    likelihood: 2
+    severity: 2
+    measures: keine technische Maßnahme möglich
+    planned: M-12 AV-Verträge nach Art. 28 (P1)
+  - id: R-13
+    risk: Keine Schlüsselrotation, kein externes KMS/HSM (secret.bin statisch)
+    goals: [V]
+    likelihood: 1
+    severity: 3
+    measures: secret.bin mit Rechten 0400
+    planned: M-13 externes Key-Management, Rotation (P2)
+  - id: R-14
+    risk: Fehlende Header-Härtung (HSTS, frame-ancestors) – Clickjacking/Downgrade
+    goals: [I, V]
+    likelihood: 1
+    severity: 2
+    measures: CSP und X-Content-Type-Options nosniff durch die Anwendung
+    planned: M-14 HSTS und frame-ancestors an Traefik (P1)

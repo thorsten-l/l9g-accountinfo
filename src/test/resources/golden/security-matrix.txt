@@ -1,0 +1,995 @@
+# access matrix: METHOD PATH USER -> outcome per vault state
+# 404 = passed the security filter chain (no controllers registered)
+GET         /                                          ANON       -> all=404
+GET         /                                          ANON_XHR   -> all=404
+GET         /                                          ANON_JSON  -> all=404
+GET         /                                          NOROLE     -> all=404
+GET         /                                          PUBLISHER  -> all=404
+GET         /                                          ADMIN      -> all=404
+GET         /                                          TABADMIN   -> all=404
+GET         /                                          VAULTADMIN -> all=404
+GET         /                                          AUDITADMIN -> all=404
+GET         /manifest.json                             ANON       -> all=404
+GET         /manifest.json                             ANON_XHR   -> all=404
+GET         /manifest.json                             ANON_JSON  -> all=404
+GET         /manifest.json                             NOROLE     -> all=404
+GET         /manifest.json                             PUBLISHER  -> all=404
+GET         /manifest.json                             ADMIN      -> all=404
+GET         /manifest.json                             TABADMIN   -> all=404
+GET         /manifest.json                             VAULTADMIN -> all=404
+GET         /manifest.json                             AUDITADMIN -> all=404
+GET         /manifest.webmanifest                      ANON       -> all=404
+GET         /manifest.webmanifest                      ANON_XHR   -> all=404
+GET         /manifest.webmanifest                      ANON_JSON  -> all=404
+GET         /manifest.webmanifest                      NOROLE     -> all=404
+GET         /manifest.webmanifest                      PUBLISHER  -> all=404
+GET         /manifest.webmanifest                      ADMIN      -> all=404
+GET         /manifest.webmanifest                      TABADMIN   -> all=404
+GET         /manifest.webmanifest                      VAULTADMIN -> all=404
+GET         /manifest.webmanifest                      AUDITADMIN -> all=404
+GET         /system/test/403                           ANON       -> all=404
+GET         /system/test/403                           ANON_XHR   -> all=404
+GET         /system/test/403                           ANON_JSON  -> all=404
+GET         /system/test/403                           NOROLE     -> all=404
+GET         /system/test/403                           PUBLISHER  -> all=404
+GET         /system/test/403                           ADMIN      -> all=404
+GET         /system/test/403                           TABADMIN   -> all=404
+GET         /system/test/403                           VAULTADMIN -> all=404
+GET         /system/test/403                           AUDITADMIN -> all=404
+GET         /system/test/error403                      ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /system/test/error403                      ANON_XHR   -> all=302 http://localhost/login
+GET         /system/test/error403                      ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /system/test/error403                      NOROLE     -> all=403
+GET         /system/test/error403                      PUBLISHER  -> all=403
+GET         /system/test/error403                      ADMIN      -> all=403
+GET         /system/test/error403                      TABADMIN   -> all=403
+GET         /system/test/error403                      VAULTADMIN -> all=403
+GET         /system/test/error403                      AUDITADMIN -> all=403
+GET         /system/test/500                           ANON       -> all=404
+GET         /system/test/500                           ANON_XHR   -> all=404
+GET         /system/test/500                           ANON_JSON  -> all=404
+GET         /system/test/500                           NOROLE     -> all=404
+GET         /system/test/500                           PUBLISHER  -> all=404
+GET         /system/test/500                           ADMIN      -> all=404
+GET         /system/test/500                           TABADMIN   -> all=404
+GET         /system/test/500                           VAULTADMIN -> all=404
+GET         /system/test/500                           AUDITADMIN -> all=404
+GET         /error                                     ANON       -> all=404
+GET         /error                                     ANON_XHR   -> all=404
+GET         /error                                     ANON_JSON  -> all=404
+GET         /error                                     NOROLE     -> all=404
+GET         /error                                     PUBLISHER  -> all=404
+GET         /error                                     ADMIN      -> all=404
+GET         /error                                     TABADMIN   -> all=404
+GET         /error                                     VAULTADMIN -> all=404
+GET         /error                                     AUDITADMIN -> all=404
+GET         /error/x                                   ANON       -> all=404
+GET         /error/x                                   ANON_XHR   -> all=404
+GET         /error/x                                   ANON_JSON  -> all=404
+GET         /error/x                                   NOROLE     -> all=404
+GET         /error/x                                   PUBLISHER  -> all=404
+GET         /error/x                                   ADMIN      -> all=404
+GET         /error/x                                   TABADMIN   -> all=404
+GET         /error/x                                   VAULTADMIN -> all=404
+GET         /error/x                                   AUDITADMIN -> all=404
+GET         /api/v1/buildinfo                          ANON       -> all=404
+GET         /api/v1/buildinfo                          ANON_XHR   -> all=404
+GET         /api/v1/buildinfo                          ANON_JSON  -> all=404
+GET         /api/v1/buildinfo                          NOROLE     -> all=404
+GET         /api/v1/buildinfo                          PUBLISHER  -> all=404
+GET         /api/v1/buildinfo                          ADMIN      -> all=404
+GET         /api/v1/buildinfo                          TABADMIN   -> all=404
+GET         /api/v1/buildinfo                          VAULTADMIN -> all=404
+GET         /api/v1/buildinfo                          AUDITADMIN -> all=404
+GET         /webjars/jquery/jquery.min.js              ANON       -> all=404
+GET         /webjars/jquery/jquery.min.js              ANON_XHR   -> all=404
+GET         /webjars/jquery/jquery.min.js              ANON_JSON  -> all=404
+GET         /webjars/jquery/jquery.min.js              NOROLE     -> all=404
+GET         /webjars/jquery/jquery.min.js              PUBLISHER  -> all=404
+GET         /webjars/jquery/jquery.min.js              ADMIN      -> all=404
+GET         /webjars/jquery/jquery.min.js              TABADMIN   -> all=404
+GET         /webjars/jquery/jquery.min.js              VAULTADMIN -> all=404
+GET         /webjars/jquery/jquery.min.js              AUDITADMIN -> all=404
+GET         /icons/x.png                               ANON       -> all=404
+GET         /icons/x.png                               ANON_XHR   -> all=404
+GET         /icons/x.png                               ANON_JSON  -> all=404
+GET         /icons/x.png                               NOROLE     -> all=404
+GET         /icons/x.png                               PUBLISHER  -> all=404
+GET         /icons/x.png                               ADMIN      -> all=404
+GET         /icons/x.png                               TABADMIN   -> all=404
+GET         /icons/x.png                               VAULTADMIN -> all=404
+GET         /icons/x.png                               AUDITADMIN -> all=404
+GET         /css/app.css                               ANON       -> all=404
+GET         /css/app.css                               ANON_XHR   -> all=404
+GET         /css/app.css                               ANON_JSON  -> all=404
+GET         /css/app.css                               NOROLE     -> all=404
+GET         /css/app.css                               PUBLISHER  -> all=404
+GET         /css/app.css                               ADMIN      -> all=404
+GET         /css/app.css                               TABADMIN   -> all=404
+GET         /css/app.css                               VAULTADMIN -> all=404
+GET         /css/app.css                               AUDITADMIN -> all=404
+GET         /js/app.js                                 ANON       -> all=404
+GET         /js/app.js                                 ANON_XHR   -> all=404
+GET         /js/app.js                                 ANON_JSON  -> all=404
+GET         /js/app.js                                 NOROLE     -> all=404
+GET         /js/app.js                                 PUBLISHER  -> all=404
+GET         /js/app.js                                 ADMIN      -> all=404
+GET         /js/app.js                                 TABADMIN   -> all=404
+GET         /js/app.js                                 VAULTADMIN -> all=404
+GET         /js/app.js                                 AUDITADMIN -> all=404
+GET         /images/x.png                              ANON       -> all=404
+GET         /images/x.png                              ANON_XHR   -> all=404
+GET         /images/x.png                              ANON_JSON  -> all=404
+GET         /images/x.png                              NOROLE     -> all=404
+GET         /images/x.png                              PUBLISHER  -> all=404
+GET         /images/x.png                              ADMIN      -> all=404
+GET         /images/x.png                              TABADMIN   -> all=404
+GET         /images/x.png                              VAULTADMIN -> all=404
+GET         /images/x.png                              AUDITADMIN -> all=404
+GET         /flags/de.svg                              ANON       -> all=404
+GET         /flags/de.svg                              ANON_XHR   -> all=404
+GET         /flags/de.svg                              ANON_JSON  -> all=404
+GET         /flags/de.svg                              NOROLE     -> all=404
+GET         /flags/de.svg                              PUBLISHER  -> all=404
+GET         /flags/de.svg                              ADMIN      -> all=404
+GET         /flags/de.svg                              TABADMIN   -> all=404
+GET         /flags/de.svg                              VAULTADMIN -> all=404
+GET         /flags/de.svg                              AUDITADMIN -> all=404
+GET         /actuator/health                           ANON       -> all=404
+GET         /actuator/health                           ANON_XHR   -> all=404
+GET         /actuator/health                           ANON_JSON  -> all=404
+GET         /actuator/health                           NOROLE     -> all=404
+GET         /actuator/health                           PUBLISHER  -> all=404
+GET         /actuator/health                           ADMIN      -> all=404
+GET         /actuator/health                           TABADMIN   -> all=404
+GET         /actuator/health                           VAULTADMIN -> all=404
+GET         /actuator/health                           AUDITADMIN -> all=404
+GET         /android-chrome-192x192.png                ANON       -> all=404
+GET         /android-chrome-192x192.png                ANON_XHR   -> all=404
+GET         /android-chrome-192x192.png                ANON_JSON  -> all=404
+GET         /android-chrome-192x192.png                NOROLE     -> all=404
+GET         /android-chrome-192x192.png                PUBLISHER  -> all=404
+GET         /android-chrome-192x192.png                ADMIN      -> all=404
+GET         /android-chrome-192x192.png                TABADMIN   -> all=404
+GET         /android-chrome-192x192.png                VAULTADMIN -> all=404
+GET         /android-chrome-192x192.png                AUDITADMIN -> all=404
+GET         /apple-touch-icon.png                      ANON       -> all=404
+GET         /apple-touch-icon.png                      ANON_XHR   -> all=404
+GET         /apple-touch-icon.png                      ANON_JSON  -> all=404
+GET         /apple-touch-icon.png                      NOROLE     -> all=404
+GET         /apple-touch-icon.png                      PUBLISHER  -> all=404
+GET         /apple-touch-icon.png                      ADMIN      -> all=404
+GET         /apple-touch-icon.png                      TABADMIN   -> all=404
+GET         /apple-touch-icon.png                      VAULTADMIN -> all=404
+GET         /apple-touch-icon.png                      AUDITADMIN -> all=404
+GET         /favicon.ico                               ANON       -> all=404
+GET         /favicon.ico                               ANON_XHR   -> all=404
+GET         /favicon.ico                               ANON_JSON  -> all=404
+GET         /favicon.ico                               NOROLE     -> all=404
+GET         /favicon.ico                               PUBLISHER  -> all=404
+GET         /favicon.ico                               ADMIN      -> all=404
+GET         /favicon.ico                               TABADMIN   -> all=404
+GET         /favicon.ico                               VAULTADMIN -> all=404
+GET         /favicon.ico                               AUDITADMIN -> all=404
+GET         /favicon-16x16.png                         ANON       -> all=404
+GET         /favicon-16x16.png                         ANON_XHR   -> all=404
+GET         /favicon-16x16.png                         ANON_JSON  -> all=404
+GET         /favicon-16x16.png                         NOROLE     -> all=404
+GET         /favicon-16x16.png                         PUBLISHER  -> all=404
+GET         /favicon-16x16.png                         ADMIN      -> all=404
+GET         /favicon-16x16.png                         TABADMIN   -> all=404
+GET         /favicon-16x16.png                         VAULTADMIN -> all=404
+GET         /favicon-16x16.png                         AUDITADMIN -> all=404
+GET         /androidX/sub                              ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /androidX/sub                              ANON_XHR   -> all=302 http://localhost/login
+GET         /androidX/sub                              ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /androidX/sub                              NOROLE     -> all=404
+GET         /androidX/sub                              PUBLISHER  -> all=404
+GET         /androidX/sub                              ADMIN      -> all=404
+GET         /androidX/sub                              TABADMIN   -> all=404
+GET         /androidX/sub                              VAULTADMIN -> all=404
+GET         /androidX/sub                              AUDITADMIN -> all=404
+GET         /logout                                    ANON       -> all=200
+GET         /logout                                    ANON_XHR   -> all=200
+GET         /logout                                    ANON_JSON  -> all=200
+GET         /logout                                    NOROLE     -> all=200
+GET         /logout                                    PUBLISHER  -> all=200
+GET         /logout                                    ADMIN      -> all=200
+GET         /logout                                    TABADMIN   -> all=200
+GET         /logout                                    VAULTADMIN -> all=200
+GET         /logout                                    AUDITADMIN -> all=200
+GET         /logoutnow                                 ANON       -> all=404
+GET         /logoutnow                                 ANON_XHR   -> all=404
+GET         /logoutnow                                 ANON_JSON  -> all=404
+GET         /logoutnow                                 NOROLE     -> all=404
+GET         /logoutnow                                 PUBLISHER  -> all=404
+GET         /logoutnow                                 ADMIN      -> all=404
+GET         /logoutnow                                 TABADMIN   -> all=404
+GET         /logoutnow                                 VAULTADMIN -> all=404
+GET         /logoutnow                                 AUDITADMIN -> all=404
+GET         /ws/signature-pad                          ANON       -> all=404
+GET         /ws/signature-pad                          ANON_XHR   -> all=404
+GET         /ws/signature-pad                          ANON_JSON  -> all=404
+GET         /ws/signature-pad                          NOROLE     -> all=404
+GET         /ws/signature-pad                          PUBLISHER  -> all=404
+GET         /ws/signature-pad                          ADMIN      -> all=404
+GET         /ws/signature-pad                          TABADMIN   -> all=404
+GET         /ws/signature-pad                          VAULTADMIN -> all=404
+GET         /ws/signature-pad                          AUDITADMIN -> all=404
+GET         /admin/validate-new-pad                    ANON       -> all=404
+GET         /admin/validate-new-pad                    ANON_XHR   -> all=404
+GET         /admin/validate-new-pad                    ANON_JSON  -> all=404
+GET         /admin/validate-new-pad                    NOROLE     -> all=404
+GET         /admin/validate-new-pad                    PUBLISHER  -> all=404
+GET         /admin/validate-new-pad                    ADMIN      -> all=404
+GET         /admin/validate-new-pad                    TABADMIN   -> all=404
+GET         /admin/validate-new-pad                    VAULTADMIN -> all=404
+GET         /admin/validate-new-pad                    AUDITADMIN -> all=404
+GET         /signature-pad                             ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /signature-pad                             ANON_XHR   -> all=302 http://localhost/login
+GET         /signature-pad                             ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /signature-pad                             NOROLE     -> all=404
+GET         /signature-pad                             PUBLISHER  -> all=404
+GET         /signature-pad                             ADMIN      -> all=404
+GET         /signature-pad                             TABADMIN   -> all=404
+GET         /signature-pad                             VAULTADMIN -> all=404
+GET         /signature-pad                             AUDITADMIN -> all=404
+GET         /admin                                     ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin                                     ANON_XHR   -> all=302 http://localhost/login
+GET         /admin                                     ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin                                     NOROLE     -> all=403
+GET         /admin                                     PUBLISHER  -> all=403
+GET         /admin                                     ADMIN      -> all=404
+GET         /admin                                     TABADMIN   -> all=404
+GET         /admin                                     VAULTADMIN -> all=404
+GET         /admin                                     AUDITADMIN -> all=404
+GET         /admin/                                    ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/                                    ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/                                    ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/                                    NOROLE     -> all=403
+GET         /admin/                                    PUBLISHER  -> all=403
+GET         /admin/                                    ADMIN      -> all=404
+GET         /admin/                                    TABADMIN   -> all=404
+GET         /admin/                                    VAULTADMIN -> all=404
+GET         /admin/                                    AUDITADMIN -> all=404
+GET         /ADMIN                                     ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /ADMIN                                     ANON_XHR   -> all=302 http://localhost/login
+GET         /ADMIN                                     ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /ADMIN                                     NOROLE     -> all=404
+GET         /ADMIN                                     PUBLISHER  -> all=404
+GET         /ADMIN                                     ADMIN      -> all=404
+GET         /ADMIN                                     TABADMIN   -> all=404
+GET         /ADMIN                                     VAULTADMIN -> all=404
+GET         /ADMIN                                     AUDITADMIN -> all=404
+GET         /admin/vault/managekeys                    ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/managekeys                    ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/vault/managekeys                    ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/managekeys                    NOROLE     -> all=403
+GET         /admin/vault/managekeys                    PUBLISHER  -> all=403
+GET         /admin/vault/managekeys                    ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /admin/vault/managekeys                    TABADMIN   -> all=403
+GET         /admin/vault/managekeys                    VAULTADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /admin/vault/managekeys                    AUDITADMIN -> all=403
+GET         /admin/vault/managekeys/                   ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/managekeys/                   ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/vault/managekeys/                   ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/managekeys/                   NOROLE     -> all=403
+GET         /admin/vault/managekeys/                   PUBLISHER  -> all=403
+GET         /admin/vault/managekeys/                   ADMIN      -> all=404
+GET         /admin/vault/managekeys/                   TABADMIN   -> all=403
+GET         /admin/vault/managekeys/                   VAULTADMIN -> all=404
+GET         /admin/vault/managekeys/                   AUDITADMIN -> all=404
+GET         /admin/vault/enrollment                    ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/enrollment                    ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/vault/enrollment                    ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/enrollment                    NOROLE     -> all=403
+GET         /admin/vault/enrollment                    PUBLISHER  -> all=403
+GET         /admin/vault/enrollment                    ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+GET         /admin/vault/enrollment                    TABADMIN   -> all=403
+GET         /admin/vault/enrollment                    VAULTADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+GET         /admin/vault/enrollment                    AUDITADMIN -> all=403
+GET         /admin/vault/unseal                        ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/unseal                        ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/vault/unseal                        ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/vault/unseal                        NOROLE     -> all=403
+GET         /admin/vault/unseal                        PUBLISHER  -> all=403
+GET         /admin/vault/unseal                        ADMIN      -> all=404
+GET         /admin/vault/unseal                        TABADMIN   -> all=403
+GET         /admin/vault/unseal                        VAULTADMIN -> all=404
+GET         /admin/vault/unseal                        AUDITADMIN -> all=404
+GET         /admin/useraudit                           ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/useraudit                           ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/useraudit                           ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/useraudit                           NOROLE     -> all=403
+GET         /admin/useraudit                           PUBLISHER  -> all=403
+GET         /admin/useraudit                           ADMIN      -> all=404
+GET         /admin/useraudit                           TABADMIN   -> all=403
+GET         /admin/useraudit                           VAULTADMIN -> all=403
+GET         /admin/useraudit                           AUDITADMIN -> all=404
+GET         /admin/register-new-pad                    ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/register-new-pad                    ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/register-new-pad                    ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/register-new-pad                    NOROLE     -> all=403
+GET         /admin/register-new-pad                    PUBLISHER  -> all=403
+GET         /admin/register-new-pad                    ADMIN      -> all=404
+GET         /admin/register-new-pad                    TABADMIN   -> all=404
+GET         /admin/register-new-pad                    VAULTADMIN -> all=403
+GET         /admin/register-new-pad                    AUDITADMIN -> all=403
+GET         /admin/manage-pads                         ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/manage-pads                         ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/manage-pads                         ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/manage-pads                         NOROLE     -> all=403
+GET         /admin/manage-pads                         PUBLISHER  -> all=403
+GET         /admin/manage-pads                         ADMIN      -> all=404
+GET         /admin/manage-pads                         TABADMIN   -> all=404
+GET         /admin/manage-pads                         VAULTADMIN -> all=403
+GET         /admin/manage-pads                         AUDITADMIN -> all=403
+GET         /admin/show-pad-info                       ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/show-pad-info                       ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/show-pad-info                       ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/show-pad-info                       NOROLE     -> all=403
+GET         /admin/show-pad-info                       PUBLISHER  -> all=403
+GET         /admin/show-pad-info                       ADMIN      -> all=404
+GET         /admin/show-pad-info                       TABADMIN   -> all=404
+GET         /admin/show-pad-info                       VAULTADMIN -> all=403
+GET         /admin/show-pad-info                       AUDITADMIN -> all=403
+GET         /admin/show-pad                            ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/show-pad                            ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/show-pad                            ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/show-pad                            NOROLE     -> all=403
+GET         /admin/show-pad                            PUBLISHER  -> all=403
+GET         /admin/show-pad                            ADMIN      -> all=404
+GET         /admin/show-pad                            TABADMIN   -> all=404
+GET         /admin/show-pad                            VAULTADMIN -> all=403
+GET         /admin/show-pad                            AUDITADMIN -> all=403
+GET         /admin/hide-pad                            ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/hide-pad                            ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/hide-pad                            ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/hide-pad                            NOROLE     -> all=403
+GET         /admin/hide-pad                            PUBLISHER  -> all=403
+GET         /admin/hide-pad                            ADMIN      -> all=404
+GET         /admin/hide-pad                            TABADMIN   -> all=404
+GET         /admin/hide-pad                            VAULTADMIN -> all=403
+GET         /admin/hide-pad                            AUDITADMIN -> all=403
+GET         /admin/delete-pad                          ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/delete-pad                          ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/delete-pad                          ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/delete-pad                          NOROLE     -> all=403
+GET         /admin/delete-pad                          PUBLISHER  -> all=403
+GET         /admin/delete-pad                          ADMIN      -> all=404
+GET         /admin/delete-pad                          TABADMIN   -> all=404
+GET         /admin/delete-pad                          VAULTADMIN -> all=403
+GET         /admin/delete-pad                          AUDITADMIN -> all=403
+GET         /admin/wait-for-response                   ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/wait-for-response                   ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/wait-for-response                   ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/wait-for-response                   NOROLE     -> all=403
+GET         /admin/wait-for-response                   PUBLISHER  -> all=403
+GET         /admin/wait-for-response                   ADMIN      -> all=404
+GET         /admin/wait-for-response                   TABADMIN   -> all=404
+GET         /admin/wait-for-response                   VAULTADMIN -> all=403
+GET         /admin/wait-for-response                   AUDITADMIN -> all=403
+GET         /admin/other                               ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/other                               ANON_XHR   -> all=302 http://localhost/login
+GET         /admin/other                               ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /admin/other                               NOROLE     -> all=403
+GET         /admin/other                               PUBLISHER  -> all=403
+GET         /admin/other                               ADMIN      -> all=404
+GET         /admin/other                               TABADMIN   -> all=404
+GET         /admin/other                               VAULTADMIN -> all=404
+GET         /admin/other                               AUDITADMIN -> all=404
+GET         /api/v1/admin/vault/challenge-data         ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/vault/challenge-data         ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/vault/challenge-data         ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/vault/challenge-data         NOROLE     -> all=403
+GET         /api/v1/admin/vault/challenge-data         PUBLISHER  -> all=403
+GET         /api/v1/admin/vault/challenge-data         ADMIN      -> all=404
+GET         /api/v1/admin/vault/challenge-data         TABADMIN   -> all=403
+GET         /api/v1/admin/vault/challenge-data         VAULTADMIN -> all=404
+GET         /api/v1/admin/vault/challenge-data         AUDITADMIN -> all=404
+GET         /api/v1/admin/vault/unlocktimeleft         ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/vault/unlocktimeleft         ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/vault/unlocktimeleft         ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/vault/unlocktimeleft         NOROLE     -> all=403
+GET         /api/v1/admin/vault/unlocktimeleft         PUBLISHER  -> all=403
+GET         /api/v1/admin/vault/unlocktimeleft         ADMIN      -> all=404
+GET         /api/v1/admin/vault/unlocktimeleft         TABADMIN   -> all=403
+GET         /api/v1/admin/vault/unlocktimeleft         VAULTADMIN -> all=404
+GET         /api/v1/admin/vault/unlocktimeleft         AUDITADMIN -> all=404
+GET         /api/v1/admin/vault/adminkey               ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/vault/adminkey               ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/vault/adminkey               ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/vault/adminkey               NOROLE     -> all=403
+GET         /api/v1/admin/vault/adminkey               PUBLISHER  -> all=403
+GET         /api/v1/admin/vault/adminkey               ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/vault/adminkey               TABADMIN   -> all=403
+GET         /api/v1/admin/vault/adminkey               VAULTADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/vault/adminkey               AUDITADMIN -> all=403
+GET         /api/v1/admin/secret                       ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret                       ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret                       ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret                       NOROLE     -> all=403
+GET         /api/v1/admin/secret                       PUBLISHER  -> all=403
+GET         /api/v1/admin/secret                       ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=403
+GET         /api/v1/admin/secret                       TABADMIN   -> all=403
+GET         /api/v1/admin/secret                       VAULTADMIN -> all=403
+GET         /api/v1/admin/secret                       AUDITADMIN -> all=403
+GET         /api/v1/admin/secret/                      ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/                      ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/                      ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/                      NOROLE     -> all=403
+GET         /api/v1/admin/secret/                      PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/                      ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=403
+GET         /api/v1/admin/secret/                      TABADMIN   -> all=403
+GET         /api/v1/admin/secret/                      VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/                      AUDITADMIN -> all=403
+GET         /api/v1/admin/secret/audit                 ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/audit                 ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/audit                 ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/audit                 NOROLE     -> all=403
+GET         /api/v1/admin/secret/audit                 PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/audit                 ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/audit                 TABADMIN   -> all=403
+GET         /api/v1/admin/secret/audit                 VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/audit                 AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/audit/x               ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/audit/x               ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/audit/x               ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/audit/x               NOROLE     -> all=403
+GET         /api/v1/admin/secret/audit/x               PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/audit/x               ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/audit/x               TABADMIN   -> all=403
+GET         /api/v1/admin/secret/audit/x               VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/audit/x               AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/search/person         ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/search/person         ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/search/person         ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/search/person         NOROLE     -> all=403
+GET         /api/v1/admin/secret/search/person         PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/search/person         ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/search/person         TABADMIN   -> all=403
+GET         /api/v1/admin/secret/search/person         VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/search/person         AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/userinfo.json         ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/userinfo.json         ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/userinfo.json         ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/userinfo.json         NOROLE     -> all=403
+GET         /api/v1/admin/secret/userinfo.json         PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/userinfo.json         ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/userinfo.json         TABADMIN   -> all=403
+GET         /api/v1/admin/secret/userinfo.json         VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/userinfo.json         AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/signature.png         ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/signature.png         ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/signature.png         ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/signature.png         NOROLE     -> all=403
+GET         /api/v1/admin/secret/signature.png         PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/signature.png         ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/signature.png         TABADMIN   -> all=403
+GET         /api/v1/admin/secret/signature.png         VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/signature.png         AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/signature.svg         ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/signature.svg         ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/signature.svg         ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/signature.svg         NOROLE     -> all=403
+GET         /api/v1/admin/secret/signature.svg         PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/signature.svg         ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/signature.svg         TABADMIN   -> all=403
+GET         /api/v1/admin/secret/signature.svg         VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/signature.svg         AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/id.jpeg               ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/id.jpeg               ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/id.jpeg               ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/id.jpeg               NOROLE     -> all=403
+GET         /api/v1/admin/secret/id.jpeg               PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/id.jpeg               ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/id.jpeg               TABADMIN   -> all=403
+GET         /api/v1/admin/secret/id.jpeg               VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/id.jpeg               AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/archive.json          ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/archive.json          ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/archive.json          ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/archive.json          NOROLE     -> all=403
+GET         /api/v1/admin/secret/archive.json          PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/archive.json          ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/archive.json          TABADMIN   -> all=403
+GET         /api/v1/admin/secret/archive.json          VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/archive.json          AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/archive/x             ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/archive/x             ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/archive/x             ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/archive/x             NOROLE     -> all=403
+GET         /api/v1/admin/secret/archive/x             PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/archive/x             ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/archive/x             TABADMIN   -> all=403
+GET         /api/v1/admin/secret/archive/x             VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/archive/x             AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/export/x              ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/export/x              ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/export/x              ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/export/x              NOROLE     -> all=403
+GET         /api/v1/admin/secret/export/x              PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/export/x              ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/export/x              TABADMIN   -> all=403
+GET         /api/v1/admin/secret/export/x              VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/export/x              AUDITADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=404
+GET         /api/v1/admin/secret/other                 ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/other                 ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/secret/other                 ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/secret/other                 NOROLE     -> all=403
+GET         /api/v1/admin/secret/other                 PUBLISHER  -> all=403
+GET         /api/v1/admin/secret/other                 ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=403
+GET         /api/v1/admin/secret/other                 TABADMIN   -> all=403
+GET         /api/v1/admin/secret/other                 VAULTADMIN -> all=403
+GET         /api/v1/admin/secret/other                 AUDITADMIN -> all=403
+GET         /v3/api-docs                               ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /v3/api-docs                               ANON_XHR   -> all=302 http://localhost/login
+GET         /v3/api-docs                               ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /v3/api-docs                               NOROLE     -> all=403
+GET         /v3/api-docs                               PUBLISHER  -> all=403
+GET         /v3/api-docs                               ADMIN      -> all=404
+GET         /v3/api-docs                               TABADMIN   -> all=403
+GET         /v3/api-docs                               VAULTADMIN -> all=403
+GET         /v3/api-docs                               AUDITADMIN -> all=403
+GET         /v3/api-docs/swagger-config                ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /v3/api-docs/swagger-config                ANON_XHR   -> all=302 http://localhost/login
+GET         /v3/api-docs/swagger-config                ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /v3/api-docs/swagger-config                NOROLE     -> all=404
+GET         /v3/api-docs/swagger-config                PUBLISHER  -> all=404
+GET         /v3/api-docs/swagger-config                ADMIN      -> all=404
+GET         /v3/api-docs/swagger-config                TABADMIN   -> all=404
+GET         /v3/api-docs/swagger-config                VAULTADMIN -> all=404
+GET         /v3/api-docs/swagger-config                AUDITADMIN -> all=404
+GET         /api/v1/admin                              ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin                              ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin                              ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin                              NOROLE     -> all=403
+GET         /api/v1/admin                              PUBLISHER  -> all=403
+GET         /api/v1/admin                              ADMIN      -> all=404
+GET         /api/v1/admin                              TABADMIN   -> all=403
+GET         /api/v1/admin                              VAULTADMIN -> all=403
+GET         /api/v1/admin                              AUDITADMIN -> all=403
+GET         /api/v1/admin/x                            ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/x                            ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/admin/x                            ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/admin/x                            NOROLE     -> all=403
+GET         /api/v1/admin/x                            PUBLISHER  -> all=403
+GET         /api/v1/admin/x                            ADMIN      -> all=404
+GET         /api/v1/admin/x                            TABADMIN   -> all=403
+GET         /api/v1/admin/x                            VAULTADMIN -> all=403
+GET         /api/v1/admin/x                            AUDITADMIN -> all=403
+GET         /app                                       ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /app                                       ANON_XHR   -> all=302 http://localhost/login
+GET         /app                                       ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /app                                       NOROLE     -> all=403
+GET         /app                                       PUBLISHER  -> all=404
+GET         /app                                       ADMIN      -> all=403
+GET         /app                                       TABADMIN   -> all=403
+GET         /app                                       VAULTADMIN -> all=403
+GET         /app                                       AUDITADMIN -> all=403
+GET         /app/x                                     ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /app/x                                     ANON_XHR   -> all=302 http://localhost/login
+GET         /app/x                                     ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /app/x                                     NOROLE     -> all=403
+GET         /app/x                                     PUBLISHER  -> all=404
+GET         /app/x                                     ADMIN      -> all=403
+GET         /app/x                                     TABADMIN   -> all=403
+GET         /app/x                                     VAULTADMIN -> all=403
+GET         /app/x                                     AUDITADMIN -> all=403
+GET         /api/v1/search/x                           ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/search/x                           ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/search/x                           ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/search/x                           NOROLE     -> all=404
+GET         /api/v1/search/x                           PUBLISHER  -> all=404
+GET         /api/v1/search/x                           ADMIN      -> all=404
+GET         /api/v1/search/x                           TABADMIN   -> all=404
+GET         /api/v1/search/x                           VAULTADMIN -> all=404
+GET         /api/v1/search/x                           AUDITADMIN -> all=404
+GET         /api/v1/summary                            ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/summary                            ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/summary                            ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/summary                            NOROLE     -> all=404
+GET         /api/v1/summary                            PUBLISHER  -> all=404
+GET         /api/v1/summary                            ADMIN      -> all=404
+GET         /api/v1/summary                            TABADMIN   -> all=404
+GET         /api/v1/summary                            VAULTADMIN -> all=404
+GET         /api/v1/summary                            AUDITADMIN -> all=404
+GET         /api/v1/userinfo                           ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/userinfo                           ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/userinfo                           ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/userinfo                           NOROLE     -> all=404
+GET         /api/v1/userinfo                           PUBLISHER  -> all=404
+GET         /api/v1/userinfo                           ADMIN      -> all=404
+GET         /api/v1/userinfo                           TABADMIN   -> all=404
+GET         /api/v1/userinfo                           VAULTADMIN -> all=404
+GET         /api/v1/userinfo                           AUDITADMIN -> all=404
+GET         /api/v1/signature-pad/connect-qrcode       ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/signature-pad/connect-qrcode       ANON_XHR   -> all=302 http://localhost/login
+GET         /api/v1/signature-pad/connect-qrcode       ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /api/v1/signature-pad/connect-qrcode       NOROLE     -> all=404
+GET         /api/v1/signature-pad/connect-qrcode       PUBLISHER  -> all=404
+GET         /api/v1/signature-pad/connect-qrcode       ADMIN      -> all=404
+GET         /api/v1/signature-pad/connect-qrcode       TABADMIN   -> all=404
+GET         /api/v1/signature-pad/connect-qrcode       VAULTADMIN -> all=404
+GET         /api/v1/signature-pad/connect-qrcode       AUDITADMIN -> all=404
+GET         /oauth2/authorization/app                  ANON       -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  ANON_XHR   -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  ANON_JSON  -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  NOROLE     -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  PUBLISHER  -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  ADMIN      -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  TABADMIN   -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  VAULTADMIN -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /oauth2/authorization/app                  AUDITADMIN -> all=302 https://idp.example.org/auth?client_id=accountinfo&code_challenge=*&code_challenge_method=S256&nonce=*&redirect_uri=http://localhost/login/oauth2/code/app&response_type=code&scope=openid%20profile%20email%20roles&state=*
+GET         /login/oauth2/code/app                     ANON       -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     ANON_XHR   -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     ANON_JSON  -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     NOROLE     -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     PUBLISHER  -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     ADMIN      -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     TABADMIN   -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     VAULTADMIN -> all=302 /login?error=null
+GET         /login/oauth2/code/app                     AUDITADMIN -> all=302 /login?error=null
+GET         /some/other                                ANON       -> all=302 http://localhost/oauth2/authorization/app
+GET         /some/other                                ANON_XHR   -> all=302 http://localhost/login
+GET         /some/other                                ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+GET         /some/other                                NOROLE     -> all=404
+GET         /some/other                                PUBLISHER  -> all=404
+GET         /some/other                                ADMIN      -> all=404
+GET         /some/other                                TABADMIN   -> all=404
+GET         /some/other                                VAULTADMIN -> all=404
+GET         /some/other                                AUDITADMIN -> all=404
+GET         /api/v1/storage/objects                    ANON       -> all=404
+GET         /api/v1/storage/objects                    ANON_XHR   -> all=404
+GET         /api/v1/storage/objects                    ANON_JSON  -> all=404
+GET         /api/v1/storage/objects                    NOROLE     -> all=404
+GET         /api/v1/storage/objects                    PUBLISHER  -> all=404
+GET         /api/v1/storage/objects                    ADMIN      -> all=404
+GET         /api/v1/storage/objects                    TABADMIN   -> all=404
+GET         /api/v1/storage/objects                    VAULTADMIN -> all=404
+GET         /api/v1/storage/objects                    AUDITADMIN -> all=404
+GET         /oidc-backchannel-logout                   ANON       -> all=404
+GET         /oidc-backchannel-logout                   ANON_XHR   -> all=404
+GET         /oidc-backchannel-logout                   ANON_JSON  -> all=404
+GET         /oidc-backchannel-logout                   NOROLE     -> all=404
+GET         /oidc-backchannel-logout                   PUBLISHER  -> all=404
+GET         /oidc-backchannel-logout                   ADMIN      -> all=404
+GET         /oidc-backchannel-logout                   TABADMIN   -> all=404
+GET         /oidc-backchannel-logout                   VAULTADMIN -> all=404
+GET         /oidc-backchannel-logout                   AUDITADMIN -> all=404
+POST        /logout                                    ANON       -> all=302 /
+POST        /logout                                    ANON_XHR   -> all=302 /
+POST        /logout                                    ANON_JSON  -> all=302 /
+POST        /logout                                    NOROLE     -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST        /logout                                    PUBLISHER  -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST        /logout                                    ADMIN      -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST        /logout                                    TABADMIN   -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST        /logout                                    VAULTADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST        /logout                                    AUDITADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST+csrf   /logout                                    ANON       -> all=302 /
+POST+csrf   /logout                                    ANON_XHR   -> all=302 /
+POST+csrf   /logout                                    ANON_JSON  -> all=302 /
+POST+csrf   /logout                                    NOROLE     -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST+csrf   /logout                                    PUBLISHER  -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST+csrf   /logout                                    ADMIN      -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST+csrf   /logout                                    TABADMIN   -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST+csrf   /logout                                    VAULTADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST+csrf   /logout                                    AUDITADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost
+POST        /logout?logoutReason=idle:/x               ANON       -> all=302 /
+POST        /logout?logoutReason=idle:/x               ANON_XHR   -> all=302 /
+POST        /logout?logoutReason=idle:/x               ANON_JSON  -> all=302 /
+POST        /logout?logoutReason=idle:/x               NOROLE     -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST        /logout?logoutReason=idle:/x               PUBLISHER  -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST        /logout?logoutReason=idle:/x               ADMIN      -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST        /logout?logoutReason=idle:/x               TABADMIN   -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST        /logout?logoutReason=idle:/x               VAULTADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST        /logout?logoutReason=idle:/x               AUDITADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST+csrf   /logout?logoutReason=idle:/x               ANON       -> all=302 /
+POST+csrf   /logout?logoutReason=idle:/x               ANON_XHR   -> all=302 /
+POST+csrf   /logout?logoutReason=idle:/x               ANON_JSON  -> all=302 /
+POST+csrf   /logout?logoutReason=idle:/x               NOROLE     -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST+csrf   /logout?logoutReason=idle:/x               PUBLISHER  -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST+csrf   /logout?logoutReason=idle:/x               ADMIN      -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST+csrf   /logout?logoutReason=idle:/x               TABADMIN   -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST+csrf   /logout?logoutReason=idle:/x               VAULTADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST+csrf   /logout?logoutReason=idle:/x               AUDITADMIN -> all=302 https://idp.example.org/logout?id_token_hint=id-token-value&post_logout_redirect_uri=http://localhost?logoutReason=idlex
+POST        /oidc-backchannel-logout                   ANON       -> all=404
+POST        /oidc-backchannel-logout                   ANON_XHR   -> all=404
+POST        /oidc-backchannel-logout                   ANON_JSON  -> all=404
+POST        /oidc-backchannel-logout                   NOROLE     -> all=404
+POST        /oidc-backchannel-logout                   PUBLISHER  -> all=404
+POST        /oidc-backchannel-logout                   ADMIN      -> all=404
+POST        /oidc-backchannel-logout                   TABADMIN   -> all=404
+POST        /oidc-backchannel-logout                   VAULTADMIN -> all=404
+POST        /oidc-backchannel-logout                   AUDITADMIN -> all=404
+POST+csrf   /oidc-backchannel-logout                   ANON       -> all=404
+POST+csrf   /oidc-backchannel-logout                   ANON_XHR   -> all=404
+POST+csrf   /oidc-backchannel-logout                   ANON_JSON  -> all=404
+POST+csrf   /oidc-backchannel-logout                   NOROLE     -> all=404
+POST+csrf   /oidc-backchannel-logout                   PUBLISHER  -> all=404
+POST+csrf   /oidc-backchannel-logout                   ADMIN      -> all=404
+POST+csrf   /oidc-backchannel-logout                   TABADMIN   -> all=404
+POST+csrf   /oidc-backchannel-logout                   VAULTADMIN -> all=404
+POST+csrf   /oidc-backchannel-logout                   AUDITADMIN -> all=404
+POST        /api/v1/storage/objects                    ANON       -> all=404
+POST        /api/v1/storage/objects                    ANON_XHR   -> all=404
+POST        /api/v1/storage/objects                    ANON_JSON  -> all=404
+POST        /api/v1/storage/objects                    NOROLE     -> all=404
+POST        /api/v1/storage/objects                    PUBLISHER  -> all=404
+POST        /api/v1/storage/objects                    ADMIN      -> all=404
+POST        /api/v1/storage/objects                    TABADMIN   -> all=404
+POST        /api/v1/storage/objects                    VAULTADMIN -> all=404
+POST        /api/v1/storage/objects                    AUDITADMIN -> all=404
+POST+csrf   /api/v1/storage/objects                    ANON       -> all=404
+POST+csrf   /api/v1/storage/objects                    ANON_XHR   -> all=404
+POST+csrf   /api/v1/storage/objects                    ANON_JSON  -> all=404
+POST+csrf   /api/v1/storage/objects                    NOROLE     -> all=404
+POST+csrf   /api/v1/storage/objects                    PUBLISHER  -> all=404
+POST+csrf   /api/v1/storage/objects                    ADMIN      -> all=404
+POST+csrf   /api/v1/storage/objects                    TABADMIN   -> all=404
+POST+csrf   /api/v1/storage/objects                    VAULTADMIN -> all=404
+POST+csrf   /api/v1/storage/objects                    AUDITADMIN -> all=404
+POST        /api/v1/signature-pad/validate             ANON       -> all=404
+POST        /api/v1/signature-pad/validate             ANON_XHR   -> all=404
+POST        /api/v1/signature-pad/validate             ANON_JSON  -> all=404
+POST        /api/v1/signature-pad/validate             NOROLE     -> all=404
+POST        /api/v1/signature-pad/validate             PUBLISHER  -> all=404
+POST        /api/v1/signature-pad/validate             ADMIN      -> all=404
+POST        /api/v1/signature-pad/validate             TABADMIN   -> all=404
+POST        /api/v1/signature-pad/validate             VAULTADMIN -> all=404
+POST        /api/v1/signature-pad/validate             AUDITADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/validate             ANON       -> all=404
+POST+csrf   /api/v1/signature-pad/validate             ANON_XHR   -> all=404
+POST+csrf   /api/v1/signature-pad/validate             ANON_JSON  -> all=404
+POST+csrf   /api/v1/signature-pad/validate             NOROLE     -> all=404
+POST+csrf   /api/v1/signature-pad/validate             PUBLISHER  -> all=404
+POST+csrf   /api/v1/signature-pad/validate             ADMIN      -> all=404
+POST+csrf   /api/v1/signature-pad/validate             TABADMIN   -> all=404
+POST+csrf   /api/v1/signature-pad/validate             VAULTADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/validate             AUDITADMIN -> all=404
+POST        /api/v1/signature-pad/scan                 ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST        /api/v1/signature-pad/scan                 ANON_XHR   -> all=302 http://localhost/login
+POST        /api/v1/signature-pad/scan                 ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST        /api/v1/signature-pad/scan                 NOROLE     -> all=404
+POST        /api/v1/signature-pad/scan                 PUBLISHER  -> all=404
+POST        /api/v1/signature-pad/scan                 ADMIN      -> all=404
+POST        /api/v1/signature-pad/scan                 TABADMIN   -> all=404
+POST        /api/v1/signature-pad/scan                 VAULTADMIN -> all=404
+POST        /api/v1/signature-pad/scan                 AUDITADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/scan                 ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/signature-pad/scan                 ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /api/v1/signature-pad/scan                 ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/signature-pad/scan                 NOROLE     -> all=404
+POST+csrf   /api/v1/signature-pad/scan                 PUBLISHER  -> all=404
+POST+csrf   /api/v1/signature-pad/scan                 ADMIN      -> all=404
+POST+csrf   /api/v1/signature-pad/scan                 TABADMIN   -> all=404
+POST+csrf   /api/v1/signature-pad/scan                 VAULTADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/scan                 AUDITADMIN -> all=404
+POST        /api/v1/signature-pad/signature            ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST        /api/v1/signature-pad/signature            ANON_XHR   -> all=302 http://localhost/login
+POST        /api/v1/signature-pad/signature            ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST        /api/v1/signature-pad/signature            NOROLE     -> all=404
+POST        /api/v1/signature-pad/signature            PUBLISHER  -> all=404
+POST        /api/v1/signature-pad/signature            ADMIN      -> all=404
+POST        /api/v1/signature-pad/signature            TABADMIN   -> all=404
+POST        /api/v1/signature-pad/signature            VAULTADMIN -> all=404
+POST        /api/v1/signature-pad/signature            AUDITADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/signature            ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/signature-pad/signature            ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /api/v1/signature-pad/signature            ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/signature-pad/signature            NOROLE     -> all=404
+POST+csrf   /api/v1/signature-pad/signature            PUBLISHER  -> all=404
+POST+csrf   /api/v1/signature-pad/signature            ADMIN      -> all=404
+POST+csrf   /api/v1/signature-pad/signature            TABADMIN   -> all=404
+POST+csrf   /api/v1/signature-pad/signature            VAULTADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/signature            AUDITADMIN -> all=404
+POST        /api/v1/signature-pad/photo                ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST        /api/v1/signature-pad/photo                ANON_XHR   -> all=302 http://localhost/login
+POST        /api/v1/signature-pad/photo                ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST        /api/v1/signature-pad/photo                NOROLE     -> all=404
+POST        /api/v1/signature-pad/photo                PUBLISHER  -> all=404
+POST        /api/v1/signature-pad/photo                ADMIN      -> all=404
+POST        /api/v1/signature-pad/photo                TABADMIN   -> all=404
+POST        /api/v1/signature-pad/photo                VAULTADMIN -> all=404
+POST        /api/v1/signature-pad/photo                AUDITADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/photo                ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/signature-pad/photo                ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /api/v1/signature-pad/photo                ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/signature-pad/photo                NOROLE     -> all=404
+POST+csrf   /api/v1/signature-pad/photo                PUBLISHER  -> all=404
+POST+csrf   /api/v1/signature-pad/photo                ADMIN      -> all=404
+POST+csrf   /api/v1/signature-pad/photo                TABADMIN   -> all=404
+POST+csrf   /api/v1/signature-pad/photo                VAULTADMIN -> all=404
+POST+csrf   /api/v1/signature-pad/photo                AUDITADMIN -> all=404
+POST        /api/v1/auth-pad                           ANON       -> all=403
+POST        /api/v1/auth-pad                           ANON_XHR   -> all=403
+POST        /api/v1/auth-pad                           ANON_JSON  -> all=403
+POST        /api/v1/auth-pad                           NOROLE     -> all=403
+POST        /api/v1/auth-pad                           PUBLISHER  -> all=403
+POST        /api/v1/auth-pad                           ADMIN      -> all=403
+POST        /api/v1/auth-pad                           TABADMIN   -> all=403
+POST        /api/v1/auth-pad                           VAULTADMIN -> all=403
+POST        /api/v1/auth-pad                           AUDITADMIN -> all=403
+POST+csrf   /api/v1/auth-pad                           ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/auth-pad                           ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /api/v1/auth-pad                           ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/auth-pad                           NOROLE     -> all=404
+POST+csrf   /api/v1/auth-pad                           PUBLISHER  -> all=404
+POST+csrf   /api/v1/auth-pad                           ADMIN      -> all=404
+POST+csrf   /api/v1/auth-pad                           TABADMIN   -> all=404
+POST+csrf   /api/v1/auth-pad                           VAULTADMIN -> all=404
+POST+csrf   /api/v1/auth-pad                           AUDITADMIN -> all=404
+POST        /admin/connect-new-pad                     ANON       -> all=403
+POST        /admin/connect-new-pad                     ANON_XHR   -> all=403
+POST        /admin/connect-new-pad                     ANON_JSON  -> all=403
+POST        /admin/connect-new-pad                     NOROLE     -> all=403
+POST        /admin/connect-new-pad                     PUBLISHER  -> all=403
+POST        /admin/connect-new-pad                     ADMIN      -> all=403
+POST        /admin/connect-new-pad                     TABADMIN   -> all=403
+POST        /admin/connect-new-pad                     VAULTADMIN -> all=403
+POST        /admin/connect-new-pad                     AUDITADMIN -> all=403
+POST+csrf   /admin/connect-new-pad                     ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /admin/connect-new-pad                     ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /admin/connect-new-pad                     ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /admin/connect-new-pad                     NOROLE     -> all=403
+POST+csrf   /admin/connect-new-pad                     PUBLISHER  -> all=403
+POST+csrf   /admin/connect-new-pad                     ADMIN      -> all=404
+POST+csrf   /admin/connect-new-pad                     TABADMIN   -> all=404
+POST+csrf   /admin/connect-new-pad                     VAULTADMIN -> all=403
+POST+csrf   /admin/connect-new-pad                     AUDITADMIN -> all=403
+POST        /api/v1/admin/vault/adminkey               ANON       -> all=403
+POST        /api/v1/admin/vault/adminkey               ANON_XHR   -> all=403
+POST        /api/v1/admin/vault/adminkey               ANON_JSON  -> all=403
+POST        /api/v1/admin/vault/adminkey               NOROLE     -> all=403
+POST        /api/v1/admin/vault/adminkey               PUBLISHER  -> all=403
+POST        /api/v1/admin/vault/adminkey               ADMIN      -> all=403
+POST        /api/v1/admin/vault/adminkey               TABADMIN   -> all=403
+POST        /api/v1/admin/vault/adminkey               VAULTADMIN -> all=403
+POST        /api/v1/admin/vault/adminkey               AUDITADMIN -> all=403
+POST+csrf   /api/v1/admin/vault/adminkey               ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/admin/vault/adminkey               ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /api/v1/admin/vault/adminkey               ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/admin/vault/adminkey               NOROLE     -> all=403
+POST+csrf   /api/v1/admin/vault/adminkey               PUBLISHER  -> all=403
+POST+csrf   /api/v1/admin/vault/adminkey               ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+POST+csrf   /api/v1/admin/vault/adminkey               TABADMIN   -> all=403
+POST+csrf   /api/v1/admin/vault/adminkey               VAULTADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+POST+csrf   /api/v1/admin/vault/adminkey               AUDITADMIN -> all=403
+POST        /api/v1/admin/vault/unseal                 ANON       -> all=403
+POST        /api/v1/admin/vault/unseal                 ANON_XHR   -> all=403
+POST        /api/v1/admin/vault/unseal                 ANON_JSON  -> all=403
+POST        /api/v1/admin/vault/unseal                 NOROLE     -> all=403
+POST        /api/v1/admin/vault/unseal                 PUBLISHER  -> all=403
+POST        /api/v1/admin/vault/unseal                 ADMIN      -> all=403
+POST        /api/v1/admin/vault/unseal                 TABADMIN   -> all=403
+POST        /api/v1/admin/vault/unseal                 VAULTADMIN -> all=403
+POST        /api/v1/admin/vault/unseal                 AUDITADMIN -> all=403
+POST+csrf   /api/v1/admin/vault/unseal                 ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/admin/vault/unseal                 ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /api/v1/admin/vault/unseal                 ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/admin/vault/unseal                 NOROLE     -> all=403
+POST+csrf   /api/v1/admin/vault/unseal                 PUBLISHER  -> all=403
+POST+csrf   /api/v1/admin/vault/unseal                 ADMIN      -> all=404
+POST+csrf   /api/v1/admin/vault/unseal                 TABADMIN   -> all=403
+POST+csrf   /api/v1/admin/vault/unseal                 VAULTADMIN -> all=404
+POST+csrf   /api/v1/admin/vault/unseal                 AUDITADMIN -> all=404
+POST        /api/v1/admin/secret/x                     ANON       -> all=403
+POST        /api/v1/admin/secret/x                     ANON_XHR   -> all=403
+POST        /api/v1/admin/secret/x                     ANON_JSON  -> all=403
+POST        /api/v1/admin/secret/x                     NOROLE     -> all=403
+POST        /api/v1/admin/secret/x                     PUBLISHER  -> all=403
+POST        /api/v1/admin/secret/x                     ADMIN      -> all=403
+POST        /api/v1/admin/secret/x                     TABADMIN   -> all=403
+POST        /api/v1/admin/secret/x                     VAULTADMIN -> all=403
+POST        /api/v1/admin/secret/x                     AUDITADMIN -> all=403
+POST+csrf   /api/v1/admin/secret/x                     ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/admin/secret/x                     ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /api/v1/admin/secret/x                     ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /api/v1/admin/secret/x                     NOROLE     -> all=403
+POST+csrf   /api/v1/admin/secret/x                     PUBLISHER  -> all=403
+POST+csrf   /api/v1/admin/secret/x                     ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=403
+POST+csrf   /api/v1/admin/secret/x                     TABADMIN   -> all=403
+POST+csrf   /api/v1/admin/secret/x                     VAULTADMIN -> all=403
+POST+csrf   /api/v1/admin/secret/x                     AUDITADMIN -> all=403
+POST        /app/x                                     ANON       -> all=403
+POST        /app/x                                     ANON_XHR   -> all=403
+POST        /app/x                                     ANON_JSON  -> all=403
+POST        /app/x                                     NOROLE     -> all=403
+POST        /app/x                                     PUBLISHER  -> all=403
+POST        /app/x                                     ADMIN      -> all=403
+POST        /app/x                                     TABADMIN   -> all=403
+POST        /app/x                                     VAULTADMIN -> all=403
+POST        /app/x                                     AUDITADMIN -> all=403
+POST+csrf   /app/x                                     ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /app/x                                     ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /app/x                                     ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /app/x                                     NOROLE     -> all=403
+POST+csrf   /app/x                                     PUBLISHER  -> all=404
+POST+csrf   /app/x                                     ADMIN      -> all=403
+POST+csrf   /app/x                                     TABADMIN   -> all=403
+POST+csrf   /app/x                                     VAULTADMIN -> all=403
+POST+csrf   /app/x                                     AUDITADMIN -> all=403
+POST        /some/other                                ANON       -> all=403
+POST        /some/other                                ANON_XHR   -> all=403
+POST        /some/other                                ANON_JSON  -> all=403
+POST        /some/other                                NOROLE     -> all=403
+POST        /some/other                                PUBLISHER  -> all=403
+POST        /some/other                                ADMIN      -> all=403
+POST        /some/other                                TABADMIN   -> all=403
+POST        /some/other                                VAULTADMIN -> all=403
+POST        /some/other                                AUDITADMIN -> all=403
+POST+csrf   /some/other                                ANON       -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /some/other                                ANON_XHR   -> all=302 http://localhost/login
+POST+csrf   /some/other                                ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+POST+csrf   /some/other                                NOROLE     -> all=404
+POST+csrf   /some/other                                PUBLISHER  -> all=404
+POST+csrf   /some/other                                ADMIN      -> all=404
+POST+csrf   /some/other                                TABADMIN   -> all=404
+POST+csrf   /some/other                                VAULTADMIN -> all=404
+POST+csrf   /some/other                                AUDITADMIN -> all=404
+DELETE      /api/v1/admin/vault/adminkey               ANON       -> all=403
+DELETE      /api/v1/admin/vault/adminkey               ANON_XHR   -> all=403
+DELETE      /api/v1/admin/vault/adminkey               ANON_JSON  -> all=403
+DELETE      /api/v1/admin/vault/adminkey               NOROLE     -> all=403
+DELETE      /api/v1/admin/vault/adminkey               PUBLISHER  -> all=403
+DELETE      /api/v1/admin/vault/adminkey               ADMIN      -> all=403
+DELETE      /api/v1/admin/vault/adminkey               TABADMIN   -> all=403
+DELETE      /api/v1/admin/vault/adminkey               VAULTADMIN -> all=403
+DELETE      /api/v1/admin/vault/adminkey               AUDITADMIN -> all=403
+DELETE+csrf /api/v1/admin/vault/adminkey               ANON       -> all=302 http://localhost/oauth2/authorization/app
+DELETE+csrf /api/v1/admin/vault/adminkey               ANON_XHR   -> all=302 http://localhost/login
+DELETE+csrf /api/v1/admin/vault/adminkey               ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+DELETE+csrf /api/v1/admin/vault/adminkey               NOROLE     -> all=403
+DELETE+csrf /api/v1/admin/vault/adminkey               PUBLISHER  -> all=403
+DELETE+csrf /api/v1/admin/vault/adminkey               ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+DELETE+csrf /api/v1/admin/vault/adminkey               TABADMIN   -> all=403
+DELETE+csrf /api/v1/admin/vault/adminkey               VAULTADMIN -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=404 | UNSEALED_NOKEYS=404
+DELETE+csrf /api/v1/admin/vault/adminkey               AUDITADMIN -> all=403
+DELETE      /api/v1/admin/secret/x                     ANON       -> all=403
+DELETE      /api/v1/admin/secret/x                     ANON_XHR   -> all=403
+DELETE      /api/v1/admin/secret/x                     ANON_JSON  -> all=403
+DELETE      /api/v1/admin/secret/x                     NOROLE     -> all=403
+DELETE      /api/v1/admin/secret/x                     PUBLISHER  -> all=403
+DELETE      /api/v1/admin/secret/x                     ADMIN      -> all=403
+DELETE      /api/v1/admin/secret/x                     TABADMIN   -> all=403
+DELETE      /api/v1/admin/secret/x                     VAULTADMIN -> all=403
+DELETE      /api/v1/admin/secret/x                     AUDITADMIN -> all=403
+DELETE+csrf /api/v1/admin/secret/x                     ANON       -> all=302 http://localhost/oauth2/authorization/app
+DELETE+csrf /api/v1/admin/secret/x                     ANON_XHR   -> all=302 http://localhost/login
+DELETE+csrf /api/v1/admin/secret/x                     ANON_JSON  -> all=302 http://localhost/oauth2/authorization/app
+DELETE+csrf /api/v1/admin/secret/x                     NOROLE     -> all=403
+DELETE+csrf /api/v1/admin/secret/x                     PUBLISHER  -> all=403
+DELETE+csrf /api/v1/admin/secret/x                     ADMIN      -> SEALED_KEYS=403 | UNSEALED_KEYS=404 | SEALED_NOKEYS=403 | UNSEALED_NOKEYS=403
+DELETE+csrf /api/v1/admin/secret/x                     TABADMIN   -> all=403
+DELETE+csrf /api/v1/admin/secret/x                     VAULTADMIN -> all=403
+DELETE+csrf /api/v1/admin/secret/x                     AUDITADMIN -> all=403
+
+# response headers
+GET / ANON -> 404
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Content-Security-Policy: default-src 'self'; manifest-src 'self'; connect-src 'self' https://idp.sonia.de; img-src 'self' data:;style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-inline';
+  Expires: 0
+  Pragma: no-cache
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 0
+GET /favicon.ico ANON -> 404
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Content-Security-Policy: default-src 'self'; manifest-src 'self'; connect-src 'self' https://idp.sonia.de; img-src 'self' data:;style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-inline';
+  Expires: 0
+  Pragma: no-cache
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 0
+GET /admin ADMIN -> 404
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Content-Security-Policy: default-src 'self'; manifest-src 'self'; connect-src 'self' https://idp.sonia.de; img-src 'self' data:;style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-inline';
+  Expires: 0
+  Pragma: no-cache
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 0
+GET /api/v1/admin/x NOROLE -> 403
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Content-Security-Policy: default-src 'self'; manifest-src 'self'; connect-src 'self' https://idp.sonia.de; img-src 'self' data:;style-src 'self' 'unsafe-inline';script-src 'self' 'unsafe-inline';
+  Expires: 0
+  Pragma: no-cache
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 0

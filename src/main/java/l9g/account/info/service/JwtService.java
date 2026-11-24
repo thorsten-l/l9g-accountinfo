@@ -15,7 +15,8 @@
  */
 package l9g.account.info.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Comparator;
@@ -94,7 +95,8 @@ public class JwtService
       // dependent
       String decodedPayload = new String(decodedBytes, StandardCharsets.UTF_8);
 
-      ObjectMapper objectMapper = new ObjectMapper();
+      // Jackson 2 defaults: same parsing behaviour as before the Jackson 3 upgrade
+      ObjectMapper objectMapper = JsonMapper.builderWithJackson2Defaults().build();
       Map<String, Object> sorted = new TreeMap<>(Comparator.naturalOrder());
       sorted.putAll(objectMapper.readValue(decodedPayload, HashMap.class));
 

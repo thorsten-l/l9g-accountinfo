@@ -15,15 +15,15 @@
  */
 package l9g.account.info.service;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-
-import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.deser.std.StdDeserializer;
 
 /**
  * Custom Jackson deserializer for {@link PublicKey} objects.
@@ -54,14 +54,14 @@ public class PublicKeyDeserializer extends StdDeserializer<PublicKey>
    *
    * @return A {@link PublicKey} object.
    *
-   * @throws IOException If an I/O error occurs or the public key cannot be deserialized.
+   * @throws JacksonException If the public key cannot be deserialized.
    */
   @Override
   public PublicKey deserialize(
     JsonParser p,
     DeserializationContext ctxt
   )
-    throws IOException
+    throws JacksonException
   {
     String b64 = p.getValueAsString();
     byte[] data = Base64.getDecoder().decode(b64);
@@ -73,7 +73,7 @@ public class PublicKeyDeserializer extends StdDeserializer<PublicKey>
     }
     catch(Exception e)
     {
-      throw new IOException("Failed to deserialize PublicKey", e);
+      throw DatabindException.from(p, "Failed to deserialize PublicKey", e);
     }
   }
 

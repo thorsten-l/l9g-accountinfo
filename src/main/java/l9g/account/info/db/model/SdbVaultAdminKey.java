@@ -19,6 +19,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import l9g.account.info.compliance.PersonalData;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -58,7 +59,11 @@ public class SdbVaultAdminKey extends SdbUuidObject
     this.encryptedMasterKey = encryptedMasterKey;
   }
 
+  @PersonalData(category = "Beschäftigtendaten", purpose = "Zuordnung des Vault-Schlüssels zur Administratorin bzw. zum Administrator")
+
   private String adminId;
+
+  @PersonalData(category = "Beschäftigtendaten", purpose = "Anzeige in der Schlüsselverwaltung")
 
   private String fullName;
 

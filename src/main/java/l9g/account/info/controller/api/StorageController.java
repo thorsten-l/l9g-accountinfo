@@ -15,11 +15,9 @@
  */
 package l9g.account.info.controller.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -44,6 +42,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * REST API controller for receiving externally uploaded storage objects.
@@ -212,7 +212,9 @@ public class StorageController
     {
       object = objectMapper.readValue(body, StorageObject.class);
     }
-    catch(IOException e)
+    // Jackson 3: parse and mapping errors are unchecked JacksonExceptions,
+    // no longer IOExceptions; they must still answer 400, not 500
+    catch(JacksonException e)
     {
       log.error("Malformed storage object");
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

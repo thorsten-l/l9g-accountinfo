@@ -1,0 +1,25 @@
+signature-pad.uuid: 5f0c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f
+signature-pad.keyId: 5f0c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f-3
+signature-pad.write: {"uuid":"5f0c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f","name":"Pad Foyer","validated":true,"clientEnvironment":{"userAgent":"Mozilla/5.0","screen":{"width":1280,"height":800},"touch":true},"version":3,"ttl":0,"publicJwk":{"kty":"RSA","e":"AQAB","use":"sig","kid":"5f0c1d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f-3","alg":"RS256","n":"sXchDaQebHnPiGvyDOAT4saGEUetSyo9MKLOoWFsueri23bOdgWp4Dy1WlUzewbgBHod5pcM9H95GQRV3JDXboIRROSBigeC5yjU1hGzHHyXss8UDprecbAYxknTcQkhslANGRUZmdTOQ5qTRsLAt6BTYuyvVRdhS8exSZEy_c4gs_7svlJJQ4H9_NxsiIoLwAEk7-Q3UXERGYw_75IDrGA84-lA_-Ct4eTlXHBIY2EaV7t7LjJaynVJCpkv4LKjTTAumiGUIuQhrNhZLuF_RJLqHpM2kgWFLU7-VTdL1VbC2tejvcI2BlMkEpk1BzBZI0KQB0GaDWFLN-aEAw3vRw"}}
+identification-status.write: {"transactionId":"tx-4711","responseType":"identification","actionId":"a-1","actionType":"ident","identifiedOn":"2026-03-14T09:15:30Z","finishedOn":"2026-03-14T09:20:00.123Z","success":true,"user":{"title":"Dr.","sex":"F","firstname":"Marie","lastname":"Muster","dateOfBirth":"1990-02-03","address":{"street":"Salzdahlumer Str.","streetNo":"46/48","addressLine1":null,"addressLine2":null,"region":null,"zip":"38302","city":"Wolfenbüttel","country":"DE"},"contact":{"email":"m.muster@example.org","cell":null,"phone":null},"customFields":{"matrikel":"123456"}},"idDocument":{"documentType":null,"authority":null,"dateOfIssue":null,"dateOfExpiry":null,"nationality":null,"issuingCountry":"DE","idNumber":null,"mrz":null,"mrzLine1":null,"mrzLine2":null,"mrzLine3":null,"nameAtBirth":null,"placeOfBirth":null,"optionalDataElements1":null,"optionalDataElements2":null,"drivingLicenseCategories":null},"product":{"name":"autoident"},"mismatch":false,"isTrueid":true,"rejectionReason":null,"customParameters":{"campus":"WF"},"passImages":[],"portraitImages":["p1"],"customLegalDecisionsForIdent":[],"qesContinue":{"url":"https://idp.example.org/qes","validUntil":"2026-03-15T00:00:00Z"},"verified":true}
+identification-status.fileResponseDownload: FileResponseDownload[downloadToken=SECRET-TOKEN, validUntil=2026-03-15T00:00Z]
+storage-object.read: StorageObject[type=EXT_IDENTIFICATION_STATUS, user=EndUserData[pid=p-1, mail=m.muster@example.org, name=ignored, username=mmuster, givenName=Marie, surname=Muster], status=present, data=5 bytes]
+storage-object.description: {"pid":"p-1","mail":"m.muster@example.org","name":"Marie Muster","username":"mmuster"}
+storage-object.status: {"transactionId":"tx-4711","responseType":"identification","actionId":"a-1","actionType":"ident","identifiedOn":"2026-03-14T09:15:30Z","finishedOn":"2026-03-14T09:20:00.123Z","success":true,"user":{"title":"Dr.","sex":"F","firstname":"Marie","lastname":"Muster","dateOfBirth":"1990-02-03","address":{"street":"Salzdahlumer Str.","streetNo":"46/48","addressLine1":null,"addressLine2":null,"region":null,"zip":"38302","city":"Wolfenbüttel","country":"DE"},"contact":{"email":"m.muster@example.org","cell":null,"phone":null},"customFields":{"matrikel":"123456"}},"idDocument":{"documentType":null,"authority":null,"dateOfIssue":null,"dateOfExpiry":null,"nationality":null,"issuingCountry":"DE","idNumber":null,"mrz":null,"mrzLine1":null,"mrzLine2":null,"mrzLine3":null,"nameAtBirth":null,"placeOfBirth":null,"optionalDataElements1":null,"optionalDataElements2":null,"drivingLicenseCategories":null},"product":{"name":"autoident"},"mismatch":false,"isTrueid":true,"rejectionReason":null,"customParameters":{"campus":"WF"},"passImages":[],"portraitImages":["p1"],"customLegalDecisionsForIdent":[],"qesContinue":{"url":"https://idp.example.org/qes","validUntil":"2026-03-15T00:00:00Z"},"verified":true}
+publisher.write: {"mail":"m.muster@example.org","name":"Marie Muster","username":"mmuster"}
+description.write: {"mail":"m.muster@example.org","name":"Marie Muster"}
+description.read: {mail=m.muster@example.org, name=Marie Muster}
+export.pretty:
+| {
+|   "id" : "row-1",
+|   "type" : "ID_SIGNATURE_JWT",
+|   "size" : 42,
+|   "description" : {
+|     "mail" : "m.muster@example.org",
+|     "name" : "Marie Muster"
+|   },
+|   "secret" : "not json"
+| }
+event.show: {"event":"show","timestamp":1767225600000,"message":"{\"name\":\"Marie\"}"}
+event.heartbeat: {"event":"heartbeat","timestamp":1767225600000}
+jwt-payload.read: {exp=1767225600, resource_access={accountinfo={roles=[ADMIN]}}, roles=[a, b], sub=u-1}

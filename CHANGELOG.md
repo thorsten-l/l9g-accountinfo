@@ -11,6 +11,34 @@ hier einen Eintrag hat — ein Release ohne Changelog-Eintrag bricht ab.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-24
+
+### Changed
+
+- **Spring Boot 3.5.16 → 4.1.3** (Spring Framework 7.0, Spring Security 7.1, Hibernate 7.4, Jackson 3.1, Tomcat 11) und **Java 21 → 25**, auch im Docker-Image (`bellsoft/liberica-openjdk-alpine:25`).
+- l9g-crypto 1.0.8 → 2.0.1 (Ausgabe für Spring Boot 4; Verschlüsselung und Chiffrat-Format unverändert, bestehende Daten bleiben lesbar) und springdoc-openapi 2.9.1 → 3.2.0 (gegen Spring Boot 4.1 gebaut).
+- Umbenannte Starter: `spring-boot-starter-web` → `spring-boot-starter-webmvc`, `spring-boot-starter-oauth2-client` → `spring-boot-starter-security-oauth2-client`. `webjars-locator-core` → `webjars-locator-lite`: Spring Framework 7 löst versionslose Webjar-Pfade nur noch damit auf.
+- **Jackson 3 mit den Jackson-2-Defaults** (`spring.jackson.use-jackson2-defaults: true`, für die direkt erzeugten Mapper `JsonMapper.builderWithJackson2Defaults()`). Ohne das würden aus der Datenbank gelesene Signatur-Pads ihre UUID verlieren (Jackson 3 setzt keine `final`-Felder mehr), und das JSON in `secretdata` sowie die WebSocket-Events würden alphabetisch sortiert. Festgeschrieben durch `JsonFormatGoldenTest`.
+- Veraltete Konstrukte ersetzt: `@Temporal` entfernt (Jakarta Persistence 3.2; Spalten bleiben `timestamp(6)`), `org.springframework.lang.NonNull/Nullable` → JSpecify, Jackson-2-API → Jackson 3. Der Build ist frei von Deprecation-Warnungen.
+
+### Removed
+
+- Ausführbares Jar mit vorangestelltem Startskript (`spring-boot-maven-plugin` `executable=true`): Spring Boot 4 unterstützt das nicht mehr, der Parameter wurde bereits ignoriert. Gestartet wird wie bisher per `java -jar` (auch im Docker-Image); `./l9g-accountinfo.jar` direkt aufzurufen geht nicht mehr.
+
+### Fixed
+
+- `POST /api/v1/storage/objects` antwortet bei fehlerhaftem JSON weiterhin mit 400: Unter Jackson 3 sind Parse-Fehler keine `IOException` mehr und wären sonst als 500 geendet.
+
+### Added
+
+- Golden-Tests, die das Verhalten über Framework-Upgrades festschreiben: `ClientSecurityConfigGoldenTest` (Zugriffsmatrix aus Pfad × Methode × CSRF × Rolle × Vault-Zustand, Security-Header, OIDC-Logout), `JsonFormatGoldenTest` (gespeichertes JSON, Pad-Protokoll) und `SchemaGoldenTest` (DDL und Namen der Unique-Constraints).
+- Maven-Profil `release` (`mvn -Prelease verify`): SBOM (CycloneDX), OWASP-dependency-check und automatisch erzeugte Compliance-Dokumente nach `target/compliance`, versioniert unter `docs/releases/<version>`.
+- `ComplianceReportGenerator` erzeugt je Release Security-Audit, Prozessbeschreibung (Art. 30) und DSFA (Art. 35) aus dem Code: Datenmodell und verschlüsselte Spalten per Reflection, personenbezogene Spalten über die neue Annotation `@PersonalData`, Datentypen aus `SdbSecretType`, Zugriffsmatrix aus dem `ClientSecurityConfigGoldenTest`, Komponentenversionen aus der SBOM und die Befunde des dependency-check. Handgepflegte Eingaben: `docs/compliance/processing-activities.yaml` und `docs/compliance/risk-register.yaml`; die ausführlichen Analysen bleiben in `ACCOUNT_*.md`.
+
+### Security
+
+- swagger-ui 5.34.0 → 5.36.0 (Override in `dependencyManagement`, bis springdoc nachzieht): der dependency-check meldete für das mitgelieferte DOMPurify 3.4.16 CVE-2026-116804 (kritisch), -116803 (hoch) und -116802 (niedrig). 5.36.0 enthält DOMPurify 3.4.17; ob das alle drei behebt, weist der dependency-check-Bericht des Releases aus.
+
 ## [2.5.2] - 2026-11-05
 
 ### Changed
@@ -165,7 +193,8 @@ Durch Tests festgeschrieben, siehe `DEFEKTE.md`:
 Frühere Versionen sind nicht rückwirkend dokumentiert; für Details siehe die
 git-Historie.
 
-[Unreleased]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.2...HEAD
+[Unreleased]: https://github.com/thorsten-l/l9g-accountinfo/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.2...v3.0.0
 [2.5.2]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.1...v2.5.2
 [2.5.1]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/thorsten-l/l9g-accountinfo/compare/v2.4.1...v2.5.0
